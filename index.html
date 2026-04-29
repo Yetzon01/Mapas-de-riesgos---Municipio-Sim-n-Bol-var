@@ -212,7 +212,7 @@
                     <label>Especifique su Vocería</label>
                     <input type="text" id="inputOtro" placeholder="¿Cuál es su vocería?">
                 </div>
-                <button type="submit" class="btn-acceder">INGRESAR Y GUARDAR REGISTRO</button>
+                <button type="submit" class="btn-acceder" id="btnRegistrar">INGRESAR Y GUARDAR REGISTRO</button>
             </div>
         </form>
 
@@ -347,7 +347,6 @@
             <button class="btn-mapa" onclick="cambiarEmoji('💧',this,'blancas')"><div>💧 Bote Agua Blanca</div> <span class="count-badge" id="count-blancas">0</span></button>
             <button class="btn-mapa" onclick="cambiarEmoji('🤢',this,'servidas')"><div>🤢 Bote Agua Servida</div> <span class="count-badge" id="count-servidas">0</span></button>
             <button class="btn-mapa" onclick="cambiarEmoji('地铁',this,'colector')"><div>地铁 Colector Caído / Cloaca</div> <span class="count-badge" id="count-colector">0</span></button>
-            <button class="btn-mapa" onclick="cambiarEmoji('🌀',this,'oxidacion')"><div>🌀 Laguna de Oxidación</div> <span class="count-badge" id="count-oxidacion">0</span></button>
             <button class="btn-mapa" onclick="cambiarEmoji('🗑️',this,'basura')"><div>🗑️ Foco Crítico (Basura)</div> <span class="count-badge" id="count-basura">0</span></button>
             <button class="btn-mapa" onclick="cambiarEmoji('🧼',this,'autolavado')"><div>🧼 Autolavado (Fuga/Suelo)</div> <span class="count-badge" id="count-autolavado">0</span></button>
             <button class="btn-mapa" onclick="cambiarEmoji('🛠️',this,'taller')"><div>🛠️ Taller Mecánico</div> <span class="count-badge" id="count-taller">0</span></button>
@@ -428,8 +427,7 @@
                     <th>Especificación</th>
                 </tr>
             </thead>
-            <tbody id="tbody-voceros">
-                </tbody>
+            <tbody id="tbody-voceros"></tbody>
         </table>
     </div>
     <div style="padding: 10px; background: #222; font-size: 9px; color: var(--v-lim);">
@@ -439,37 +437,14 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://npmcdn.com/leaflet-editable@1.2.0/src/Leaflet.Editable.js"></script>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-    // CONFIGURACIÓN DE CONEXIÓN (IMPORTANTE: Pon tus llaves aquí)
+    // --- CONFIGURACIÓN DE CONEXIÓN ---
+    // IMPORTANTE: Asegúrate de poner aquí tus llaves reales de Supabase
     const SUPABASE_URL = 'https://tu-proyecto.supabase.co'; 
     const SUPABASE_KEY = 'sb_publishable_...'; 
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    // FUNCIÓN PARA GUARDAR EN LA NUBE
-    async function guardarEnSupabase(datos) {
-        try {
-            const { error } = await _supabase
-                .from('registros_voceros')
-                .insert([{
-                    nombre: datos.nom,
-                    apellido: datos.ape,
-                    cedula: datos.ced,
-                    telefono: datos.tel,
-                    correo: datos.cor,
-                    sector: datos.sec,
-                    comuna: datos.com,
-                    voceria: datos.voc,
-                    especificacion: datos.esp
-                }]);
-            if (error) throw error;
-            console.log("¡Datos respaldados en Supabase!");
-        } catch (err) {
-            console.error("Error guardando en la nube:", err.message);
-        }
-    }
 
     let dbVoceros = [];
     let dbMapasCount = {};
@@ -496,26 +471,12 @@
 
     listaComunas.forEach(c => dbMapasCount[c] = 0);
 
-    // --- LÓGICA DE VOCERÍA ---
-    function controlarOtro(valor) {
-        const campoOtro = document.getElementById('segmento-otro');
-        const inputOtro = document.getElementById('inputOtro');
-        if (valor === 'Otro') {
-            campoOtro.style.display = 'block';
-            inputOtro.required = true;
-        } else {
-            campoOtro.style.display = 'none';
-            inputOtro.required = false;
-        }
-    }
-
-    // --- REGISTRO Y TABLA EXCEL ---
-    function registrarVocero() {
+    // --- LÓGICA DE REGISTRO ACTUALIZADA ---
+    async function registrarVocero() {
         const correo = document.getElementById('regCor').value;
         const voceriaSelect = document.getElementById('selectVoceria').value;
         const especificacion = (voceriaSelect === 'Otro') ? document.getElementById('inputOtro').value : '—';
         
-        const indexExistente = dbVoceros.findIndex(v => v.cor.toLowerCase() === correo.toLowerCase());
         const vocero = {
             nom: document.getElementById('regNom').value, 
             ape: document.getElementById('regApe').value,
@@ -528,16 +489,55 @@
             esp: especificacion
         };
 
-        if(indexExistente !== -1) dbVoceros[indexExistente] = vocero;
-        else dbVoceros.push(vocero);
+        try {
+            // Intentamos guardar en la nube
+            const { error } = await _supabase
+                .from('registros_voceros')
+                .insert([{
+                    nombre: vocero.nom,
+                    apellido: vocero.ape,
+                    cedula: vocero.ced,
+                    telefono: vocero.tel,
+                    correo: vocero.cor,
+                    sector: vocero.sec,
+                    comuna: vocero.com,
+                    voceria: vocero.voc,
+                    especificacion: vocero.esp
+                }]);
 
-        guardarDB();
-        actualizarTablaVoceros();
-        
-        // --- AQUÍ SE ENVÍA A SUPABASE ---
-        guardarEnSupabase(vocero); 
+            if (error) throw error;
 
-        reproducirAnimacion('usuario');
+            // Si llegamos aquí, el guardado fue exitoso
+            alert("✅ ¡Registro exitoso! Los datos han sido respaldados en la nube.");
+
+            // Guardamos localmente
+            const indexExistente = dbVoceros.findIndex(v => v.cor.toLowerCase() === correo.toLowerCase());
+            if(indexExistente !== -1) dbVoceros[indexExistente] = vocero;
+            else dbVoceros.push(vocero);
+
+            guardarDB();
+            actualizarTablaVoceros();
+            
+            // Iniciamos la animación para entrar al mapa
+            reproducirAnimacion('usuario');
+
+        } catch (err) {
+            console.error("Error al registrar:", err.message);
+            alert("❌ Error al guardar en la nube: " + err.message);
+        }
+    }
+
+    // --- RESTO DE TUS FUNCIONES (Mantenidas intactas) ---
+    function controlarOtro(valor) {
+        const campoOtro = document.getElementById('segmento-otro');
+        const inputOtro = document.getElementById('inputOtro');
+        if (valor === 'Otro') {
+            campoOtro.style.display = 'block';
+            inputOtro.required = true;
+        } else {
+            campoOtro.style.display = 'none';
+            inputOtro.required = false;
+        }
     }
 
     function actualizarTablaVoceros() {
@@ -684,7 +684,6 @@
         if(rolActual === 'admin') mostrarLeyendaAdmin();
     }
 
-    /* MAPA - FUNCIONES CORE */
     var map, emojiActual = null, modoEspecial = "", modoNavegar = true;
     var stackElementos = [], stackRedo = [];
     var objetoSeleccionado = null;
@@ -850,26 +849,7 @@
     function actualizarBadges() { for(let k in contadores) { let el = document.getElementById('count-'+k); if(el) el.innerText = contadores[k]; } }
     function deshacer() { let el = stackElementos.pop(); if(el) { stackRedo.push(el); map.removeLayer(el); } }
     function rehacer() { let el = stackRedo.pop(); if(el) { stackElementos.push(el); el.addTo(map); } }
-function rehacer() { 
-        let el = stackRedo.pop();
-        // ... (tu código actual) ...
-    } // <--- Esta es la última llave de tu función de la foto
-
-    // AQUÍ DEJAS EL ESPACIO Y PEGAS:
-
-    document.addEventListener("DOMContentLoaded", function() {
-        const miBoton = document.getElementById("btnRegistrar"); 
-        if (miBoton) {
-            miBoton.addEventListener("click", function(event) {
-                event.preventDefault(); 
-                registrarVocero(); 
-                alert("¡Botón activado! Procesando registro...");
-            });
-        }
-    });
 
 </script>
-</script>
-
 </body>
 </html>

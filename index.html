@@ -440,7 +440,37 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://npmcdn.com/leaflet-editable@1.2.0/src/Leaflet.Editable.js"></script>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
+    // CONFIGURACIÓN DE CONEXIÓN (IMPORTANTE: Pon tus llaves aquí)
+    const SUPABASE_URL = 'https://tu-proyecto.supabase.co'; 
+    const SUPABASE_KEY = 'sb_publishable_...'; 
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // FUNCIÓN PARA GUARDAR EN LA NUBE
+    async function guardarEnSupabase(datos) {
+        try {
+            const { error } = await _supabase
+                .from('registros_voceros')
+                .insert([{
+                    nombre: datos.nom,
+                    apellido: datos.ape,
+                    cedula: datos.ced,
+                    telefono: datos.tel,
+                    correo: datos.cor,
+                    sector: datos.sec,
+                    comuna: datos.com,
+                    voceria: datos.voc,
+                    especificacion: datos.esp
+                }]);
+            if (error) throw error;
+            console.log("¡Datos respaldados en Supabase!");
+        } catch (err) {
+            console.error("Error guardando en la nube:", err.message);
+        }
+    }
+
     let dbVoceros = [];
     let dbMapasCount = {};
     let rolActual = "usuario";
@@ -503,6 +533,10 @@
 
         guardarDB();
         actualizarTablaVoceros();
+        
+        // --- AQUÍ SE ENVÍA A SUPABASE ---
+        guardarEnSupabase(vocero); 
+
         reproducirAnimacion('usuario');
     }
 
@@ -575,7 +609,6 @@
         if (datos) { dbVoceros = JSON.parse(datos); actualizarTablaVoceros(); }
     });
 
-    // ... (El resto de tus funciones de mapa y animación se mantienen igual abajo) ...
     function validarAdmin() {
         const emailIngresado = document.getElementById('adminEmail').value.trim().toLowerCase();
         const passIngresada = document.getElementById('adminPass').value;
@@ -651,7 +684,7 @@
         if(rolActual === 'admin') mostrarLeyendaAdmin();
     }
 
-    /* MAPA - FUNCIONES CORE (Copiar de tu versión anterior tal cual) */
+    /* MAPA - FUNCIONES CORE */
     var map, emojiActual = null, modoEspecial = "", modoNavegar = true;
     var stackElementos = [], stackRedo = [];
     var objetoSeleccionado = null;

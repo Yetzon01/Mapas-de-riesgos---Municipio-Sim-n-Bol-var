@@ -170,7 +170,7 @@
 
 <div id="video-contenedor">
     <video id="animacion-video" muted>
-        <source src="video.mp4" type="video/mp4">
+        <source src="video.mp4.mp4" type="video/mp4">
     </video>
 </div>
 
@@ -467,10 +467,9 @@
         "SOCIALISTA VALLES DEL NEVERI", "SOCIOPRODUCTIVA BICENTENARIO DE LA INDEPENDENCIA", "VENCEDORES INDIGENAS CUMANAGOTO"
     ];
 
-    // Inicializar contadores de mapas
     listaComunas.forEach(c => dbMapasCount[c] = 0);
 
-    /* --- LÓGICA DE VERIFICACIÓN DE CORREO --- */
+    /* --- LÓGICA DE VERIFICACIÓN DE CORREO (MEMORIA) --- */
     function verificarCorreo() {
         const correo = document.getElementById('regCor').value.trim().toLowerCase();
         if(!correo) { alert("Por favor ingrese un correo."); return; }
@@ -767,6 +766,5 @@
     function deshacer() { let el = stackElementos.pop(); if(el) { stackRedo.push(el); map.removeLayer(el); } }
     function rehacer() { let el = stackRedo.pop(); if(el) { stackElementos.push(el); el.addTo(map); } }
 </script>
-
 </body>
 </html>

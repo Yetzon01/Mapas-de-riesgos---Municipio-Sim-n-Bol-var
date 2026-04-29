@@ -94,7 +94,7 @@
         #titulo-principal { font-size: 22px; font-weight: 800; color: #FFFFFF; text-transform: uppercase; margin-bottom: 5px; }
 
         #contenedor { display: flex; flex-grow: 1; overflow: hidden; }
-        #sidebar { width: 440px; background: var(--negro); color: white; padding: 15px; overflow-y: auto; border-right: 2px solid #333; }
+        #sidebar { width: 440px; background: var(--negro); color: white; padding: 15px; overflow-y: auto; border-right: 2px solid #333; transition: margin-left 0.3s ease; }
         
         h4 { color: var(--v-lim); font-size: 11px; text-transform: uppercase; margin: 15px 0 8px 0; border-bottom: 1px solid #444; padding-bottom: 4px; letter-spacing: 1px; }
         .grid-datos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -404,6 +404,7 @@
             </div>
 
             <div class="controles-mapa-horiz">
+                <button class="btn-float" onclick="toggleSidebar()" title="Ocultar/Mostrar Inventario">☰</button>
                 <button id="floatMano" class="btn-float activo-float" onclick="activarMano()">🖐️</button>
                 <button class="btn-float" onclick="irAMiUbicacion()" title="Mi Ubicación GPS">🎯</button>
                 <button id="btnFinalizar" class="btn-float" onclick="finalizarTrazado()">✅</button>
@@ -467,23 +468,15 @@
         "SOCIALISTA VALLES DEL NEVERI", "SOCIOPRODUCTIVA BICENTENARIO DE LA INDEPENDENCIA", "VENCEDORES INDIGENAS CUMANAGOTO"
     ];
 
-    // Inicializar contadores de mapas
     listaComunas.forEach(c => dbMapasCount[c] = 0);
 
-    /* --- LÓGICA MEJORADA DE VERIFICACIÓN (PASO 1) --- */
     function verificarCorreo() {
         const correoInput = document.getElementById('regCor');
         const correo = correoInput.value.trim().toLowerCase();
-        
         if(!correo) return; 
-
         const contenedorCampos = document.getElementById('campos-dinamicos-registro');
-
-        // Buscar si ya existe en la memoria
         const voceroExistente = dbVoceros.find(v => v.cor.toLowerCase() === correo);
-
         if(voceroExistente) {
-            // Usuario reconocido: mostramos campos y rellenamos
             contenedorCampos.style.display = 'flex';
             document.getElementById('regNom').value = voceroExistente.nom;
             document.getElementById('regApe').value = voceroExistente.ape;
@@ -491,9 +484,7 @@
             document.getElementById('regTel').value = voceroExistente.tel;
             document.getElementById('regCom').value = voceroExistente.com;
             document.getElementById('regSec').value = voceroExistente.sec;
-            console.log("Datos cargados para: " + correo);
         } else {
-            // Usuario nuevo: solo mostramos el formulario vacío
             contenedorCampos.style.display = 'flex';
         }
     }
@@ -504,11 +495,9 @@
         }
     }
 
-    /* --- REGISTRO CON MEMORIA LOCAL (LOCALSTORAGE) --- */
     function registrarVocero() {
         const correo = document.getElementById('regCor').value;
         const indexExistente = dbVoceros.findIndex(v => v.cor.toLowerCase() === correo.toLowerCase());
-
         const vocero = {
             nom: document.getElementById('regNom').value,
             ape: document.getElementById('regApe').value,
@@ -518,16 +507,9 @@
             com: document.getElementById('regCom').value,
             sec: document.getElementById('regSec').value
         };
-
-        if(indexExistente !== -1) {
-            dbVoceros[indexExistente] = vocero; // Actualizar datos
-        } else {
-            dbVoceros.push(vocero); // Nuevo registro
-        }
-
-        // GUARDAR EN LA MEMORIA DEL NAVEGADOR
+        if(indexExistente !== -1) dbVoceros[indexExistente] = vocero;
+        else dbVoceros.push(vocero);
         localStorage.setItem('dbVoceros_SIG', JSON.stringify(dbVoceros));
-
         actualizarTablaVoceros();
         reproducirAnimacion('usuario');
     }
@@ -542,7 +524,6 @@
         });
     }
 
-    // Al cargar la página, recuperar lo guardado anteriormente
     window.addEventListener('load', function() {
         const datosGuardados = localStorage.getItem('dbVoceros_SIG');
         if (datosGuardados) {
@@ -593,10 +574,8 @@
         const video = document.getElementById('animacion-video');
         const registro = document.getElementById('pantalla-registro');
         const sistema = document.getElementById('sistema-principal');
-
         videoContenedor.style.display = 'flex';
         video.play();
-
         video.onended = function() {
             videoContenedor.style.opacity = '0';
             videoContenedor.style.transition = 'opacity 0.6s';
@@ -604,7 +583,6 @@
                 videoContenedor.style.display = 'none';
                 registro.style.display = 'none';
                 sistema.style.display = 'flex';
-                
                 if(rol === 'admin') mostrarLeyendaAdmin();
                 else {
                     document.getElementById('sidebar').style.display = 'block';
@@ -620,7 +598,6 @@
         document.getElementById('panel-admin-comunas').style.display = 'block';
         const listaDiv = document.getElementById('lista-comunas-admin');
         listaDiv.innerHTML = "";
-
         listaComunas.forEach(comuna => {
             const div = document.createElement('div');
             div.className = 'item-comuna-admin';
@@ -645,7 +622,7 @@
         if(rolActual === 'admin') mostrarLeyendaAdmin();
     }
 
-    /* MAPA - FUNCIONES CORE (SIN CAMBIOS) */
+    /* MAPA - FUNCIONES CORE */
     var map, emojiActual = null, modoEspecial = "", modoNavegar = true;
     var stackElementos = [], stackRedo = [];
     var objetoSeleccionado = null;
@@ -690,6 +667,24 @@
         });
     }
 
+    // FUNCIÓN PARA OCULTAR INVENTARIO
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const adminPanel = document.getElementById('panel-admin-comunas');
+        const panelActivo = sidebar.style.display !== 'none' ? sidebar : adminPanel;
+
+        if (panelActivo.style.display !== 'none') {
+            panelActivo.style.display = 'none';
+        } else {
+            if(rolActual === 'admin' && document.getElementById('btnVolverAdmin').style.display === 'none') {
+                 adminPanel.style.display = 'block';
+            } else {
+                 sidebar.style.display = 'block';
+            }
+        }
+        map.invalidateSize(); // Ajustar el mapa al nuevo tamaño del contenedor
+    }
+
     function irAMiUbicacion() {
         if (!navigator.geolocation) { alert("GPS no disponible."); return; }
         navigator.geolocation.getCurrentPosition(function(pos) {
@@ -725,7 +720,13 @@
         let s = 24; 
         let contenidoIcono = (emojiActual === 'CRUZ_ROJA') ? `<div class="cruz-roja"></div>` : emojiActual;
         let html = `<div class="map-icon-container">${contenidoIcono}</div>`;
-        let m = L.marker(latlng, { icon: L.divIcon({ className:'', html: html, iconSize:[s,s], iconAnchor:[s/2, s/2] }), draggable: true }).addTo(map);
+        // SE AGREGA zIndexOffset PARA QUE ESTÉ POR ENCIMA DE LOS POLÍGONOS
+        let m = L.marker(latlng, { 
+            icon: L.divIcon({ className:'', html: html, iconSize:[s,s], iconAnchor:[s/2, s/2] }), 
+            draggable: true,
+            zIndexOffset: 1000 
+        }).addTo(map);
+        
         m.tipoId = modoEspecial;
         contadores[modoEspecial]++; actualizarBadges();
         m.bindPopup(`<button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button>`);
@@ -739,7 +740,16 @@
         let descripcion = prompt("Descripción del riesgo/trazado:", "");
         obj.setStyle({ color: col, fillColor: col, fillOpacity: fill ? 0.4 : 0, weight: 4 });
         obj.bindPopup(`<div><span class="popup-desc">${descripcion || "Trazado"}</span><button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button></div>`);
-        obj.on('mousedown', e => { L.DomEvent.stopPropagation(e); deseleccionarTodo(); objetoSeleccionado = obj; obj.enableEdit(); obj.openPopup(); });
+        obj.on('mousedown', e => { 
+            // Si el modo es navegar (mano), permite seleccionar el polígono
+            if(modoNavegar) {
+                L.DomEvent.stopPropagation(e); 
+                deseleccionarTodo(); 
+                objetoSeleccionado = obj; 
+                obj.enableEdit(); 
+                obj.openPopup(); 
+            }
+        });
         stackElementos.push(obj);
     }
 

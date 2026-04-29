@@ -54,7 +54,6 @@
         .form-row { display: flex; gap: 15px; }
         .form-group { flex: 1; }
         
-        /* Contenedor de datos que se oculta/muestra según el correo */
         #campos-dinamicos-registro { display: none; flex-direction: column; gap: 15px; }
 
         label { font-size: 11px; color: var(--v-lime); text-transform: uppercase; font-weight: 800; margin-bottom: 5px; display: block; }
@@ -84,7 +83,7 @@
             margin-top: 5px; width: auto; align-self: flex-end;
         }
 
-        /* --- SECCIÓN 2: SISTEMA PRINCIPAL (MAPA) --- */
+        /* --- SECCIÓN 2: SISTEMA PRINCIPAL --- */
         #sistema-principal { display: none; width: 100vw; height: 100vh; flex-direction: column; background: #111; color: white; }
 
         #header { height: 130px; background: var(--v-osc); border-bottom: 5px solid var(--v-lim); position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; flex-shrink: 0; }
@@ -137,26 +136,14 @@
         .zoom-preciso-panel input[type="text"] { width: 50px; padding: 4px; border: 1px solid #ccc; text-align: center; font-size: 11px; font-weight: bold; border-radius: 4px; color: black; }
         .zoom-preciso-panel span { font-size: 10px; font-weight: bold; color: var(--v-osc); }
 
-        /* --- PANELES ADMINISTRATIVOS --- */
-        #panel-admin-comunas {
-            display: none; width: 440px; background: var(--negro); color: white; padding: 15px; overflow-y: auto; border-right: 2px solid #333;
-        }
-        .item-comuna-admin {
-            background: #222; border: 1px solid #444; border-radius: 8px; padding: 10px; margin-bottom: 8px;
-            display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.3s;
-        }
+        #panel-admin-comunas { display: none; width: 440px; background: var(--negro); color: white; padding: 15px; overflow-y: auto; border-right: 2px solid #333; }
+        .item-comuna-admin { background: #222; border: 1px solid #444; border-radius: 8px; padding: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.3s; }
         .item-comuna-admin:hover { border-color: var(--v-lim); background: #2a2a2a; }
         .comuna-nombre { font-size: 10px; font-weight: bold; color: #fff; text-transform: uppercase; flex: 1; padding-right: 10px; }
         .badge-mapas { background: var(--v-lim); color: var(--v-osc); padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: 900; }
         .btn-volver-admin { background: #444; color: #fff; border: none; padding: 8px; border-radius: 5px; font-size: 10px; cursor: pointer; margin-bottom: 10px; width: 100%; font-weight: bold; }
 
-        /* PANEL DE VOCEROS REGISTRADOS */
-        #panel-voceros-lista {
-            position: fixed; bottom: 20px; right: 20px; width: 80%; max-height: 400px;
-            background: var(--negro-card); border: 2px solid var(--v-lim); z-index: 4000;
-            border-radius: 15px; display: none; flex-direction: column; overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-        }
+        #panel-voceros-lista { position: fixed; bottom: 20px; right: 20px; width: 80%; max-height: 400px; background: var(--negro-card); border: 2px solid var(--v-lim); z-index: 4000; border-radius: 15px; display: none; flex-direction: column; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
         .header-panel-v { background: var(--v-osc); padding: 10px; display: flex; justify-content: space-between; align-items: center; }
         .table-container { overflow-y: auto; flex-grow: 1; padding: 10px; }
         table { width: 100%; border-collapse: collapse; color: white; font-size: 12px; }
@@ -425,13 +412,7 @@
         <table>
             <thead>
                 <tr>
-                    <th>Nombre</th>
-                    <th>Apellido</th>
-                    <th>Cédula</th>
-                    <th>Teléfono</th>
-                    <th>Correo</th>
-                    <th>Comuna</th>
-                    <th>Sector</th>
+                    <th>Nombre</th><th>Apellido</th><th>Cédula</th><th>Teléfono</th><th>Correo</th><th>Comuna</th><th>Sector</th>
                 </tr>
             </thead>
             <tbody id="tbody-voceros"></tbody>
@@ -443,12 +424,10 @@
 <script src="https://npmcdn.com/leaflet-editable@1.2.0/src/Leaflet.Editable.js"></script>
 
 <script>
-    /* --- BASE DE DATOS LOCAL Y MEMORIA --- */
     let dbVoceros = [];
     let dbMapasCount = {};
     let rolActual = "usuario";
 
-    /* --- ADMINISTRADORES AUTORIZADOS --- */
     const adminPermitidos = [
         { user: "yetzonmora@gmail.com", pass: "32568263" },
         { user: "andreinacastro040789@gmail.com", pass: "andreina123" }
@@ -490,22 +469,16 @@
     }
 
     function limpiarSiVacio(val) {
-        if(val === "") {
-            document.getElementById('campos-dinamicos-registro').style.display = 'none';
-        }
+        if(val === "") document.getElementById('campos-dinamicos-registro').style.display = 'none';
     }
 
     function registrarVocero() {
         const correo = document.getElementById('regCor').value;
         const indexExistente = dbVoceros.findIndex(v => v.cor.toLowerCase() === correo.toLowerCase());
         const vocero = {
-            nom: document.getElementById('regNom').value,
-            ape: document.getElementById('regApe').value,
-            ced: document.getElementById('regCed').value,
-            tel: document.getElementById('regTel').value,
-            cor: correo,
-            com: document.getElementById('regCom').value,
-            sec: document.getElementById('regSec').value
+            nom: document.getElementById('regNom').value, ape: document.getElementById('regApe').value,
+            ced: document.getElementById('regCed').value, tel: document.getElementById('regTel').value,
+            cor: correo, com: document.getElementById('regCom').value, sec: document.getElementById('regSec').value
         };
         if(indexExistente !== -1) dbVoceros[indexExistente] = vocero;
         else dbVoceros.push(vocero);
@@ -526,10 +499,7 @@
 
     window.addEventListener('load', function() {
         const datosGuardados = localStorage.getItem('dbVoceros_SIG');
-        if (datosGuardados) {
-            dbVoceros = JSON.parse(datosGuardados);
-            actualizarTablaVoceros();
-        }
+        if (datosGuardados) { dbVoceros = JSON.parse(datosGuardados); actualizarTablaVoceros(); }
     });
 
     function togglePanelVoceros() {
@@ -541,12 +511,8 @@
         const emailIngresado = document.getElementById('adminEmail').value.trim().toLowerCase();
         const passIngresada = document.getElementById('adminPass').value;
         const esValido = adminPermitidos.find(acc => acc.user === emailIngresado && acc.pass === passIngresada);
-        if (esValido) {
-            rolActual = "admin";
-            reproducirAnimacion('admin');
-        } else {
-            alert("Acceso Denegado: Usuario o contraseña incorrectos.");
-        }
+        if (esValido) { rolActual = "admin"; reproducirAnimacion('admin'); } 
+        else { alert("Acceso Denegado: Usuario o contraseña incorrectos."); }
     }
 
     function cambiarSeccion(tipo) {
@@ -662,7 +628,6 @@
         });
         
         map.on('click', e => {
-            // AQUÍ SE CUMPLE LO QUE PEDISTE: Si hay emoji seleccionado, lo pone arriba
             if (emojiActual && !modoNavegar) {
                 crearIcono(e.latlng);
             } else {
@@ -675,15 +640,10 @@
         const sidebar = document.getElementById('sidebar');
         const adminPanel = document.getElementById('panel-admin-comunas');
         const panelActivo = sidebar.style.display !== 'none' ? sidebar : adminPanel;
-
-        if (panelActivo.style.display !== 'none') {
-            panelActivo.style.display = 'none';
-        } else {
-            if(rolActual === 'admin' && document.getElementById('btnVolverAdmin').style.display === 'none') {
-                 adminPanel.style.display = 'block';
-            } else {
-                 sidebar.style.display = 'block';
-            }
+        if (panelActivo.style.display !== 'none') panelActivo.style.display = 'none';
+        else {
+            if(rolActual === 'admin' && document.getElementById('btnVolverAdmin').style.display === 'none') adminPanel.style.display = 'block';
+            else sidebar.style.display = 'block';
         }
         map.invalidateSize();
     }
@@ -724,11 +684,10 @@
         let contenidoIcono = (emojiActual === 'CRUZ_ROJA') ? `<div class="cruz-roja"></div>` : emojiActual;
         let html = `<div class="map-icon-container">${contenidoIcono}</div>`;
         
-        // Z-INDEX ALTO para que siempre esté sobre el polígono
         let m = L.marker(latlng, { 
             icon: L.divIcon({ className:'', html: html, iconSize:[s,s], iconAnchor:[s/2, s/2] }), 
             draggable: true,
-            zIndexOffset: 2000 
+            zIndexOffset: 3000 // Aumentado para estar siempre arriba
         }).addTo(map);
         
         m.tipoId = modoEspecial;
@@ -751,14 +710,16 @@
         obj.setStyle({ color: col, fillColor: col, fillOpacity: fill ? 0.4 : 0, weight: 4 });
         obj.bindPopup(`<div><span class="popup-desc">${descripcion || "Trazado"}</span><button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button></div>`);
         
-        // MANEJO DE CLIC EN POLÍGONO
         obj.on('click', e => { 
-            // Si hay un icono seleccionado, NO HACEMOS NADA aquí
-            // El clic pasará al mapa para colocar el icono (Bubbling corregido)
+            // NUEVA LÓGICA: Si estamos en modo de colocar icono, 
+            // desactivamos la interacción del polígono temporalmente 
+            // para que el mapa reciba el clic.
             if (emojiActual && !modoNavegar) {
-                // Dejamos que el evento llegue al mapa
+                // Prevenimos que el polígono actúe para que el evento 
+                // pase al evento 'click' del mapa
+                L.DomEvent.stopPropagation(e);
+                crearIcono(e.latlng); 
             } else {
-                // Si está la mano (modo navegar), permitimos eliminar o editar
                 L.DomEvent.stopPropagation(e); 
                 deseleccionarTodo(); 
                 objetoSeleccionado = obj; 

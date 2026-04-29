@@ -177,8 +177,8 @@
 <div id="pantalla-registro">
     <div class="card-registro">
         <div class="logos-registro">
-            <div class="logo-wrapper"><img src="logo1.png.png" alt="Logo 1"></div>
-            <div class="logo-wrapper"><img src="logo2.png.png" alt="Logo 2"></div>
+            <div class="logo-wrapper"><img src="logo1.png" alt="Logo 1"></div>
+            <div class="logo-wrapper"><img src="logo2.png" alt="Logo 2"></div>
         </div>
         
         <h2>SISTEMA DE GESTIÓN</h2>
@@ -193,7 +193,7 @@
             <div class="form-group">
                 <label>Correo Electrónico</label>
                 <div style="display: flex; gap: 10px;">
-                    <input type="email" id="regCor" placeholder="ejemplo@correo.com" required oninput="limpiarSiVacio(this.value)">
+                    <input type="email" id="regCor" placeholder="ejemplo@correo.com" required oninput="limpiarSiVacio(this.value)" onblur="verificarCorreo()">
                     <button type="button" class="btn-verificar" onclick="verificarCorreo()">VERIFICAR</button>
                 </div>
             </div>
@@ -237,10 +237,10 @@
 
 <div id="sistema-principal">
     <div id="header">
-        <div class="logo-box logo-left"><img src="logo1.png.png"></div>
+        <div class="logo-box logo-left"><img src="logo1.png"></div>
         <div id="titulo-principal">MAPA DE RIESGOS COMUNITARIOS</div>
         <div style="color: #B4D445; font-size: 13px; font-weight: bold;">Municipio Simón Bolívar - Estado Anzoátegui</div>
-        <div class="logo-box logo-right"><img src="logo2.png.png"></div>
+        <div class="logo-box logo-right"><img src="logo2.png"></div>
     </div>
 
     <div id="contenedor">
@@ -442,7 +442,7 @@
 <script src="https://npmcdn.com/leaflet-editable@1.2.0/src/Leaflet.Editable.js"></script>
 
 <script>
-    /* --- BASE DE DATOS LOCAL (SIMULADA) --- */
+    /* --- BASE DE DATOS LOCAL Y MEMORIA --- */
     let dbVoceros = [];
     let dbMapasCount = {};
     let rolActual = "usuario";
@@ -470,39 +470,32 @@
     // Inicializar contadores de mapas
     listaComunas.forEach(c => dbMapasCount[c] = 0);
 
-    /* --- LÓGICA DE VERIFICACIÓN DE CORREO --- */
+    /* --- LÓGICA MEJORADA DE VERIFICACIÓN (PASO 1) --- */
     function verificarCorreo() {
-        const correo = document.getElementById('regCor').value.trim().toLowerCase();
-        if(!correo) { alert("Por favor ingrese un correo."); return; }
+        const correoInput = document.getElementById('regCor');
+        const correo = correoInput.value.trim().toLowerCase();
+        
+        if(!correo) return; 
 
         const contenedorCampos = document.getElementById('campos-dinamicos-registro');
-        contenedorCampos.style.display = 'flex';
 
-        // Buscar si ya existe en la "base de datos"
+        // Buscar si ya existe en la memoria
         const voceroExistente = dbVoceros.find(v => v.cor.toLowerCase() === correo);
 
         if(voceroExistente) {
-            // Auto-llenar campos
+            // Usuario reconocido: mostramos campos y rellenamos
+            contenedorCampos.style.display = 'flex';
             document.getElementById('regNom').value = voceroExistente.nom;
             document.getElementById('regApe').value = voceroExistente.ape;
             document.getElementById('regCed').value = voceroExistente.ced;
             document.getElementById('regTel').value = voceroExistente.tel;
             document.getElementById('regCom').value = voceroExistente.com;
             document.getElementById('regSec').value = voceroExistente.sec;
-            alert("Usuario reconocido. Los datos se han cargado automáticamente.");
+            console.log("Datos cargados para: " + correo);
         } else {
-            // Limpiar campos para nuevo registro
-            limpiarCamposRegistro();
+            // Usuario nuevo: solo mostramos el formulario vacío
+            contenedorCampos.style.display = 'flex';
         }
-    }
-
-    function limpiarCamposRegistro() {
-        document.getElementById('regNom').value = "";
-        document.getElementById('regApe').value = "";
-        document.getElementById('regCed').value = "";
-        document.getElementById('regTel').value = "";
-        document.getElementById('regCom').value = "";
-        document.getElementById('regSec').value = "";
     }
 
     function limpiarSiVacio(val) {
@@ -511,6 +504,7 @@
         }
     }
 
+    /* --- REGISTRO CON MEMORIA LOCAL (LOCALSTORAGE) --- */
     function registrarVocero() {
         const correo = document.getElementById('regCor').value;
         const indexExistente = dbVoceros.findIndex(v => v.cor.toLowerCase() === correo.toLowerCase());
@@ -526,10 +520,13 @@
         };
 
         if(indexExistente !== -1) {
-            dbVoceros[indexExistente] = vocero; // Actualizar
+            dbVoceros[indexExistente] = vocero; // Actualizar datos
         } else {
-            dbVoceros.push(vocero); // Nuevo
+            dbVoceros.push(vocero); // Nuevo registro
         }
+
+        // GUARDAR EN LA MEMORIA DEL NAVEGADOR
+        localStorage.setItem('dbVoceros_SIG', JSON.stringify(dbVoceros));
 
         actualizarTablaVoceros();
         reproducirAnimacion('usuario');
@@ -544,6 +541,15 @@
             tbody.appendChild(tr);
         });
     }
+
+    // Al cargar la página, recuperar lo guardado anteriormente
+    window.addEventListener('load', function() {
+        const datosGuardados = localStorage.getItem('dbVoceros_SIG');
+        if (datosGuardados) {
+            dbVoceros = JSON.parse(datosGuardados);
+            actualizarTablaVoceros();
+        }
+    });
 
     function togglePanelVoceros() {
         const p = document.getElementById('panel-voceros-lista');
@@ -639,7 +645,7 @@
         if(rolActual === 'admin') mostrarLeyendaAdmin();
     }
 
-    /* MAPA - FUNCIONES CORE */
+    /* MAPA - FUNCIONES CORE (SIN CAMBIOS) */
     var map, emojiActual = null, modoEspecial = "", modoNavegar = true;
     var stackElementos = [], stackRedo = [];
     var objetoSeleccionado = null;

@@ -492,7 +492,7 @@
         try {
             // Intentamos guardar en la nube
             const { error } = await _supabase
-                .from('registros_voceros')
+                .from('registross_voceros')
                 .insert([{
                     nombre: vocero.nom,
                     apellido: vocero.ape,

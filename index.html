@@ -491,20 +491,19 @@
 
         try {
             // Intentamos guardar en la nube
-            const { error } = await _supabase
-                .from('registross_voceros')
-                .insert([{
-                    nombre: vocero.nom,
-                    apellido: vocero.ape,
-                    cedula: vocero.ced,
-                    telefono: vocero.tel,
-                    correo: vocero.cor,
-                    sector: vocero.sec,
-                    comuna: vocero.com,
-                    voceria: vocero.voc,
-                    especificacion: vocero.esp
-                }]);
-
+           const { data, error } = await _supabase
+        .from('registross_voceros')
+        .insert([
+          { 
+            'cédula de identidad': document.getElementById('cedula').value,
+            'nombres': document.getElementById('nombres').value,
+            'apellidos': document.getElementById('apellidos').value,
+            'correo': document.getElementById('correo').value,
+            'telefono': document.getElementById('telefono').value,
+            'comuna': document.getElementById('comuna').value,
+            'sector': document.getElementById('sector').value
+          }
+        ]);
             if (error) throw error;
 
             // Si llegamos aquí, el guardado fue exitoso

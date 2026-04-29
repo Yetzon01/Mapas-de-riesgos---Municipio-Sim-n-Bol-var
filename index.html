@@ -143,14 +143,16 @@
         .badge-mapas { background: var(--v-lim); color: var(--v-osc); padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: 900; }
         .btn-volver-admin { background: #444; color: #fff; border: none; padding: 8px; border-radius: 5px; font-size: 10px; cursor: pointer; margin-bottom: 10px; width: 100%; font-weight: bold; }
 
-        #panel-voceros-lista { position: fixed; bottom: 20px; right: 20px; width: 80%; max-height: 400px; background: var(--negro-card); border: 2px solid var(--v-lim); z-index: 4000; border-radius: 15px; display: none; flex-direction: column; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        /* --- TABLA EDITABLE ESTILO EXCEL --- */
+        #panel-voceros-lista { position: fixed; bottom: 20px; right: 20px; width: 90%; max-height: 450px; background: var(--negro-card); border: 2px solid var(--v-lim); z-index: 4000; border-radius: 15px; display: none; flex-direction: column; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
         .header-panel-v { background: var(--v-osc); padding: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .table-container { overflow-y: auto; flex-grow: 1; padding: 10px; }
-        table { width: 100%; border-collapse: collapse; color: white; font-size: 12px; }
-        th { background: #333; color: var(--v-lim); text-align: left; padding: 8px; border-bottom: 2px solid var(--v-lim); }
-        td { padding: 8px; border-bottom: 1px solid #444; }
-        tr:hover { background: rgba(180, 212, 69, 0.1); }
+        .table-container { overflow-x: auto; overflow-y: auto; flex-grow: 1; padding: 10px; }
+        table { width: 100%; border-collapse: collapse; color: white; font-size: 11px; min-width: 1000px; }
+        th { background: #333; color: var(--v-lim); text-align: left; padding: 8px; border-bottom: 2px solid var(--v-lim); position: sticky; top: 0; }
+        td { padding: 6px 8px; border-bottom: 1px solid #444; border-right: 1px solid #333; }
+        .editable-cell:focus { background: rgba(180, 212, 69, 0.2); outline: 1px solid var(--v-lim); }
         .btn-close-panel { background: red; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; padding: 5px 10px; }
+        .select-voceria-table { background: #222; color: white; border: none; font-size: 10px; width: 100%; }
     </style>
 </head>
 <body>
@@ -203,7 +205,7 @@
                     <select id="selectVoceria" onchange="controlarOtro(this.value)">
                         <option value="" disabled selected>Seleccione una opción</option>
                         <option value="Vocero de Ecosocialismo">Vocero de Ecosocialismo</option>
-                        <option value="otro">Otro (Especificar)</option>
+                        <option value="Otro">Otro (Especificar)</option>
                     </select>
                 </div>
                 <div id="segmento-otro">
@@ -405,18 +407,33 @@
 
 <div id="panel-voceros-lista">
     <div class="header-panel-v">
-        <h4 style="margin:0; color:white; font-size: 13px;">👥 LISTADO DE VOCEROS REGISTRADOS</h4>
-        <button class="btn-close-panel" onclick="togglePanelVoceros()">CERRAR [X]</button>
+        <h4 style="margin:0; color:white; font-size: 11px; text-transform:uppercase;">👥 BASE DE DATOS EDITABLE (MODO EXCEL)</h4>
+        <div style="display:flex; gap:10px;">
+            <button class="btn-add-hist" style="margin:0; width:auto; padding:5px 15px;" onclick="exportarExcelSimulado()">📥 EXPORTAR</button>
+            <button class="btn-close-panel" onclick="togglePanelVoceros()">X</button>
+        </div>
     </div>
     <div class="table-container">
         <table>
             <thead>
                 <tr>
-                    <th>Nombre</th><th>Apellido</th><th>Cédula</th><th>Teléfono</th><th>Correo</th><th>Comuna</th><th>Sector</th>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>Cédula</th>
+                    <th>Teléfono</th>
+                    <th>Correo</th>
+                    <th>Comuna</th>
+                    <th>Sector</th>
+                    <th>Vocería</th>
+                    <th>Especificación</th>
                 </tr>
             </thead>
-            <tbody id="tbody-voceros"></tbody>
+            <tbody id="tbody-voceros">
+                </tbody>
         </table>
+    </div>
+    <div style="padding: 10px; background: #222; font-size: 9px; color: var(--v-lim);">
+        💡 Haz clic en cualquier celda para editar el texto. Los cambios se guardan automáticamente al salir de la celda.
     </div>
 </div>
 
@@ -449,20 +466,101 @@
 
     listaComunas.forEach(c => dbMapasCount[c] = 0);
 
+    // --- LÓGICA DE VOCERÍA ---
+    function controlarOtro(valor) {
+        const campoOtro = document.getElementById('segmento-otro');
+        const inputOtro = document.getElementById('inputOtro');
+        if (valor === 'Otro') {
+            campoOtro.style.display = 'block';
+            inputOtro.required = true;
+        } else {
+            campoOtro.style.display = 'none';
+            inputOtro.required = false;
+        }
+    }
+
+    // --- REGISTRO Y TABLA EXCEL ---
+    function registrarVocero() {
+        const correo = document.getElementById('regCor').value;
+        const voceriaSelect = document.getElementById('selectVoceria').value;
+        const especificacion = (voceriaSelect === 'Otro') ? document.getElementById('inputOtro').value : '—';
+        
+        const indexExistente = dbVoceros.findIndex(v => v.cor.toLowerCase() === correo.toLowerCase());
+        const vocero = {
+            nom: document.getElementById('regNom').value, 
+            ape: document.getElementById('regApe').value,
+            ced: document.getElementById('regCed').value, 
+            tel: document.getElementById('regTel').value,
+            cor: correo, 
+            com: document.getElementById('regCom').value, 
+            sec: document.getElementById('regSec').value,
+            voc: voceriaSelect,
+            esp: especificacion
+        };
+
+        if(indexExistente !== -1) dbVoceros[indexExistente] = vocero;
+        else dbVoceros.push(vocero);
+
+        guardarDB();
+        actualizarTablaVoceros();
+        reproducirAnimacion('usuario');
+    }
+
+    function actualizarTablaVoceros() {
+        const tbody = document.getElementById('tbody-voceros');
+        tbody.innerHTML = "";
+        dbVoceros.forEach((v, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td contenteditable="true" onblur="editarDato(${index}, 'nom', this.innerText)">${v.nom}</td>
+                <td contenteditable="true" onblur="editarDato(${index}, 'ape', this.innerText)">${v.ape}</td>
+                <td contenteditable="true" onblur="editarDato(${index}, 'ced', this.innerText)">${v.ced}</td>
+                <td contenteditable="true" onblur="editarDato(${index}, 'tel', this.innerText)">${v.tel}</td>
+                <td contenteditable="true" onblur="editarDato(${index}, 'cor', this.innerText)">${v.cor}</td>
+                <td contenteditable="true" onblur="editarDato(${index}, 'com', this.innerText)">${v.com}</td>
+                <td contenteditable="true" onblur="editarDato(${index}, 'sec', this.innerText)">${v.sec}</td>
+                <td>
+                    <select class="select-voceria-table" onchange="editarDato(${index}, 'voc', this.value)">
+                        <option value="Vocero de Ecosocialismo" ${v.voc === 'Vocero de Ecosocialismo' ? 'selected' : ''}>Ecosocialismo</option>
+                        <option value="Otro" ${v.voc === 'Otro' ? 'selected' : ''}>Otro</option>
+                    </select>
+                </td>
+                <td contenteditable="true" onblur="editarDato(${index}, 'esp', this.innerText)">${v.esp}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function editarDato(idx, campo, valor) {
+        dbVoceros[idx][campo] = valor;
+        guardarDB();
+    }
+
+    function guardarDB() {
+        localStorage.setItem('dbVoceros_SIG', JSON.stringify(dbVoceros));
+    }
+
+    function togglePanelVoceros() {
+        const p = document.getElementById('panel-voceros-lista');
+        p.style.display = (p.style.display === 'flex') ? 'none' : 'flex';
+    }
+
     function verificarCorreo() {
-        const correoInput = document.getElementById('regCor');
-        const correo = correoInput.value.trim().toLowerCase();
+        const correo = document.getElementById('regCor').value.trim().toLowerCase();
         if(!correo) return; 
         const contenedorCampos = document.getElementById('campos-dinamicos-registro');
-        const voceroExistente = dbVoceros.find(v => v.cor.toLowerCase() === correo);
-        if(voceroExistente) {
+        const v = dbVoceros.find(voc => voc.cor.toLowerCase() === correo);
+        if(v) {
             contenedorCampos.style.display = 'flex';
-            document.getElementById('regNom').value = voceroExistente.nom;
-            document.getElementById('regApe').value = voceroExistente.ape;
-            document.getElementById('regCed').value = voceroExistente.ced;
-            document.getElementById('regTel').value = voceroExistente.tel;
-            document.getElementById('regCom').value = voceroExistente.com;
-            document.getElementById('regSec').value = voceroExistente.sec;
+            document.getElementById('regNom').value = v.nom;
+            document.getElementById('regApe').value = v.ape;
+            document.getElementById('regCed').value = v.ced;
+            document.getElementById('regTel').value = v.tel;
+            document.getElementById('regCom').value = v.com;
+            document.getElementById('regSec').value = v.sec;
+            document.getElementById('selectVoceria').value = v.voc;
+            controlarOtro(v.voc);
+            if(v.voc === 'Otro') document.getElementById('inputOtro').value = v.esp;
         } else {
             contenedorCampos.style.display = 'flex';
         }
@@ -472,41 +570,12 @@
         if(val === "") document.getElementById('campos-dinamicos-registro').style.display = 'none';
     }
 
-    function registrarVocero() {
-        const correo = document.getElementById('regCor').value;
-        const indexExistente = dbVoceros.findIndex(v => v.cor.toLowerCase() === correo.toLowerCase());
-        const vocero = {
-            nom: document.getElementById('regNom').value, ape: document.getElementById('regApe').value,
-            ced: document.getElementById('regCed').value, tel: document.getElementById('regTel').value,
-            cor: correo, com: document.getElementById('regCom').value, sec: document.getElementById('regSec').value
-        };
-        if(indexExistente !== -1) dbVoceros[indexExistente] = vocero;
-        else dbVoceros.push(vocero);
-        localStorage.setItem('dbVoceros_SIG', JSON.stringify(dbVoceros));
-        actualizarTablaVoceros();
-        reproducirAnimacion('usuario');
-    }
-
-    function actualizarTablaVoceros() {
-        const tbody = document.getElementById('tbody-voceros');
-        tbody.innerHTML = "";
-        dbVoceros.forEach(v => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${v.nom}</td><td>${v.ape}</td><td>${v.ced}</td><td>${v.tel}</td><td>${v.cor}</td><td>${v.com}</td><td>${v.sec}</td>`;
-            tbody.appendChild(tr);
-        });
-    }
-
     window.addEventListener('load', function() {
-        const datosGuardados = localStorage.getItem('dbVoceros_SIG');
-        if (datosGuardados) { dbVoceros = JSON.parse(datosGuardados); actualizarTablaVoceros(); }
+        const datos = localStorage.getItem('dbVoceros_SIG');
+        if (datos) { dbVoceros = JSON.parse(datos); actualizarTablaVoceros(); }
     });
 
-    function togglePanelVoceros() {
-        const p = document.getElementById('panel-voceros-lista');
-        p.style.display = (p.style.display === 'flex') ? 'none' : 'flex';
-    }
-
+    // ... (El resto de tus funciones de mapa y animación se mantienen igual abajo) ...
     function validarAdmin() {
         const emailIngresado = document.getElementById('adminEmail').value.trim().toLowerCase();
         const passIngresada = document.getElementById('adminPass').value;
@@ -527,12 +596,6 @@
             fRegistro.style.display = 'none'; fAdmin.style.display = 'grid';
             btns[1].classList.add('active');
         }
-    }
-
-    function controlarOtro(valor) {
-        const campoOtro = document.getElementById('segmento-otro');
-        if (valor === 'otro') campoOtro.style.display = 'block';
-        else campoOtro.style.display = 'none';
     }
 
     function reproducirAnimacion(rol) {
@@ -588,7 +651,7 @@
         if(rolActual === 'admin') mostrarLeyendaAdmin();
     }
 
-    /* MAPA - FUNCIONES CORE */
+    /* MAPA - FUNCIONES CORE (Copiar de tu versión anterior tal cual) */
     var map, emojiActual = null, modoEspecial = "", modoNavegar = true;
     var stackElementos = [], stackRedo = [];
     var objetoSeleccionado = null;
@@ -687,7 +750,7 @@
         let m = L.marker(latlng, { 
             icon: L.divIcon({ className:'', html: html, iconSize:[s,s], iconAnchor:[s/2, s/2] }), 
             draggable: true,
-            zIndexOffset: 3000 // Aumentado para estar siempre arriba
+            zIndexOffset: 3000
         }).addTo(map);
         
         m.tipoId = modoEspecial;
@@ -711,12 +774,7 @@
         obj.bindPopup(`<div><span class="popup-desc">${descripcion || "Trazado"}</span><button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button></div>`);
         
         obj.on('click', e => { 
-            // NUEVA LÓGICA: Si estamos en modo de colocar icono, 
-            // desactivamos la interacción del polígono temporalmente 
-            // para que el mapa reciba el clic.
             if (emojiActual && !modoNavegar) {
-                // Prevenimos que el polígono actúe para que el evento 
-                // pase al evento 'click' del mapa
                 L.DomEvent.stopPropagation(e);
                 crearIcono(e.latlng); 
             } else {
@@ -752,7 +810,7 @@
     function cambiarEmoji(e, btn, esp) { 
         emojiActual = e; modoEspecial = esp; modoNavegar = false; 
         document.querySelectorAll('.btn-mapa').forEach(b => b.classList.remove('active')); 
-        btn.classList.add('activo'); 
+        btn.classList.add('active'); 
         document.getElementById('floatMano').classList.remove('activo-float'); 
     }
 

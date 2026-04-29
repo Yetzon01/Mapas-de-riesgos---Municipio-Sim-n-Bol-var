@@ -850,6 +850,25 @@
     function actualizarBadges() { for(let k in contadores) { let el = document.getElementById('count-'+k); if(el) el.innerText = contadores[k]; } }
     function deshacer() { let el = stackElementos.pop(); if(el) { stackRedo.push(el); map.removeLayer(el); } }
     function rehacer() { let el = stackRedo.pop(); if(el) { stackElementos.push(el); el.addTo(map); } }
+function rehacer() { 
+        let el = stackRedo.pop();
+        // ... (tu código actual) ...
+    } // <--- Esta es la última llave de tu función de la foto
+
+    // AQUÍ DEJAS EL ESPACIO Y PEGAS:
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const miBoton = document.getElementById("btnRegistrar"); 
+        if (miBoton) {
+            miBoton.addEventListener("click", function(event) {
+                event.preventDefault(); 
+                registrarVocero(); 
+                alert("¡Botón activado! Procesando registro...");
+            });
+        }
+    });
+
+</script>
 </script>
 
 </body>

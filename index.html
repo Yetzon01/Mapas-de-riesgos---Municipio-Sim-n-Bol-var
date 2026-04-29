@@ -662,12 +662,15 @@
         });
         
         map.on('click', e => {
-            if (emojiActual && !modoNavegar) crearIcono(e.latlng);
-            else deseleccionarTodo();
+            // AQUÍ SE CUMPLE LO QUE PEDISTE: Si hay emoji seleccionado, lo pone arriba
+            if (emojiActual && !modoNavegar) {
+                crearIcono(e.latlng);
+            } else {
+                deseleccionarTodo();
+            }
         });
     }
 
-    // FUNCIÓN PARA OCULTAR INVENTARIO
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
         const adminPanel = document.getElementById('panel-admin-comunas');
@@ -682,7 +685,7 @@
                  sidebar.style.display = 'block';
             }
         }
-        map.invalidateSize(); // Ajustar el mapa al nuevo tamaño del contenedor
+        map.invalidateSize();
     }
 
     function irAMiUbicacion() {
@@ -720,17 +723,23 @@
         let s = 24; 
         let contenidoIcono = (emojiActual === 'CRUZ_ROJA') ? `<div class="cruz-roja"></div>` : emojiActual;
         let html = `<div class="map-icon-container">${contenidoIcono}</div>`;
-        // SE AGREGA zIndexOffset PARA QUE ESTÉ POR ENCIMA DE LOS POLÍGONOS
+        
+        // Z-INDEX ALTO para que siempre esté sobre el polígono
         let m = L.marker(latlng, { 
             icon: L.divIcon({ className:'', html: html, iconSize:[s,s], iconAnchor:[s/2, s/2] }), 
             draggable: true,
-            zIndexOffset: 1000 
+            zIndexOffset: 2000 
         }).addTo(map);
         
         m.tipoId = modoEspecial;
         contadores[modoEspecial]++; actualizarBadges();
         m.bindPopup(`<button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button>`);
-        m.on('click', ev => { L.DomEvent.stopPropagation(ev); deseleccionarTodo(); objetoSeleccionado = m; m.openPopup(); });
+        m.on('click', ev => { 
+            L.DomEvent.stopPropagation(ev); 
+            deseleccionarTodo(); 
+            objetoSeleccionado = m; 
+            m.openPopup(); 
+        });
         stackElementos.push(m);
     }
 
@@ -738,11 +747,18 @@
         let col = document.getElementById('colorPol').value;
         let fill = document.getElementById('checkRelleno').checked;
         let descripcion = prompt("Descripción del riesgo/trazado:", "");
+        
         obj.setStyle({ color: col, fillColor: col, fillOpacity: fill ? 0.4 : 0, weight: 4 });
         obj.bindPopup(`<div><span class="popup-desc">${descripcion || "Trazado"}</span><button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button></div>`);
-        obj.on('mousedown', e => { 
-            // Si el modo es navegar (mano), permite seleccionar el polígono
-            if(modoNavegar) {
+        
+        // MANEJO DE CLIC EN POLÍGONO
+        obj.on('click', e => { 
+            // Si hay un icono seleccionado, NO HACEMOS NADA aquí
+            // El clic pasará al mapa para colocar el icono (Bubbling corregido)
+            if (emojiActual && !modoNavegar) {
+                // Dejamos que el evento llegue al mapa
+            } else {
+                // Si está la mano (modo navegar), permitimos eliminar o editar
                 L.DomEvent.stopPropagation(e); 
                 deseleccionarTodo(); 
                 objetoSeleccionado = obj; 

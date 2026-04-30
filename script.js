@@ -1,37 +1,38 @@
-// 1. Configuración de conexión (Asegúrate de que estas variables ya existan en tu HTML o agrégalas aquí)
-const supabaseUrl = 'TU_URL_DE_SUPABASE'; // Reemplaza con tu URL
-const supabaseKey = 'TU_API_KEY_DE_SUPABASE'; // Reemplaza con tu Key
+// 1. Asegúrate de que estas constantes tengan tus llaves de Supabase
+const supabaseUrl = 'https://zezcmftcbbzplhtdqotd.supabase.co'; 
+const supabaseKey = 'sb_publishable_bNaRcykfZaVdW67HsEf3Tw_rWemQCui';
 const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-// 2. Función principal para registrar o actualizar
+// 2. Esta función se activa al darle al botón de registro
 async function enviarDatos(event) {
-    event.preventDefault(); // Evita que la página se recargue
+    event.preventDefault();
 
-    // Capturamos los datos del formulario (asegúrate de que los IDs coincidan con tu HTML)
-    const datos = {
-        nombre: document.getElementById('nombre').value,
-        apellido: document.getElementById('apellido').value,
+    // Capturamos lo que el usuario escribió en el formulario
+    // IMPORTANTE: Los IDs deben coincidir con tu HTML (ej: id="correo")
+    const datosParaGuardar = {
+        correo: document.getElementById('correo').value, 
+        nombre: document.getElementById('nombres').value,
+        apellido: document.getElementById('apellidos').value,
         cedula_de_identidad: document.getElementById('cedula').value,
         telefono: document.getElementById('telefono').value,
-        correo: document.getElementById('email').value, // Esta es la clave única
-        sector: document.getElementById('sector').value,
-        comuna: document.getElementById('comuna').value
+        comuna: document.getElementById('comuna').value,
+        sector: document.getElementById('sector').value
     };
 
-    // Usamos UPSERT para que si el correo existe, solo actualice y no dé error
+    // Usamos UPSERT en lugar de INSERT
+    // Esto le dice a Supabase: "Si el correo ya existe, actualiza la fila. No des error"
     const { data, error } = await _supabase
-        .from('registross_voceros') // El nombre de tu tabla en Supabase
-        .upsert(datos, { onConflict: 'correo' }); 
+        .from('registross_voceros') // Nombre exacto de tu tabla en la imagen
+        .upsert(datosParaGuardar, { onConflict: 'correo' });
 
     if (error) {
         console.error("Error:", error.message);
-        alert("Hubo un error al registrar: " + error.message);
+        alert("Error al conectar con Supabase: " + error.message);
     } else {
-        console.log("¡Listo! Datos guardados:", data);
-        alert("Registro completado con éxito.");
-        document.getElementById('tu-formulario-id').reset(); // Limpia el formulario
+        alert("¡Registro exitoso o actualizado correctamente!");
+        // Aquí puedes redirigir al usuario o limpiar el formulario
     }
 }
 
-// 3. Escuchar cuando el usuario haga clic en el botón
-document.getElementById('tu-formulario-id').addEventListener('submit', enviarDatos);
+// 3. Conectamos la función al formulario (cambia 'form-registro' por el ID de tu <form>)
+document.getElementById('form-registro').addEventListener('submit', enviarDatos);

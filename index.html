@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -189,11 +188,11 @@
 
             <div id="campos-dinamicos-registro">
                 <div class="form-row">
-                    <div class="form-group"><label>Nombres</label><input type="text" id="regNom" required></div>
-                    <div class="form-group"><label>Apellidos</label><input type="text" id="regApe" required></div>
+                    <div class="form-group"><label>Nombre</label><input type="text" id="regNom" required></div>
+                    <div class="form-group"><label>Apellido</label><input type="text" id="regApe" required></div>
                 </div>
                 <div class="form-row">
-                    <div class="form-group"><label>"cédula de identidad"</label><input type="text" id="regCed" required></div>
+                    <div class="form-group"><label>Cédula de Identidad</label><input type="text" id="regCed" required></div>
                     <div class="form-group"><label>Teléfono</label><input type="tel" id="regTel" required></div>
                 </div>
                 <div class="form-row">
@@ -440,8 +439,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-    // --- CONFIGURACIÓN DE CONEXIÓN ---
-    // IMPORTANTE: Asegúrate de poner aquí tus llaves reales de Supabase
+    // --- CONFIGURACIÓN DE CONEXIÓN CORREGIDA ---
     const SUPABASE_URL = 'https://zezcmftcbbzplhtdqotd.supabase.co'; 
     const SUPABASE_KEY = 'sb_publishable_bNaRcykfZaVdW67HsEf3Tw_rWemQCui'; 
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -471,13 +469,14 @@
 
     listaComunas.forEach(c => dbMapasCount[c] = 0);
 
-    // --- LÓGICA DE REGISTRO ACTUALIZADA ---
+    // --- LÓGICA DE REGISTRO SINCRONIZADA CON SUPABASE ---
     async function registrarVocero() {
         const correo = document.getElementById('regCor').value;
         const voceriaSelect = document.getElementById('selectVoceria').value;
         const especificacion = (voceriaSelect === 'Otro') ? document.getElementById('inputOtro').value : '—';
         
-        const vocero = {
+        // Datos para local
+        const voceroLocal = {
             nom: document.getElementById('regNom').value, 
             ape: document.getElementById('regApe').value,
             ced: document.getElementById('regCed').value, 
@@ -490,43 +489,40 @@
         };
 
         try {
-            // Intentamos guardar en la nube
-           const { data, error } = await _supabase
-        .from('registross_voceros')
-        .insert([
-          { 
-            'cédula de identidad': document.getElementById('cedula').value,
-            'nombres': document.getElementById('nombres').value,
-            'apellidos': document.getElementById('apellidos').value,
-            'correo': document.getElementById('correo').value,
-            'telefono': document.getElementById('telefono').value,
-            'comuna': document.getElementById('comuna').value,
-            'sector': document.getElementById('sector').value
-          }
-        ]);
+            // ENVIAR A SUPABASE (Con los nombres de tus columnas exactas)
+            const { data, error } = await _supabase
+                .from('registros_voces')
+                .insert([
+                  { 
+                    'nombre': document.getElementById('regNom').value,
+                    'apellido': document.getElementById('regApe').value,
+                    'cédula de identidad': document.getElementById('regCed').value,
+                    'teléfono': document.getElementById('regTel').value,
+                    'correo': correo,
+                    'comuna': document.getElementById('regCom').value,
+                    'sector': document.getElementById('regSec').value
+                  }
+                ]);
+
             if (error) throw error;
 
-            // Si llegamos aquí, el guardado fue exitoso
-            alert("✅ ¡Registro exitoso! Los datos han sido respaldados en la nube.");
+            alert("✅ ¡Registro exitoso en la nube!");
 
-            // Guardamos localmente
+            // Guardado local opcional
             const indexExistente = dbVoceros.findIndex(v => v.cor.toLowerCase() === correo.toLowerCase());
-            if(indexExistente !== -1) dbVoceros[indexExistente] = vocero;
-            else dbVoceros.push(vocero);
+            if(indexExistente !== -1) dbVoceros[indexExistente] = voceroLocal;
+            else dbVoceros.push(voceroLocal);
 
             guardarDB();
             actualizarTablaVoceros();
-            
-            // Iniciamos la animación para entrar al mapa
             reproducirAnimacion('usuario');
 
         } catch (err) {
             console.error("Error al registrar:", err.message);
-            alert("❌ Error al guardar en la nube: " + err.message);
+            alert("❌ Error de guardado: " + err.message);
         }
     }
 
-    // --- RESTO DE TUS FUNCIONES (Mantenidas intactas) ---
     function controlarOtro(valor) {
         const campoOtro = document.getElementById('segmento-otro');
         const inputOtro = document.getElementById('inputOtro');

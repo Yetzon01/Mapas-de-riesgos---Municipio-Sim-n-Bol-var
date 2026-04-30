@@ -188,8 +188,8 @@
 
             <div id="campos-dinamicos-registro">
                 <div class="form-row">
-                    <div class="form-group"><label>Nombre</label><input type="text" id="regNom" required></div>
-                    <div class="form-group"><label>Apellido</label><input type="text" id="regApe" required></div>
+                    <div class="form-group"><label>Nombres</label><input type="text" id="regNom" required></div>
+                    <div class="form-group"><label>Apellidos</label><input type="text" id="regApe" required></div>
                 </div>
                 <div class="form-row">
                     <div class="form-group"><label>Cédula de Identidad</label><input type="text" id="regCed" required></div>
@@ -439,7 +439,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-    // --- CONFIGURACIÓN DE CONEXIÓN CORREGIDA ---
+    // --- CONFIGURACIÓN DE CONEXIÓN ---
     const SUPABASE_URL = 'https://zezcmftcbbzplhtdqotd.supabase.co'; 
     const SUPABASE_KEY = 'sb_publishable_bNaRcykfZaVdW67HsEf3Tw_rWemQCui'; 
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -469,14 +469,14 @@
 
     listaComunas.forEach(c => dbMapasCount[c] = 0);
 
-    // --- LÓGICA DE REGISTRO SINCRONIZADA CON SUPABASE ---
+    // --- LÓGICA DE REGISTRO ACTUALIZADA CON SUPABASE ---
     async function registrarVocero() {
         const correo = document.getElementById('regCor').value;
         const voceriaSelect = document.getElementById('selectVoceria').value;
         const especificacion = (voceriaSelect === 'Otro') ? document.getElementById('inputOtro').value : '—';
         
-        // Datos para local
-        const voceroLocal = {
+        // Datos para el guardado local y el objeto de la función
+        const vocero = {
             nom: document.getElementById('regNom').value, 
             ape: document.getElementById('regApe').value,
             ced: document.getElementById('regCed').value, 
@@ -489,40 +489,44 @@
         };
 
         try {
-            // ENVIAR A SUPABASE (Con los nombres de tus columnas exactas)
+            // INSERCIÓN EN LA TABLA: registross_voceros
             const { data, error } = await _supabase
-                .from('registros_voces')
+                .from('registross_voceros')
                 .insert([
-                  { 
-                    'nombre': document.getElementById('regNom').value,
-                    'apellido': document.getElementById('regApe').value,
-                    'cédula de identidad': document.getElementById('regCed').value,
-                    'teléfono': document.getElementById('regTel').value,
-                    'correo': correo,
-                    'comuna': document.getElementById('regCom').value,
-                    'sector': document.getElementById('regSec').value
-                  }
+                    { 
+                        'nombres': vocero.nom,
+                        'apellidos': vocero.ape,
+                        'cédula de identidad': vocero.ced,
+                        'telefono': vocero.tel,
+                        'correo': vocero.cor,
+                        'comuna': vocero.com,
+                        'sector': vocero.sec,
+                        'voceria': vocero.voc,
+                        'especificacion': vocero.esp
+                    }
                 ]);
 
             if (error) throw error;
 
-            alert("✅ ¡Registro exitoso en la nube!");
+            alert("✅ ¡Registro exitoso! Los datos han sido respaldados en registross_voceros.");
 
-            // Guardado local opcional
+            // Guardamos localmente (Caché del navegador)
             const indexExistente = dbVoceros.findIndex(v => v.cor.toLowerCase() === correo.toLowerCase());
-            if(indexExistente !== -1) dbVoceros[indexExistente] = voceroLocal;
-            else dbVoceros.push(voceroLocal);
+            if(indexExistente !== -1) dbVoceros[indexExistente] = vocero;
+            else dbVoceros.push(vocero);
 
             guardarDB();
             actualizarTablaVoceros();
+            
             reproducirAnimacion('usuario');
 
         } catch (err) {
             console.error("Error al registrar:", err.message);
-            alert("❌ Error de guardado: " + err.message);
+            alert("❌ Error al conectar con Supabase: " + err.message);
         }
     }
 
+    // --- FUNCIONES DE SOPORTE E INTERFAZ ---
     function controlarOtro(valor) {
         const campoOtro = document.getElementById('segmento-otro');
         const inputOtro = document.getElementById('inputOtro');
@@ -537,6 +541,7 @@
 
     function actualizarTablaVoceros() {
         const tbody = document.getElementById('tbody-voceros');
+        if(!tbody) return;
         tbody.innerHTML = "";
         dbVoceros.forEach((v, index) => {
             const tr = document.createElement('tr');
@@ -688,7 +693,7 @@
     var contadores = { 
         centro_med:0, cpt1:0, cpt2:0, cpt3:0, pol_inst:0, bom_inst:0, pc_inst:0, cuadrante:0,
         medico:0, enfermero:0, paramedico:0, pol_amb:0, inparques:0, mov_amb:0,
-        arbol_v:0, cables:0, casa_r:0, inund:0, terreno_i:0, derrumbe:0, blancas:0, servidas:0, oxidacion:0, basura:0,
+        arbol_v:0, cables:0, casa_r:0, inund:0, terreno_i:0, derrumbe:0, blancas:0, servidas:0, basura:0,
         colector:0, autolavado:0, taller:0, verde:0, huerto:0, araguaney:0, apamate:0, cereipo:0,
         pollos:0, cerdo_c:0, cerdo_s:0, ovejos:0, cautivo:0, invasora:0,
         vuln_emb:0, vuln_disc:0, vuln_nino:0, vuln_adult:0, vuln_cron:0

@@ -91,16 +91,6 @@
         .logo-box img { width: 100%; height: 100%; object-fit: contain; transform: scale(2.0); }
         #titulo-principal { font-size: 22px; font-weight: 800; color: #FFFFFF; text-transform: uppercase; margin-bottom: 5px; }
 
-        /* NUEVO BOTÓN SALIR EN HEADER */
-        .btn-salir-header {
-            position: absolute; top: 15px; right: 20px;
-            background: #ff4444; color: white; border: 2px solid white;
-            padding: 8px 15px; border-radius: 8px; cursor: pointer;
-            font-weight: 900; font-size: 12px; display: flex; align-items: center; gap: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: 0.3s; z-index: 2000;
-        }
-        .btn-salir-header:hover { background: white; color: #ff4444; transform: scale(1.05); }
-
         #contenedor { display: flex; flex-grow: 1; overflow: hidden; }
         #sidebar { width: 440px; background: var(--negro); color: white; padding: 15px; overflow-y: auto; border-right: 2px solid #333; transition: margin-left 0.3s ease; }
         
@@ -235,9 +225,6 @@
 
 <div id="sistema-principal">
     <div id="header">
-        <button class="btn-salir-header" onclick="confirmarSalida()">
-            <span>SALIR</span> ✖
-        </button>
         <div class="logo-box logo-left"><img src="logo1.png.png"></div>
         <div id="titulo-principal">MAPA DE RIESGOS COMUNITARIOS</div>
         <div style="color: #B4D445; font-size: 13px; font-weight: bold;">Municipio Simón Bolívar - Estado Anzoátegui</div>
@@ -414,9 +401,41 @@
                 <button id="btnFinalizar" class="btn-float" onclick="finalizarTrazado()">✅</button>
                 <button class="btn-float" onclick="deshacer()">↩️</button>
                 <button class="btn-float" onclick="rehacer()">↪️</button>
+                <button class="btn-float" onclick="window.location.reload()" title="SALIR" style="color: #ff4444; font-weight: bold; border: 2px solid #ff4444;">✖</button>
             </div>
             <div id="map"></div>
         </div>
+    </div>
+</div>
+
+<div id="panel-voceros-lista">
+    <div class="header-panel-v">
+        <h4 style="margin:0; color:white; font-size: 11px; text-transform:uppercase;">👥 BASE DE DATOS EDITABLE (MODO EXCEL)</h4>
+        <div style="display:flex; gap:10px;">
+            <button class="btn-add-hist" style="margin:0; width:auto; padding:5px 15px;" onclick="exportarExcelSimulado()">📥 EXPORTAR</button>
+            <button class="btn-close-panel" onclick="togglePanelVoceros()">X</button>
+        </div>
+    </div>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>Cédula</th>
+                    <th>Teléfono</th>
+                    <th>Correo</th>
+                    <th>Comuna</th>
+                    <th>Sector</th>
+                    <th>Vocería</th>
+                    <th>Especificación</th>
+                </tr>
+            </thead>
+            <tbody id="tbody-voceros"></tbody>
+        </table>
+    </div>
+    <div style="padding: 10px; background: #222; font-size: 9px; color: var(--v-lim);">
+        💡 Haz clic en cualquier celda para editar el texto. Los cambios se guardan automáticamente al salir de la celda.
     </div>
 </div>
 
@@ -425,15 +444,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-    // --- LÓGICA DE SALIDA CON ADVERTENCIA ---
-    function confirmarSalida() {
-        const respuesta = confirm("⚠️ ¿ESTÁS SEGURO DE QUE QUIERES SALIR?\n\nAsegúrate de haber guardado tus cambios antes de salir de la aplicación.");
-        if (respuesta) {
-            window.location.reload(); // Recarga la aplicación (vuelve al inicio)
-        }
-    }
-
-    // --- RESTO DEL CÓDIGO (Sin cambios para mantener funcionalidad) ---
+    // --- CONFIGURACIÓN DE CONEXIÓN ---
     const SUPABASE_URL = 'https://zezcmftcbbzplhtdqotd.supabase.co'; 
     const SUPABASE_KEY = 'sb_publishable_bNaRcykfZaVdW67HsEf3Tw_rWemQCui'; 
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -463,11 +474,13 @@
 
     listaComunas.forEach(c => dbMapasCount[c] = 0);
 
+    // --- LÓGICA DE REGISTRO ACTUALIZADA CON SUPABASE ---
     async function registrarVocero() {
         const correo = document.getElementById('regCor').value;
         const voceriaSelect = document.getElementById('selectVoceria').value;
         const especificacion = (voceriaSelect === 'Otro') ? document.getElementById('inputOtro').value : '—';
         
+        // Datos para el guardado local y el objeto de la función
         const vocero = {
             nom: document.getElementById('regNom').value, 
             ape: document.getElementById('regApe').value,
@@ -481,6 +494,7 @@
         };
 
         try {
+            // INSERCIÓN EN LA TABLA: registross_voceros
             const { data, error } = await _supabase
                 .from('registross_voceros')
                 .insert([
@@ -496,49 +510,190 @@
                         'especificacion': vocero.esp
                     }
                 ]);
+
             if (error) throw error;
-            alert("✅ ¡Registro exitoso!");
+
+            alert("✅ ¡Registro exitoso! Los datos han sido respaldados en registross_voceros.");
+
+            // Guardamos localmente (Caché del navegador)
             const indexExistente = dbVoceros.findIndex(v => v.cor.toLowerCase() === correo.toLowerCase());
             if(indexExistente !== -1) dbVoceros[indexExistente] = vocero;
             else dbVoceros.push(vocero);
+
             guardarDB();
+            actualizarTablaVoceros();
+            
             reproducirAnimacion('usuario');
+
         } catch (err) {
-            console.error(err);
-            alert("❌ Error: " + err.message);
+            console.error("Error al registrar:", err.message);
+            alert("❌ Error al conectar con Supabase: " + err.message);
         }
     }
 
-    // Funciones de utilidad (Mantenidas)
-    function guardarDB() { localStorage.setItem('dbVoceros_SIG', JSON.stringify(dbVoceros)); }
-    function controlarOtro(v) { document.getElementById('segmento-otro').style.display = (v === 'Otro' ? 'block' : 'none'); }
-    function cambiarSeccion(t) { /* lógica ya definida */ }
-    function validarAdmin() {
-        const email = document.getElementById('adminEmail').value.trim().toLowerCase();
-        const pass = document.getElementById('adminPass').value;
-        if (adminPermitidos.find(acc => acc.user === email && acc.pass === pass)) {
-            rolActual = "admin"; reproducirAnimacion('admin');
-        } else alert("Acceso Denegado.");
+    // --- FUNCIONES DE SOPORTE E INTERFAZ ---
+    function controlarOtro(valor) {
+        const campoOtro = document.getElementById('segmento-otro');
+        const inputOtro = document.getElementById('inputOtro');
+        if (valor === 'Otro') {
+            campoOtro.style.display = 'block';
+            inputOtro.required = true;
+        } else {
+            campoOtro.style.display = 'none';
+            inputOtro.required = false;
+        }
     }
-    
+
+    function actualizarTablaVoceros() {
+        const tbody = document.getElementById('tbody-voceros');
+        if(!tbody) return;
+        tbody.innerHTML = "";
+        dbVoceros.forEach((v, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td contenteditable="true" onblur="editarDato(${index}, 'nom', this.innerText)">${v.nom}</td>
+                <td contenteditable="true" onblur="editarDato(${index}, 'ape', this.innerText)">${v.ape}</td>
+                <td contenteditable="true" onblur="editarDato(${index}, 'ced', this.innerText)">${v.ced}</td>
+                <td contenteditable="true" onblur="editarDato(${index}, 'tel', this.innerText)">${v.tel}</td>
+                <td contenteditable="true" onblur="editarDato(${index}, 'cor', this.innerText)">${v.cor}</td>
+                <td contenteditable="true" onblur="editarDato(${index}, 'com', this.innerText)">${v.com}</td>
+                <td contenteditable="true" onblur="editarDato(${index}, 'sec', this.innerText)">${v.sec}</td>
+                <td>
+                    <select class="select-voceria-table" onchange="editarDato(${index}, 'voc', this.value)">
+                        <option value="Vocero de Ecosocialismo" ${v.voc === 'Vocero de Ecosocialismo' ? 'selected' : ''}>Ecosocialismo</option>
+                        <option value="Otro" ${v.voc === 'Otro' ? 'selected' : ''}>Otro</option>
+                    </select>
+                </td>
+                <td contenteditable="true" onblur="editarDato(${index}, 'esp', this.innerText)">${v.esp}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function editarDato(idx, campo, valor) {
+        dbVoceros[idx][campo] = valor;
+        guardarDB();
+    }
+
+    function guardarDB() {
+        localStorage.setItem('dbVoceros_SIG', JSON.stringify(dbVoceros));
+    }
+
+    function togglePanelVoceros() {
+        const p = document.getElementById('panel-voceros-lista');
+        p.style.display = (p.style.display === 'flex') ? 'none' : 'flex';
+    }
+
+    function verificarCorreo() {
+        const correo = document.getElementById('regCor').value.trim().toLowerCase();
+        if(!correo) return; 
+        const contenedorCampos = document.getElementById('campos-dinamicos-registro');
+        const v = dbVoceros.find(voc => voc.cor.toLowerCase() === correo);
+        if(v) {
+            contenedorCampos.style.display = 'flex';
+            document.getElementById('regNom').value = v.nom;
+            document.getElementById('regApe').value = v.ape;
+            document.getElementById('regCed').value = v.ced;
+            document.getElementById('regTel').value = v.tel;
+            document.getElementById('regCom').value = v.com;
+            document.getElementById('regSec').value = v.sec;
+            document.getElementById('selectVoceria').value = v.voc;
+            controlarOtro(v.voc);
+            if(v.voc === 'Otro') document.getElementById('inputOtro').value = v.esp;
+        } else {
+            contenedorCampos.style.display = 'flex';
+        }
+    }
+
+    function limpiarSiVacio(val) {
+        if(val === "") document.getElementById('campos-dinamicos-registro').style.display = 'none';
+    }
+
+    window.addEventListener('load', function() {
+        const datos = localStorage.getItem('dbVoceros_SIG');
+        if (datos) { dbVoceros = JSON.parse(datos); actualizarTablaVoceros(); }
+    });
+
+    function validarAdmin() {
+        const emailIngresado = document.getElementById('adminEmail').value.trim().toLowerCase();
+        const passIngresada = document.getElementById('adminPass').value;
+        const esValido = adminPermitidos.find(acc => acc.user === emailIngresado && acc.pass === passIngresada);
+        if (esValido) { rolActual = "admin"; reproducirAnimacion('admin'); } 
+        else { alert("Acceso Denegado: Usuario o contraseña incorrectos."); }
+    }
+
+    function cambiarSeccion(tipo) {
+        const fRegistro = document.getElementById('form-registro-principal');
+        const fAdmin = document.getElementById('form-admin-acceso');
+        const btns = document.querySelectorAll('.tab-btn');
+        btns.forEach(btn => btn.classList.remove('active'));
+        if(tipo === 'registro') {
+            fRegistro.style.display = 'grid'; fAdmin.style.display = 'none';
+            btns[0].classList.add('active');
+        } else {
+            fRegistro.style.display = 'none'; fAdmin.style.display = 'grid';
+            btns[1].classList.add('active');
+        }
+    }
+
     function reproducirAnimacion(rol) {
         const videoContenedor = document.getElementById('video-contenedor');
         const video = document.getElementById('animacion-video');
+        const registro = document.getElementById('pantalla-registro');
+        const sistema = document.getElementById('sistema-principal');
         videoContenedor.style.display = 'flex';
         video.play();
         video.onended = function() {
-            videoContenedor.style.display = 'none';
-            document.getElementById('pantalla-registro').style.display = 'none';
-            document.getElementById('sistema-principal').style.display = 'flex';
-            if(rol === 'admin') mostrarLeyendaAdmin();
-            inicializarMapa();
+            videoContenedor.style.opacity = '0';
+            videoContenedor.style.transition = 'opacity 0.6s';
+            setTimeout(() => {
+                videoContenedor.style.display = 'none';
+                registro.style.display = 'none';
+                sistema.style.display = 'flex';
+                if(rol === 'admin') mostrarLeyendaAdmin();
+                else {
+                    document.getElementById('sidebar').style.display = 'block';
+                    document.getElementById('panel-admin-comunas').style.display = 'none';
+                }
+                inicializarMapa();
+            }, 600);
         };
     }
 
-    var map, emojiActual = null, modoNavegar = true;
+    function mostrarLeyendaAdmin() {
+        document.getElementById('sidebar').style.display = 'none';
+        document.getElementById('panel-admin-comunas').style.display = 'block';
+        const listaDiv = document.getElementById('lista-comunas-admin');
+        listaDiv.innerHTML = "";
+        listaComunas.forEach(comuna => {
+            const div = document.createElement('div');
+            div.className = 'item-comuna-admin';
+            div.onclick = () => entrarAComunaAdmin(comuna);
+            div.innerHTML = `<span class="comuna-nombre">${comuna}</span> <span class="badge-mapas">${dbMapasCount[comuna]}</span>`;
+            listaDiv.appendChild(div);
+        });
+    }
+
+    function entrarAComunaAdmin(comuna) {
+        document.getElementById('panel-admin-comunas').style.display = 'none';
+        document.getElementById('sidebar').style.display = 'block';
+        document.getElementById('btnVolverAdmin').style.display = 'block';
+        document.getElementById('selectComuna').value = comuna;
+    }
+
+    function publicarMapaAdmin() {
+        const comuna = document.getElementById('selectComuna').value;
+        if(!comuna) { alert("Debe seleccionar una Comuna."); return; }
+        dbMapasCount[comuna]++;
+        alert("¡Información guardada exitosamente en el historial!");
+        if(rolActual === 'admin') mostrarLeyendaAdmin();
+    }
+
+    var map, emojiActual = null, modoEspecial = "", modoNavegar = true;
     var stackElementos = [], stackRedo = [];
     var objetoSeleccionado = null;
     var trazandoAhora = null;
+    var markerUbicacion = null;
 
     var contadores = { 
         centro_med:0, cpt1:0, cpt2:0, cpt3:0, pol_inst:0, bom_inst:0, pc_inst:0, cuadrante:0,
@@ -551,22 +706,136 @@
 
     function inicializarMapa() {
         if (map) return;
-        map = L.map('map', { editable: true }).setView([10.136, -64.686], 18);
+        map = L.map('map', { editable: true, zoomControl: true }).setView([10.136, -64.686], 18);
         L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 20 }).addTo(map);
-        map.on('click', e => { if (emojiActual && !modoNavegar) crearIcono(e.latlng); });
+        
+        map.on('zoomend', function() {
+            let z = map.getZoom();
+            document.getElementById('zoomSlider').value = z;
+            document.getElementById('zoomInput').value = Math.round((z / 18) * 100);
+        });
+
+        map.on('editable:drawing:start', e => {
+            trazandoAhora = e.layer;
+            document.getElementById('btnFinalizar').style.display = 'flex';
+        });
+
+        map.on('editable:drawing:end', e => {
+            registrarObjeto(e.layer);
+            activarMano();
+            document.getElementById('btnFinalizar').style.display = 'none';
+            trazandoAhora = null;
+        });
+        
+        map.on('click', e => {
+            if (emojiActual && !modoNavegar) {
+                crearIcono(e.latlng);
+            } else {
+                deseleccionarTodo();
+            }
+        });
     }
 
     function toggleSidebar() {
-        const s = document.getElementById('sidebar');
-        s.style.display = (s.style.display === 'none' ? 'block' : 'none');
+        const sidebar = document.getElementById('sidebar');
+        const adminPanel = document.getElementById('panel-admin-comunas');
+        const panelActivo = sidebar.style.display !== 'none' ? sidebar : adminPanel;
+        if (panelActivo.style.display !== 'none') panelActivo.style.display = 'none';
+        else {
+            if(rolActual === 'admin' && document.getElementById('btnVolverAdmin').style.display === 'none') adminPanel.style.display = 'block';
+            else sidebar.style.display = 'block';
+        }
         map.invalidateSize();
     }
 
-    function cambiarEmoji(e, btn, esp) { 
-        emojiActual = e; modoNavegar = false; 
-        document.querySelectorAll('.btn-mapa').forEach(b => b.classList.remove('active')); 
-        btn.classList.add('active'); 
-        document.getElementById('floatMano').classList.remove('activo-float'); 
+    function irAMiUbicacion() {
+        if (!navigator.geolocation) { alert("GPS no disponible."); return; }
+        navigator.geolocation.getCurrentPosition(function(pos) {
+            var lat = pos.coords.latitude; var lon = pos.coords.longitude;
+            map.setView([lat, lon], 19);
+            if (markerUbicacion) map.removeLayer(markerUbicacion);
+            markerUbicacion = L.circleMarker([lat, lon], { radius: 8, fillColor: "#2196F3", color: "white", weight: 2, opacity: 1, fillOpacity: 0.8 }).addTo(map).bindPopup("Ubicación Actual").openPopup();
+        });
+    }
+
+    function iniciarTrazado(tipo) {
+        deseleccionarTodo();
+        if(tipo === 'pol') map.editTools.startPolygon();
+        else map.editTools.startPolyline();
+    }
+
+    function finalizarTrazado() { if(trazandoAhora) map.editTools.stopDrawing(); }
+    function controlarZoomSlider(val) { map.setZoom(parseFloat(val)); }
+    function controlarZoomManual(porcentaje) {
+        let p = parseFloat(porcentaje);
+        let nuevoZoom = (p / 100) * 18;
+        map.setZoom(nuevoZoom);
+    }
+
+    function agregarFilaHistoria() {
+        let div = document.createElement('div');
+        div.className = 'fila-historia';
+        div.innerHTML = `<input type="text" class="col-anio sidebar-input" placeholder="Año"><input type="text" class="col-suceso sidebar-input" placeholder="Hito"><button class="btn-del-hist" onclick="this.parentElement.remove()">🗑️</button>`;
+        document.getElementById('lista-antecedentes').appendChild(div);
+    }
+
+    function crearIcono(latlng) {
+        let s = 24; 
+        let contenidoIcono = (emojiActual === 'CRUZ_ROJA') ? `<div class="cruz-roja"></div>` : emojiActual;
+        let html = `<div class="map-icon-container">${contenidoIcono}</div>`;
+        
+        let m = L.marker(latlng, { 
+            icon: L.divIcon({ className:'', html: html, iconSize:[s,s], iconAnchor:[s/2, s/2] }), 
+            draggable: true,
+            zIndexOffset: 3000
+        }).addTo(map);
+        
+        m.tipoId = modoEspecial;
+        contadores[modoEspecial]++; actualizarBadges();
+        m.bindPopup(`<button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button>`);
+        m.on('click', ev => { 
+            L.DomEvent.stopPropagation(ev); 
+            deseleccionarTodo(); 
+            objetoSeleccionado = m; 
+            m.openPopup(); 
+        });
+        stackElementos.push(m);
+    }
+
+    function registrarObjeto(obj) {
+        let col = document.getElementById('colorPol').value;
+        let fill = document.getElementById('checkRelleno').checked;
+        let descripcion = prompt("Descripción del riesgo/trazado:", "");
+        
+        obj.setStyle({ color: col, fillColor: col, fillOpacity: fill ? 0.4 : 0, weight: 4 });
+        obj.bindPopup(`<div><span class="popup-desc">${descripcion || "Trazado"}</span><button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button></div>`);
+        
+        obj.on('click', e => { 
+            if (emojiActual && !modoNavegar) {
+                L.DomEvent.stopPropagation(e);
+                crearIcono(e.latlng); 
+            } else {
+                L.DomEvent.stopPropagation(e); 
+                deseleccionarTodo(); 
+                objetoSeleccionado = obj; 
+                obj.enableEdit(); 
+                obj.openPopup(); 
+            }
+        });
+        stackElementos.push(obj);
+    }
+
+    function eliminarObjeto(obj) {
+        if (!obj) return;
+        if (obj.tipoId) { contadores[obj.tipoId]--; actualizarBadges(); }
+        map.removeLayer(obj);
+        stackElementos = stackElementos.filter(i => i !== obj);
+        objetoSeleccionado = null;
+    }
+
+    function deseleccionarTodo() {
+        if (objetoSeleccionado) { if (objetoSeleccionado.disableEdit) objetoSeleccionado.disableEdit(); objetoSeleccionado.closePopup(); }
+        objetoSeleccionado = null;
     }
 
     function activarMano() { 
@@ -574,14 +843,17 @@
         document.querySelectorAll('.btn-mapa').forEach(b => b.classList.remove('active')); 
         document.getElementById('floatMano').classList.add('activo-float'); 
     }
-    
-    function crearIcono(latlng) {
-        let html = `<div class="map-icon-container">${emojiActual}</div>`;
-        let m = L.marker(latlng, { icon: L.divIcon({ html: html, iconSize:[24,24] }), draggable: true }).addTo(map);
-        stackElementos.push(m);
+
+    function cambiarEmoji(e, btn, esp) { 
+        emojiActual = e; modoEspecial = esp; modoNavegar = false; 
+        document.querySelectorAll('.btn-mapa').forEach(b => b.classList.remove('active')); 
+        btn.classList.add('active'); 
+        document.getElementById('floatMano').classList.remove('activo-float'); 
     }
-    
-    function deshacer() { let el = stackElementos.pop(); if(el) map.removeLayer(el); }
+
+    function actualizarBadges() { for(let k in contadores) { let el = document.getElementById('count-'+k); if(el) el.innerText = contadores[k]; } }
+    function deshacer() { let el = stackElementos.pop(); if(el) { stackRedo.push(el); map.removeLayer(el); } }
+    function rehacer() { let el = stackRedo.pop(); if(el) { stackElementos.push(el); el.addTo(map); } }
 
 </script>
 </body>

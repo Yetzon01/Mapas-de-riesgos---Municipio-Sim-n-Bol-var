@@ -3,19 +3,33 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-// 1. CONFIGURACIÓN DE TU SUPABASE (Se mantiene igual)
+// 1. CONFIGURACIÓN DE TU SUPABASE
 const supabaseUrl = 'https://zezcmftcbbzplhtdqotd.supabase.co'; 
 const supabaseKey = 'sb_publishable_bNaRcykfZaVdW67HsEf3Tw_rWemQCui';
 const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-// 2. LA FUNCIÓN QUE TE FALTABA: verificarCorreo
-// Esta es la que hace que el formulario "avance" y se muestre
+// --- NUEVA LÓGICA DE PERSISTENCIA ---
+// Esta función se ejecuta automáticamente al refrescar la página
+window.addEventListener('load', () => {
+    const estadoGuardado = localStorage.getItem('pantalla_activa');
+    
+    if (estadoGuardado === 'sistema-principal') {
+        // Si ya estaba adentro del sistema, lo mostramos directo
+        document.getElementById('pantalla-registro').style.display = 'none';
+        document.getElementById('sistema-principal').style.display = 'flex';
+    } else if (estadoGuardado === 'admin') {
+        // Si estaba en la pestaña de administración
+        cambiarSeccion('admin');
+    }
+    // Si no hay nada guardado, el HTML mostrará el menú inicial por defecto
+});
+
+// 2. LA FUNCIÓN: verificarCorreo
 function verificarCorreo() {
     const correoInput = document.getElementById('regCor').value;
     const camposOcultos = document.getElementById('campos-dinamicos-registro');
 
     if (correoInput.includes('@') && correoInput.length > 5) {
-        // Mostramos los campos de Nombres, Apellidos, Cédula, etc.
         camposOcultos.style.display = 'flex';
         console.log("Correo validado: " + correoInput);
     } else {
@@ -23,16 +37,14 @@ function verificarCorreo() {
     }
 }
 
-// Función para limpiar si el usuario borra el correo
 function limpiarSiVacio(valor) {
     if (valor === "") {
         document.getElementById('campos-dinamicos-registro').style.display = 'none';
     }
 }
 
-// 3. FUNCIÓN PARA GUARDAR (Ajustada a los IDs de tu HTML)
+// 3. FUNCIÓN PARA GUARDAR
 async function registrarVocero() {
-    // Recolectamos los datos usando los IDs REALES de tu HTML (regNom, regApe, etc)
     const datos = {
         correo: document.getElementById('regCor').value,
         nombre: document.getElementById('regNom').value,
@@ -41,7 +53,6 @@ async function registrarVocero() {
         telefono: document.getElementById('regTel').value,
         comuna: document.getElementById('regCom').value,
         sector: document.getElementById('regSec').value,
-        // Si eligió "Otro", guardamos el texto manual; si no, el del select
         voceria: document.getElementById('selectVoceria').value === "Otro" ? 
                  document.getElementById('inputOtro').value : 
                  document.getElementById('selectVoceria').value
@@ -55,18 +66,20 @@ async function registrarVocero() {
         if (error) throw error;
 
         alert("¡Registro exitoso! Bienvenido al sistema.");
-        
-        // Efecto visual para entrar al sistema
+
+        // Guardamos que ahora estamos en el sistema principal
+        localStorage.setItem('pantalla_activa', 'sistema-principal');
+
         document.getElementById('pantalla-registro').style.display = 'none';
         document.getElementById('sistema-principal').style.display = 'flex';
-        
+
     } catch (error) {
         console.error("Error:", error.message);
         alert("Hubo un problema al guardar: " + error.message);
     }
 }
 
-// 4. LÓGICA DE INTERFAZ (Tabs y Selects)
+// 4. LÓGICA DE INTERFAZ
 function cambiarSeccion(tipo) {
     const formReg = document.getElementById('form-registro-principal');
     const formAdmin = document.getElementById('form-admin-acceso');
@@ -77,11 +90,13 @@ function cambiarSeccion(tipo) {
         formAdmin.style.display = 'none';
         tabs[0].classList.add('active');
         tabs[1].classList.remove('active');
+        localStorage.setItem('pantalla_activa', 'registro'); // Guardamos pestaña registro
     } else {
         formReg.style.display = 'none';
         formAdmin.style.display = 'grid';
         tabs[1].classList.add('active');
         tabs[0].classList.remove('active');
+        localStorage.setItem('pantalla_activa', 'admin'); // Guardamos pestaña admin
     }
 }
 
@@ -92,6 +107,7 @@ function controlarOtro(valor) {
 
 function confirmarSalida() {
     if (confirm("¿Deseas cerrar la sesión?")) {
+        localStorage.removeItem('pantalla_activa'); // Borramos el recuerdo al salir
         window.location.reload(); 
     }
 }

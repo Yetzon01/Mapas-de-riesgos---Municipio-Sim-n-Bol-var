@@ -13,7 +13,7 @@
             --v-lim: #B4D445;
             --negro: #1a1c1b;
         }
-        
+
         * { box-sizing: border-box; }
         body, html { margin: 0; height: 100%; font-family: 'Segoe UI', sans-serif; background: #000; overflow: hidden; }
 
@@ -47,22 +47,22 @@
 
         h2 { margin: 0; font-size: 24px; color: #fff; text-transform: uppercase; letter-spacing: 1px; }
         .subtitle { color: var(--v-lime); font-size: 13px; margin-bottom: 30px; font-weight: bold; text-transform: uppercase; }
-        
+
         .form-registro, .form-admin { text-align: left; display: grid; gap: 15px; }
         .form-admin { display: none; }
         .form-row { display: flex; gap: 15px; }
         .form-group { flex: 1; }
-        
+
         #campos-dinamicos-registro { display: none; flex-direction: column; gap: 15px; }
 
         label { font-size: 11px; color: var(--v-lime); text-transform: uppercase; font-weight: 800; margin-bottom: 5px; display: block; }
-        
+
         input, select { 
             width: 100%; background: #111; border: 1px solid #333; color: white; 
             padding: 12px; border-radius: 8px; outline: none; font-size: 14px; 
             transition: 0.3s;
         }
-        
+
         input:focus, select:focus { border-color: var(--v-lime); background: #1a1a1a; }
 
         #segmento-otro { display: none; margin-top: 5px; border-left: 3px solid var(--v-lime); padding-left: 15px; animation: fadeIn 0.4s ease; }
@@ -93,7 +93,7 @@
 
         #contenedor { display: flex; flex-grow: 1; overflow: hidden; }
         #sidebar { width: 440px; background: var(--negro); color: white; padding: 15px; overflow-y: auto; border-right: 2px solid #333; transition: margin-left 0.3s ease; }
-        
+
         h4 { color: var(--v-lim); font-size: 11px; text-transform: uppercase; margin: 15px 0 8px 0; border-bottom: 1px solid #444; padding-bottom: 4px; letter-spacing: 1px; }
         .grid-datos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .sidebar-form-group { margin-bottom: 8px; }
@@ -122,11 +122,11 @@
 
         #map-container { flex-grow: 1; position: relative; background: #1a1a1a; }
         #map { width: 100%; height: 100%; }
-        
+
         .controles-mapa-horiz { position: absolute; top: 15px; left: 60px; z-index: 2000; display: flex; flex-direction: row; gap: 8px; }
         .btn-float { width: 42px; height: 42px; background: white; border: none; border-radius: 50%; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
         .btn-float.activo-float { background: var(--v-lim); border: 2px solid var(--v-osc); }
-        
+
         #btnFinalizar { display: none; background: #4CAF50; color: white; font-size: 22px; border: 2px solid white; }
 
         .zoom-preciso-panel { position: absolute; top: 15px; right: 15px; z-index: 2000; background: white; padding: 10px; border-radius: 8px; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: 2px solid var(--v-osc); }
@@ -168,7 +168,7 @@
             <div class="logo-wrapper"><img src="logo1.png.png" alt="Logo 1"></div>
             <div class="logo-wrapper"><img src="logo2.png.png" alt="Logo 2"></div>
         </div>
-        
+
         <h2>SISTEMA DE GESTIÓN</h2>
         <p class="subtitle">Municipio Simón Bolívar</p>
 
@@ -176,7 +176,7 @@
             <button class="tab-btn active" onclick="cambiarSeccion('registro')">Registro Vocero</button>
             <button class="tab-btn" onclick="cambiarSeccion('admin')">Administrador</button>
         </div>
-        
+
         <form id="form-registro-principal" class="form-registro" onsubmit="event.preventDefault(); registrarVocero();">
             <div class="form-group">
                 <label>Correo Electrónico</label>
@@ -378,11 +378,13 @@
                     <label style="font-size:9px;">RELLENO: <input type="checkbox" id="checkRelleno" checked></label>
                 </div>
             </div>
-            
+
             <button class="btn-mapa" style="background:#1a1c1b; border: 2px solid var(--v-lim); color:var(--v-lim); font-weight:bold; margin-top:15px;" onclick="publicarMapaAdmin()">💾 GUARDAR Y FINALIZAR MAPA</button>
             <button class="btn-mapa" style="background:var(--v-lim); color:var(--v-osc); font-weight:bold; margin-top:5px;" onclick="window.print()">🖨️ EXPORTAR MAPA (PDF)</button>
-            <div style="height:50px;"></div>
-        </div>
+            
+            <button class="btn-mapa" style="background:#333; color:#ff4444; border: 1px solid #ff4444; margin-top:20px; font-weight:bold;" onclick="confirmarSalida()">🚪 CERRAR SESIÓN / SALIR</button>
+            
+            <div style="height:80px;"></div> </div>
 
         <div id="map-container">
             <div class="zoom-preciso-panel">
@@ -401,8 +403,7 @@
                 <button id="btnFinalizar" class="btn-float" onclick="finalizarTrazado()">✅</button>
                 <button class="btn-float" onclick="deshacer()">↩️</button>
                 <button class="btn-float" onclick="rehacer()">↪️</button>
-                <button class="btn-float" onclick="window.location.reload()" title="SALIR" style="color: #ff4444; font-weight: bold; border: 2px solid #ff4444;">✖</button>
-            </div>
+                </div>
             <div id="map"></div>
         </div>
     </div>
@@ -474,13 +475,19 @@
 
     listaComunas.forEach(c => dbMapasCount[c] = 0);
 
-    // --- LÓGICA DE REGISTRO ACTUALIZADA CON SUPABASE ---
+    // NUEVA FUNCIÓN DE SALIDA CON CONFIRMACIÓN
+    function confirmarSalida() {
+        const respuesta = confirm("⚠️ ¿ESTÁS SEGURO DE QUE DESEAS SALIR?\n\nAsegúrate de haber guardado los cambios en el mapa antes de finalizar la sesión.");
+        if (respuesta) {
+            window.location.reload();
+        }
+    }
+
     async function registrarVocero() {
         const correo = document.getElementById('regCor').value;
         const voceriaSelect = document.getElementById('selectVoceria').value;
         const especificacion = (voceriaSelect === 'Otro') ? document.getElementById('inputOtro').value : '—';
-        
-        // Datos para el guardado local y el objeto de la función
+
         const vocero = {
             nom: document.getElementById('regNom').value, 
             ape: document.getElementById('regApe').value,
@@ -494,7 +501,6 @@
         };
 
         try {
-            // INSERCIÓN EN LA TABLA: registross_voceros
             const { data, error } = await _supabase
                 .from('registross_voceros')
                 .insert([
@@ -512,26 +518,19 @@
                 ]);
 
             if (error) throw error;
-
-            alert("✅ ¡Registro exitoso! Los datos han sido respaldados en registross_voceros.");
-
-            // Guardamos localmente (Caché del navegador)
+            alert("✅ ¡Registro exitoso!");
             const indexExistente = dbVoceros.findIndex(v => v.cor.toLowerCase() === correo.toLowerCase());
             if(indexExistente !== -1) dbVoceros[indexExistente] = vocero;
             else dbVoceros.push(vocero);
-
             guardarDB();
             actualizarTablaVoceros();
-            
             reproducirAnimacion('usuario');
-
         } catch (err) {
             console.error("Error al registrar:", err.message);
-            alert("❌ Error al conectar con Supabase: " + err.message);
+            alert("❌ Error: " + err.message);
         }
     }
 
-    // --- FUNCIONES DE SOPORTE E INTERFAZ ---
     function controlarOtro(valor) {
         const campoOtro = document.getElementById('segmento-otro');
         const inputOtro = document.getElementById('inputOtro');
@@ -619,7 +618,7 @@
         const passIngresada = document.getElementById('adminPass').value;
         const esValido = adminPermitidos.find(acc => acc.user === emailIngresado && acc.pass === passIngresada);
         if (esValido) { rolActual = "admin"; reproducirAnimacion('admin'); } 
-        else { alert("Acceso Denegado: Usuario o contraseña incorrectos."); }
+        else { alert("Acceso Denegado."); }
     }
 
     function cambiarSeccion(tipo) {
@@ -685,7 +684,7 @@
         const comuna = document.getElementById('selectComuna').value;
         if(!comuna) { alert("Debe seleccionar una Comuna."); return; }
         dbMapasCount[comuna]++;
-        alert("¡Información guardada exitosamente en el historial!");
+        alert("¡Información guardada exitosamente!");
         if(rolActual === 'admin') mostrarLeyendaAdmin();
     }
 
@@ -708,7 +707,7 @@
         if (map) return;
         map = L.map('map', { editable: true, zoomControl: true }).setView([10.136, -64.686], 18);
         L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 20 }).addTo(map);
-        
+
         map.on('zoomend', function() {
             let z = map.getZoom();
             document.getElementById('zoomSlider').value = z;
@@ -726,7 +725,7 @@
             document.getElementById('btnFinalizar').style.display = 'none';
             trazandoAhora = null;
         });
-        
+
         map.on('click', e => {
             if (emojiActual && !modoNavegar) {
                 crearIcono(e.latlng);
@@ -783,13 +782,13 @@
         let s = 24; 
         let contenidoIcono = (emojiActual === 'CRUZ_ROJA') ? `<div class="cruz-roja"></div>` : emojiActual;
         let html = `<div class="map-icon-container">${contenidoIcono}</div>`;
-        
+
         let m = L.marker(latlng, { 
             icon: L.divIcon({ className:'', html: html, iconSize:[s,s], iconAnchor:[s/2, s/2] }), 
             draggable: true,
             zIndexOffset: 3000
         }).addTo(map);
-        
+
         m.tipoId = modoEspecial;
         contadores[modoEspecial]++; actualizarBadges();
         m.bindPopup(`<button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button>`);
@@ -806,10 +805,10 @@
         let col = document.getElementById('colorPol').value;
         let fill = document.getElementById('checkRelleno').checked;
         let descripcion = prompt("Descripción del riesgo/trazado:", "");
-        
+
         obj.setStyle({ color: col, fillColor: col, fillOpacity: fill ? 0.4 : 0, weight: 4 });
         obj.bindPopup(`<div><span class="popup-desc">${descripcion || "Trazado"}</span><button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button></div>`);
-        
+
         obj.on('click', e => { 
             if (emojiActual && !modoNavegar) {
                 L.DomEvent.stopPropagation(e);

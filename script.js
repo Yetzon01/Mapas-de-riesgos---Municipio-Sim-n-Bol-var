@@ -3,36 +3,36 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-// 1. CONFIGURACIÓN DE SUPABASE
+// 1. CONFIGURACIÓN DE TU SUPABASE (Se mantiene igual)
 const supabaseUrl = 'https://zezcmftcbbzplhtdqotd.supabase.co'; 
 const supabaseKey = 'sb_publishable_bNaRcykfZaVdW67HsEf3Tw_rWemQCui';
 const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-// 2. FUNCIÓN PARA VERIFICAR (Hacer que el formulario "avance")
+// 2. LA FUNCIÓN QUE TE FALTABA: verificarCorreo
+// Esta es la que hace que el formulario "avance" y se muestre
 function verificarCorreo() {
-    const correo = document.getElementById('regCor').value;
-    const camposDinamicos = document.getElementById('campos-dinamicos-registro');
+    const correoInput = document.getElementById('regCor').value;
+    const camposOcultos = document.getElementById('campos-dinamicos-registro');
 
-    if (correo.includes('@') && correo.length > 5) {
-        // Mostramos los campos ocultos
-        camposDinamicos.style.display = 'flex';
-        // Pasamos el correo al campo que se guardará (opcional si usas el mismo ID)
-        console.log("Correo verificado para: " + correo);
+    if (correoInput.includes('@') && correoInput.length > 5) {
+        // Mostramos los campos de Nombres, Apellidos, Cédula, etc.
+        camposOcultos.style.display = 'flex';
+        console.log("Correo validado: " + correoInput);
     } else {
-        alert("Por favor, ingresa un correo electrónico válido para continuar.");
+        alert("Por favor, ingresa un correo electrónico válido para verificar.");
     }
 }
 
-// Limpiar si borran el correo
+// Función para limpiar si el usuario borra el correo
 function limpiarSiVacio(valor) {
     if (valor === "") {
         document.getElementById('campos-dinamicos-registro').style.display = 'none';
     }
 }
 
-// 3. FUNCIÓN PARA GUARDAR (Ajustada a tus IDs del HTML)
+// 3. FUNCIÓN PARA GUARDAR (Ajustada a los IDs de tu HTML)
 async function registrarVocero() {
-    // Recolectamos los datos usando los IDs reales de tu HTML
+    // Recolectamos los datos usando los IDs REALES de tu HTML (regNom, regApe, etc)
     const datos = {
         correo: document.getElementById('regCor').value,
         nombre: document.getElementById('regNom').value,
@@ -41,28 +41,32 @@ async function registrarVocero() {
         telefono: document.getElementById('regTel').value,
         comuna: document.getElementById('regCom').value,
         sector: document.getElementById('regSec').value,
+        // Si eligió "Otro", guardamos el texto manual; si no, el del select
         voceria: document.getElementById('selectVoceria').value === "Otro" ? 
                  document.getElementById('inputOtro').value : 
                  document.getElementById('selectVoceria').value
     };
 
-    // Enviamos a Supabase
-    const { data, error } = await _supabase
-        .from('registross_voceros') 
-        .upsert(datos, { onConflict: 'correo' });
+    try {
+        const { data, error } = await _supabase
+            .from('registross_voceros') 
+            .upsert(datos, { onConflict: 'correo' });
 
-    if (error) {
-        console.error("Error al guardar:", error.message);
-        alert("Error: " + error.message);
-    } else {
-        alert("¡Registro guardado con éxito!");
-        // Aquí podrías mostrar el sistema principal
+        if (error) throw error;
+
+        alert("¡Registro exitoso! Bienvenido al sistema.");
+        
+        // Efecto visual para entrar al sistema
         document.getElementById('pantalla-registro').style.display = 'none';
         document.getElementById('sistema-principal').style.display = 'flex';
+        
+    } catch (error) {
+        console.error("Error:", error.message);
+        alert("Hubo un problema al guardar: " + error.message);
     }
 }
 
-// 4. FUNCIONES DE INTERFAZ
+// 4. LÓGICA DE INTERFAZ (Tabs y Selects)
 function cambiarSeccion(tipo) {
     const formReg = document.getElementById('form-registro-principal');
     const formAdmin = document.getElementById('form-admin-acceso');
@@ -87,9 +91,8 @@ function controlarOtro(valor) {
 }
 
 function confirmarSalida() {
-    if (confirm("¿Estás seguro de que deseas salir?")) {
+    if (confirm("¿Deseas cerrar la sesión?")) {
         window.location.reload(); 
     }
 }
 </script>
- 

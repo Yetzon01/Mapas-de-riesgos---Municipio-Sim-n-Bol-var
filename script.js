@@ -1,47 +1,38 @@
-// 1. CONFIGURACIÓN
+// 1. CONFIGURACIÓN DE SUPABASE
 const supabaseUrl = 'https://zezcmftcbbzplhtdqotd.supabase.co'; 
 const supabaseKey = 'sb_publishable_bNaRcykfZaVdW67HsEf3Tw_rWemQCui';
 const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-// 2. FUNCIÓN DE SALTO AUTOMÁTICO (REVISADA)
-function verificarSesionSegura() {
-    const sesion = localStorage.getItem('sesion_activa');
-    if (sesion) {
-        console.log("Sesión detectada, intentando saltar registro...");
-        
-        const intervalo = setInterval(() => {
-            const reg = document.getElementById('pantalla-registro');
-            const sis = document.getElementById('sistema-principal');
+// 2. FUNCIÓN PARA CARGAR LA MEMORIA DEL MAPA (Trae lo que ya existe)
+async function cargarPuntosPrevios(correo) {
+    const { data, error } = await _supabase
+        .from('memoria_mapa')
+        .select('*')
+        .eq('creado_por', correo);
 
-            if (reg && sis) {
-                reg.style.display = 'none';
-                sis.style.display = 'flex';
-                if (typeof inicializarMapa === 'function') inicializarMapa();
-                clearInterval(intervalo);
-            }
-        }, 100);
-
-        // Si después de 3 segundos no encuentra los IDs, te avisa el error
-        setTimeout(() => {
-            clearInterval(intervalo);
-            if (!document.getElementById('pantalla-registro')) {
-                alert("⚠️ Error: No encontré el ID 'pantalla-registro' en tu HTML");
-            }
-        }, 3000);
+    if (!error && data) {
+        data.forEach(punto => {
+            // Dibujamos los marcadores que ya estaban guardados
+            L.marker([punto.latitud, punto.longitud])
+                .addTo(map)
+                .bindPopup(punto.informacion);
+        });
+        console.log("Memoria del mapa cargada para: " + correo);
     }
 }
-verificarSesionSegura();
 
-// 3. FUNCIÓN PARA GUARDAR
+// 3. FUNCIÓN PARA GUARDAR DATOS PERSONALES
 async function guardarDatos(event) {
     event.preventDefault();
+
+    const correoInput = document.getElementById('correo-electronico').value;
 
     const datos = {
         nombre: document.getElementById('nombres').value,
         apellido: document.getElementById('apellidos').value,
         cedula_de_identidad: document.getElementById('cedula-de-identidad').value,
         telefono: document.getElementById('telefono').value,
-        correo: document.getElementById('correo-electronico').value,
+        correo: correoInput,
         sector: document.getElementById('sector').value,
         comuna: document.getElementById('comuna').value,
         voceria: document.getElementById('voceria').value
@@ -52,28 +43,45 @@ async function guardarDatos(event) {
         .upsert(datos, { onConflict: 'correo' });
 
     if (error) {
-        alert("Error Supabase: " + error.message);
+        alert("Error: " + error.message);
     } else {
-        // GUARDAR MEMORIA
-        localStorage.setItem('sesion_activa', 'usuario');
-        alert("¡Registro Exitoso! Ahora puedes refrescar y no se saldrá.");
-        
-        // Cambio de pantalla manual
-        document.getElementById('pantalla-registro').style.display = 'none';
-        document.getElementById('sistema-principal').style.display = 'flex';
-        if (typeof inicializarMapa === 'function') inicializarMapa();
+        alert("¡Sesión iniciada! Cargando tu mapa personal...");
+        // Al tener éxito, cargamos sus puntos guardados anteriormente
+        cargarPuntosPrevios(correoInput);
     }
 }
 
+// 4. FUNCIÓN PARA GUARDAR CLICS EN EL MAPA (La nueva memoria)
+map.on('click', async function(e) {
+    const lat = e.latlng.lat;
+    const lng = e.latlng.lng;
+    const correoActivo = document.getElementById('correo-electronico').value;
+
+    if (!correoActivo) {
+        alert("Por favor, ingresa tu correo primero para poder guardar en el mapa.");
+        return;
+    }
+
+    const info = prompt("¿Qué reporte o riesgo hay en este punto?");
+
+    if (info) {
+        // Ponemos el marcador visualmente
+        L.marker([lat, lng]).addTo(map).bindPopup(info).openPopup();
+
+        // GUARDAMOS EN LA TABLA QUE CREASTE (memoria_mapa)
+        const { error } = await _supabase
+            .from('memoria_mapa')
+            .insert({
+                latitud: lat,
+                longitud: lng,
+                informacion: info,
+                creado_por: correoActivo 
+            });
+
+        if (error) console.error("No se pudo guardar el punto:", error.message);
+    }
+});
+
+// 5. CONECTAR EL FORMULARIO
 document.getElementById('form-registro').addEventListener('submit', guardarDatos);
-
-// 4. BOTÓN DE ESTADO FORZADO (ESTILO VISIBLE)
-const btn = document.createElement('button');
-btn.innerHTML = "VER MEMORIA";
-btn.setAttribute('style', 'position:fixed !important; bottom:20px !important; left:20px !important; z-index:999999 !important; background:red !important; color:white !important; padding:15px !important; border-radius:10px !important;');
-document.body.appendChild(btn);
-
-btn.onclick = function() {
-    const s = localStorage.getItem('sesion_activa');
-    alert("Dato en memoria: " + s);
-};
+ 

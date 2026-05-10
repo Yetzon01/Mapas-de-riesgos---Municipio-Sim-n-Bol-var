@@ -1,99 +1,106 @@
-// 1. CONFIGURACIÓN DE SUPABASE
+// 1. CONFIGURACIÓN (Tus llaves de Supabase)
 const supabaseUrl = 'https://zezcmftcbbzplhtdqotd.supabase.co'; 
 const supabaseKey = 'sb_publishable_bNaRcykfZaVdW67HsEf3Tw_rWemQCui';
 const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-// 2. INICIALIZAR EL MAPA (Asegúrate de que esto esté antes de las funciones)
-// Si ya tienes estas líneas en otra parte, no las dupliques.
-const map = L.map('map').setView([10.13, -64.68], 13); // Coordenadas de Barcelona, Anzoátegui
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap'
-}).addTo(map);
+// VARIABLE GLOBAL PARA LA MEMORIA
+let correoUsuarioActual = ""; 
 
-// 3. FUNCIÓN PARA CARGAR LA MEMORIA (Traer puntos antiguos de la nube)
-async function cargarPuntosPrevios(correo) {
-    console.log("Buscando puntos para:", correo);
-    const { data, error } = await _supabase
-        .from('memoria_mapa')
-        .select('*')
-        .eq('creado_por', correo);
-
-    if (error) {
-        console.error("Error al cargar puntos:", error.message);
-    } else if (data) {
-        data.forEach(punto => {
-            L.marker([punto.latitud, punto.longitud])
-                .addTo(map)
-                .bindPopup(punto.informacion);
-        });
-    }
-}
-
-// 4. FUNCIÓN PARA GUARDAR DATOS DEL FORMULARIO
+// 2. FUNCIÓN PARA GUARDAR DATOS DEL REGISTRO (Tu función original mejorada)
 async function guardarDatos(event) {
-    event.preventDefault();
-    const correoInput = document.getElementById('correo-electronico').value;
+    if (event) event.preventDefault(); 
+
+    const inputCorreo = document.getElementById('correo-electronico');
+    correoUsuarioActual = inputCorreo.value.trim().toLowerCase();
 
     const datos = {
         nombre: document.getElementById('nombres').value,
         apellido: document.getElementById('apellidos').value,
         cedula_de_identidad: document.getElementById('cedula-de-identidad').value,
         telefono: document.getElementById('telefono').value,
-        correo: correoInput,
+        correo: correoUsuarioActual,
         sector: document.getElementById('sector').value,
         comuna: document.getElementById('comuna').value,
         voceria: document.getElementById('voceria').value
     };
 
-    const { error } = await _supabase
+    const { data, error } = await _supabase
         .from('registross_voceros') 
         .upsert(datos, { onConflict: 'correo' });
 
     if (error) {
-        alert("Error al registrar: " + error.message);
+        console.error("Hubo un error:", error.message);
     } else {
-        alert("¡Sesión iniciada con éxito! Cargando tus puntos...");
-        cargarPuntosPrevios(correoInput); // Carga los puntos al iniciar sesión
+        console.log("Registro de vocero exitoso.");
+        // Después de registrar, intentamos cargar si ya tenía un mapa guardado
+        cargarMapaDesdeBD();
     }
 }
 
-// 5. EVENTO DE CLIC EN EL MAPA (Guardar nuevos puntos)
-map.on('click', async function(e) {
-    const lat = e.latlng.lat;
-    const lng = e.latlng.lng;
-    const correoActivo = document.getElementById('correo-electronico').value;
+// 3. NUEVA FUNCIÓN: GUARDAR LEYENDA E ICONOS AUTOMÁTICAMENTE
+async function guardarProgresoMapa() {
+    // Si el usuario no ha ingresado su correo, no podemos guardar
+    if (!correoUsuarioActual) return;
 
-    if (!correoActivo) {
-        alert("Primero debes ingresar tu correo en el formulario.");
-        return;
+    // A. Recolectamos los iconos del mapa (asumiendo que usas stackElementos para guardarlos)
+    const elementosMapa = typeof stackElementos !== 'undefined' ? stackElementos.map(obj => ({
+        tipo: obj instanceof L.Marker ? 'icono' : 'trazado',
+        latlng: obj instanceof L.Marker ? obj.getLatLng() : obj.getLatLngs(),
+        tipoId: obj.tipoId || 'general',
+        emoji: obj.emojiTexto || ''
+    })) : [];
+
+    // B. Recolectamos los datos de los campos de la leyenda
+    // Ajusta los IDs (comuna, parroquia, etc.) según los tengas en tu HTML
+    const datosLeyenda = {
+        correo_usuario: correoUsuarioActual,
+        comuna_nombre: document.getElementById('comuna')?.value || '',
+        parroquia: document.querySelector('input[placeholder="Parroquia"]')?.value || '',
+        sector_especifico: document.getElementById('sector')?.value || '',
+        arbol_predominante: document.getElementById('inputArbolPredominante')?.value || '',
+        elementos_mapa: elementosMapa // Aquí se guardan todos los iconos
+    };
+
+    const { error } = await _supabase
+        .from('datos_mapa_comunitario')
+        .upsert(datosLeyenda, { onConflict: 'correo_usuario' });
+
+    if (error) {
+        console.error("Error al guardar mapa:", error.message);
+    } else {
+        console.log("✅ Mapa e iconos guardados automáticamente.");
     }
+}
 
-    const info = prompt("¿Qué quieres reportar en este punto?");
+// 4. NUEVA FUNCIÓN: CARGAR MAPA AL INICIAR
+async function cargarMapaDesdeBD() {
+    if (!correoUsuarioActual) return;
 
-    if (info) {
-        // Ponemos el marcador en la pantalla
-        L.marker([lat, lng]).addTo(map).bindPopup(info).openPopup();
+    const { data, error } = await _supabase
+        .from('datos_mapa_comunitario')
+        .select('*')
+        .eq('correo_usuario', correoUsuarioActual)
+        .maybeSingle();
 
-        // Enviamos a Supabase
-        const { error } = await _supabase
-            .from('memoria_mapa')
-            .insert([
-                {
-                    latitud: lat,
-                    longitud: lng,
-                    informacion: info,
-                    creado_por: correoActivo 
-                }
-            ]);
-
-        if (error) {
-            console.error("Error al guardar en memoria_mapa:", error.message);
-            alert("No se pudo guardar el punto en la base de datos.");
-        } else {
-            console.log("¡Punto guardado exitosamente!");
-        }
+    if (data && data.elementos_mapa) {
+        console.log("Restaurando mapa de:", correoUsuarioActual);
+        // Aquí podrías recorrer data.elementos_mapa y volver a dibujarlos en el mapa
+        // Ejemplo: data.elementos_mapa.forEach(item => { ... dibujar ... });
     }
-});
+}
 
-// 6. ASOCIAR EL BOTÓN DEL FORMULARIO
-document.getElementById('form-registro').addEventListener('submit', guardarDatos);
+// 5. CONECTAR EL FORMULARIO DE REGISTRO
+const formRegistro = document.getElementById('form-registro');
+if (formRegistro) {
+    formRegistro.addEventListener('submit', guardarDatos);
+}
+
+// 6. HACER QUE LOS ICONOS SE GUARDEN AL CREARLOS
+// Debes llamar a guardarProgresoMapa() dentro de tus funciones de Leaflet
+// Ejemplo: 
+/* function alPonerIcono() { 
+   ... tu código ...
+   stackElementos.push(nuevoIcono);
+   guardarProgresoMapa(); 
+} 
+*/

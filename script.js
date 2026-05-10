@@ -8,20 +8,19 @@ const supabaseUrl = 'https://zezcmftcbbzplhtdqotd.supabase.co';
 const supabaseKey = 'sb_publishable_bNaRcykfZaVdW67HsEf3Tw_rWemQCui';
 const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-// --- NUEVA LÓGICA DE PERSISTENCIA ---
-// Esta función se ejecuta automáticamente al refrescar la página
+// --- LÓGICA DE PERSISTENCIA ACTUALIZADA ---
 window.addEventListener('load', () => {
     const estadoGuardado = localStorage.getItem('pantalla_activa');
-    
+
     if (estadoGuardado === 'sistema-principal') {
-        // Si ya estaba adentro del sistema, lo mostramos directo
-        document.getElementById('pantalla-registro').style.display = 'none';
-        document.getElementById('sistema-principal').style.display = 'flex';
+        // Mantiene la sesión abierta al refrescar
+        const pantallaReg = document.getElementById('pantalla-registro');
+        const sistemaPrinc = document.getElementById('sistema-principal');
+        if(pantallaReg) pantallaReg.style.display = 'none';
+        if(sistemaPrinc) sistemaPrinc.style.display = 'flex';
     } else if (estadoGuardado === 'admin') {
-        // Si estaba en la pestaña de administración
         cambiarSeccion('admin');
     }
-    // Si no hay nada guardado, el HTML mostrará el menú inicial por defecto
 });
 
 // 2. LA FUNCIÓN: verificarCorreo
@@ -38,12 +37,12 @@ function verificarCorreo() {
 }
 
 function limpiarSiVacio(valor) {
-    if (valor === "") {
+    if (valor === "" && document.getElementById('campos-dinamicos-registro')) {
         document.getElementById('campos-dinamicos-registro').style.display = 'none';
     }
 }
 
-// 3. FUNCIÓN PARA GUARDAR
+// 3. FUNCIÓN PARA GUARDAR (CORREGIDA PARA EVITAR EL ERROR ON CONFLICT)
 async function registrarVocero() {
     const datos = {
         correo: document.getElementById('regCor').value,
@@ -59,15 +58,16 @@ async function registrarVocero() {
     };
 
     try {
+        // CAMBIO CLAVE: Se usa .insert() en lugar de .upsert() para permitir múltiples registros
         const { data, error } = await _supabase
             .from('registross_voceros') 
-            .upsert(datos, { onConflict: 'correo' });
+            .insert([datos]); // Eliminada la cláusula onConflict que causaba el error
 
         if (error) throw error;
 
         alert("¡Registro exitoso! Bienvenido al sistema.");
 
-        // Guardamos que ahora estamos en el sistema principal
+        // Guardamos el estado para que no se salga al refrescar
         localStorage.setItem('pantalla_activa', 'sistema-principal');
 
         document.getElementById('pantalla-registro').style.display = 'none';
@@ -86,28 +86,28 @@ function cambiarSeccion(tipo) {
     const tabs = document.querySelectorAll('.tab-btn');
 
     if (tipo === 'registro') {
-        formReg.style.display = 'grid';
-        formAdmin.style.display = 'none';
-        tabs[0].classList.add('active');
-        tabs[1].classList.remove('active');
-        localStorage.setItem('pantalla_activa', 'registro'); // Guardamos pestaña registro
+        if(formReg) formReg.style.display = 'grid';
+        if(formAdmin) formAdmin.style.display = 'none';
+        if(tabs[0]) tabs[0].classList.add('active');
+        if(tabs[1]) tabs[1].classList.remove('active');
+        localStorage.setItem('pantalla_activa', 'registro');
     } else {
-        formReg.style.display = 'none';
-        formAdmin.style.display = 'grid';
-        tabs[1].classList.add('active');
-        tabs[0].classList.remove('active');
-        localStorage.setItem('pantalla_activa', 'admin'); // Guardamos pestaña admin
+        if(formReg) formReg.style.display = 'none';
+        if(formAdmin) formAdmin.style.display = 'grid';
+        if(tabs[1]) tabs[1].classList.add('active');
+        if(tabs[0]) tabs[0].classList.remove('active');
+        localStorage.setItem('pantalla_activa', 'admin');
     }
 }
 
 function controlarOtro(valor) {
     const segmentoOtro = document.getElementById('segmento-otro');
-    segmentoOtro.style.display = (valor === 'Otro') ? 'block' : 'none';
+    if(segmentoOtro) segmentoOtro.style.display = (valor === 'Otro') ? 'block' : 'none';
 }
 
 function confirmarSalida() {
     if (confirm("¿Deseas cerrar la sesión?")) {
-        localStorage.removeItem('pantalla_activa'); // Borramos el recuerdo al salir
+        localStorage.removeItem('pantalla_activa'); 
         window.location.reload(); 
     }
 }

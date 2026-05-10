@@ -1,32 +1,35 @@
-// 1. CONFIGURACIÓN (Aquí pones tus llaves de Supabase)
+// 1. CONFIGURACIÓN (Tus llaves de Supabase)
 const supabaseUrl = 'https://zezcmftcbbzplhtdqotd.supabase.co'; 
 const supabaseKey = 'sb_publishable_bNaRcykfZaVdW67HsEf3Tw_rWemQCui';
 const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-// --- LÓGICA DE PERSISTENCIA (NUEVO) ---
-// Esta función revisa si ya habías iniciado sesión antes de refrescar
-function verificarSesionAlCargar() {
+// --- LÓGICA DE PERSISTENCIA (Para que no se salga al refrescar) ---
+function verificarSesionSegura() {
     const sesion = localStorage.getItem('sesion_activa');
-    if (sesion) {
-        // Si existe la sesión, ocultamos el registro y mostramos el sistema
-        document.getElementById('pantalla-registro').style.display = 'none';
-        document.getElementById('sistema-principal').style.display = 'flex';
-        
-        // Si el usuario era admin, mantenemos su rol
-        if (sesion === 'admin') {
-            if (typeof rolActual !== 'undefined') rolActual = 'admin';
-            if (typeof mostrarLeyendaAdmin === 'function') mostrarLeyendaAdmin();
-        }
-        
-        // Inicializamos el mapa si la función existe
-        if (typeof inicializarMapa === 'function') inicializarMapa();
+    
+    if (sesion === 'usuario') {
+        // En teléfonos, a veces los elementos tardan en aparecer, por eso usamos setInterval
+        const checkExistencia = setInterval(function() {
+            const reg = document.getElementById('pantalla-registro');
+            const sis = document.getElementById('sistema-principal');
+            
+            if (reg && sis) {
+                reg.style.display = 'none';
+                sis.style.display = 'flex';
+                
+                // Si tienes la función para cargar el mapa, la ejecutamos
+                if (typeof inicializarMapa === 'function') inicializarMapa();
+                
+                clearInterval(checkExistencia);
+            }
+        }, 100); 
     }
 }
 
-// Ejecutar la revisión apenas cargue la página
-window.addEventListener('load', verificarSesionAlCargar);
+// Ejecutar la revisión apenas cargue el script
+verificarSesionSegura();
 
-// 2. FUNCIÓN PARA GUARDAR (Tu función original mejorada con persistencia)
+// 2. FUNCIÓN PARA GUARDAR
 async function guardarDatos(event) {
     event.preventDefault(); 
 
@@ -49,39 +52,29 @@ async function guardarDatos(event) {
         console.error("Hubo un error:", error.message);
         alert("Error: " + error.message);
     } else {
-        // MARCAMOS LA SESIÓN COMO ACTIVA ANTES DE ENTRAR
+        // --- GUARDAMOS LA SESIÓN AQUÍ ---
         localStorage.setItem('sesion_activa', 'usuario');
-        
+
         alert("¡Excelente! Registro guardado o actualizado con éxito.");
+
+        // Cambiamos la vista manualmente después del registro exitoso
+        document.getElementById('pantalla-registro').style.display = 'none';
+        document.getElementById('sistema-principal').style.display = 'flex';
         
-        // Llamamos a tu animación si existe
-        if (typeof reproducirAnimacion === 'function') {
-            reproducirAnimacion('usuario');
-        }
+        if (typeof inicializarMapa === 'function') inicializarMapa();
     }
 }
 
 // 3. CONECTAR EL FORMULARIO
 document.getElementById('form-registro').addEventListener('submit', guardarDatos);
 
-// 4. FUNCIÓN PARA CERRAR SESIÓN Y LIMPIAR EL RASTRO (NUEVO)
-// Así, al darle a salir, el LocalStorage se limpia y pedirá registro de nuevo
-function confirmarSalidaSegura() {
-    const comunaSeleccionada = document.getElementById('selectComuna')?.value;
+// 4. BOTÓN DE ESTADO (Para probar en el teléfono)
+const btnEspia = document.createElement('button');
+btnEspia.innerText = "🔍 ESTADO";
+btnEspia.style = "position:fixed; bottom:10px; left:10px; z-index:9999; background:rgba(0,0,0,0.8); color:white; font-size:10px; padding:8px; border-radius:5px; border:none;";
+document.body.appendChild(btnEspia);
 
-    if (!comunaSeleccionada || comunaSeleccionada === "") {
-        alert("⚠️ ERROR: Debe seleccionar obligatoriamente una COMUNA antes de salir.");
-        return;
-    }
-
-    if (confirm(`¿Confirma que desea guardar y salir?`)) {
-        // LIMPIAMOS EL LOCAL STORAGE PARA QUE NO ENTRE AUTOMÁTICAMENTE
-        localStorage.removeItem('sesion_activa'); 
-        
-        if (typeof publicarMapaAdmin === 'function') publicarMapaAdmin();
-        
-        setTimeout(() => {
-            window.location.reload();
-        }, 500);
-    }
-}
+btnEspia.onclick = function() {
+    const sesion = localStorage.getItem('sesion_activa');
+    alert("Sesión en este teléfono: " + (sesion ? sesion : "VACÍA (null)"));
+};

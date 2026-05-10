@@ -1,37 +1,40 @@
-// 1. CONFIGURACIÓN (Tus llaves de Supabase)
+// 1. CONFIGURACIÓN
 const supabaseUrl = 'https://zezcmftcbbzplhtdqotd.supabase.co'; 
 const supabaseKey = 'sb_publishable_bNaRcykfZaVdW67HsEf3Tw_rWemQCui';
 const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-// --- LÓGICA DE PERSISTENCIA (Para que no se salga al refrescar) ---
+// 2. FUNCIÓN DE SALTO AUTOMÁTICO (REVISADA)
 function verificarSesionSegura() {
     const sesion = localStorage.getItem('sesion_activa');
-    
-    if (sesion === 'usuario') {
-        // En teléfonos, a veces los elementos tardan en aparecer, por eso usamos setInterval
-        const checkExistencia = setInterval(function() {
+    if (sesion) {
+        console.log("Sesión detectada, intentando saltar registro...");
+        
+        const intervalo = setInterval(() => {
             const reg = document.getElementById('pantalla-registro');
             const sis = document.getElementById('sistema-principal');
-            
+
             if (reg && sis) {
                 reg.style.display = 'none';
                 sis.style.display = 'flex';
-                
-                // Si tienes la función para cargar el mapa, la ejecutamos
                 if (typeof inicializarMapa === 'function') inicializarMapa();
-                
-                clearInterval(checkExistencia);
+                clearInterval(intervalo);
             }
-        }, 100); 
+        }, 100);
+
+        // Si después de 3 segundos no encuentra los IDs, te avisa el error
+        setTimeout(() => {
+            clearInterval(intervalo);
+            if (!document.getElementById('pantalla-registro')) {
+                alert("⚠️ Error: No encontré el ID 'pantalla-registro' en tu HTML");
+            }
+        }, 3000);
     }
 }
-
-// Ejecutar la revisión apenas cargue el script
 verificarSesionSegura();
 
-// 2. FUNCIÓN PARA GUARDAR
+// 3. FUNCIÓN PARA GUARDAR
 async function guardarDatos(event) {
-    event.preventDefault(); 
+    event.preventDefault();
 
     const datos = {
         nombre: document.getElementById('nombres').value,
@@ -49,32 +52,28 @@ async function guardarDatos(event) {
         .upsert(datos, { onConflict: 'correo' });
 
     if (error) {
-        console.error("Hubo un error:", error.message);
-        alert("Error: " + error.message);
+        alert("Error Supabase: " + error.message);
     } else {
-        // --- GUARDAMOS LA SESIÓN AQUÍ ---
+        // GUARDAR MEMORIA
         localStorage.setItem('sesion_activa', 'usuario');
-
-        alert("¡Excelente! Registro guardado o actualizado con éxito.");
-
-        // Cambiamos la vista manualmente después del registro exitoso
+        alert("¡Registro Exitoso! Ahora puedes refrescar y no se saldrá.");
+        
+        // Cambio de pantalla manual
         document.getElementById('pantalla-registro').style.display = 'none';
         document.getElementById('sistema-principal').style.display = 'flex';
-        
         if (typeof inicializarMapa === 'function') inicializarMapa();
     }
 }
 
-// 3. CONECTAR EL FORMULARIO
 document.getElementById('form-registro').addEventListener('submit', guardarDatos);
 
-// 4. BOTÓN DE ESTADO (Para probar en el teléfono)
-const btnEspia = document.createElement('button');
-btnEspia.innerText = "🔍 ESTADO";
-btnEspia.style = "position:fixed; bottom:10px; left:10px; z-index:9999; background:rgba(0,0,0,0.8); color:white; font-size:10px; padding:8px; border-radius:5px; border:none;";
-document.body.appendChild(btnEspia);
+// 4. BOTÓN DE ESTADO FORZADO (ESTILO VISIBLE)
+const btn = document.createElement('button');
+btn.innerHTML = "VER MEMORIA";
+btn.setAttribute('style', 'position:fixed !important; bottom:20px !important; left:20px !important; z-index:999999 !important; background:red !important; color:white !important; padding:15px !important; border-radius:10px !important;');
+document.body.appendChild(btn);
 
-btnEspia.onclick = function() {
-    const sesion = localStorage.getItem('sesion_activa');
-    alert("Sesión en este teléfono: " + (sesion ? sesion : "VACÍA (null)"));
+btn.onclick = function() {
+    const s = localStorage.getItem('sesion_activa');
+    alert("Dato en memoria: " + s);
 };

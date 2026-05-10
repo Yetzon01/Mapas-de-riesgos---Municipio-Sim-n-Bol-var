@@ -8,12 +8,11 @@ const supabaseUrl = 'https://zezcmftcbbzplhtdqotd.supabase.co';
 const supabaseKey = 'sb_publishable_bNaRcykfZaVdW67HsEf3Tw_rWemQCui';
 const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-// --- LÓGICA DE PERSISTENCIA ACTUALIZADA ---
+// --- LÓGICA DE PERSISTENCIA (PARA NO PERDER EL AVANCE AL REFRESCAR) ---
 window.addEventListener('load', () => {
     const estadoGuardado = localStorage.getItem('pantalla_activa');
 
     if (estadoGuardado === 'sistema-principal') {
-        // Mantiene la sesión abierta al refrescar
         const pantallaReg = document.getElementById('pantalla-registro');
         const sistemaPrinc = document.getElementById('sistema-principal');
         if(pantallaReg) pantallaReg.style.display = 'none';
@@ -37,12 +36,13 @@ function verificarCorreo() {
 }
 
 function limpiarSiVacio(valor) {
-    if (valor === "" && document.getElementById('campos-dinamicos-registro')) {
-        document.getElementById('campos-dinamicos-registro').style.display = 'none';
+    const camposDinamicos = document.getElementById('campos-dinamicos-registro');
+    if (valor === "" && camposDinamicos) {
+        camposDinamicos.style.display = 'none';
     }
 }
 
-// 3. FUNCIÓN PARA GUARDAR (CORREGIDA PARA EVITAR EL ERROR ON CONFLICT)
+// 3. FUNCIÓN PARA GUARDAR (CORREGIDA: SIN ERROR DE CONFLICTO)
 async function registrarVocero() {
     const datos = {
         correo: document.getElementById('regCor').value,
@@ -58,16 +58,16 @@ async function registrarVocero() {
     };
 
     try {
-        // CAMBIO CLAVE: Se usa .insert() en lugar de .upsert() para permitir múltiples registros
+        // USAMOS .insert PARA PERMITIR MÚLTIPLES REGISTROS Y EVITAR EL ERROR DE LA FOTO
         const { data, error } = await _supabase
             .from('registross_voceros') 
-            .insert([datos]); // Eliminada la cláusula onConflict que causaba el error
+            .insert([datos]); 
 
         if (error) throw error;
 
         alert("¡Registro exitoso! Bienvenido al sistema.");
 
-        // Guardamos el estado para que no se salga al refrescar
+        // Guardamos el estado para mantener la pantalla al refrescar
         localStorage.setItem('pantalla_activa', 'sistema-principal');
 
         document.getElementById('pantalla-registro').style.display = 'none';
@@ -79,7 +79,7 @@ async function registrarVocero() {
     }
 }
 
-// 4. LÓGICA DE INTERFAZ
+// 4. LÓGICA DE INTERFAZ (TUS AVANCES MANTENIDOS)
 function cambiarSeccion(tipo) {
     const formReg = document.getElementById('form-registro-principal');
     const formAdmin = document.getElementById('form-admin-acceso');

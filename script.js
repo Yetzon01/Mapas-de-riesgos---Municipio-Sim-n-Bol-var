@@ -3,11 +3,33 @@ const supabaseUrl = 'https://zezcmftcbbzplhtdqotd.supabase.co';
 const supabaseKey = 'sb_publishable_bNaRcykfZaVdW67HsEf3Tw_rWemQCui';
 const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-// 2. FUNCIÓN PARA GUARDAR
-async function guardarDatos(event) {
-    event.preventDefault(); // Esto evita que la página se recargue sola
+// --- LÓGICA DE PERSISTENCIA (NUEVO) ---
+// Esta función revisa si ya habías iniciado sesión antes de refrescar
+function verificarSesionAlCargar() {
+    const sesion = localStorage.getItem('sesion_activa');
+    if (sesion) {
+        // Si existe la sesión, ocultamos el registro y mostramos el sistema
+        document.getElementById('pantalla-registro').style.display = 'none';
+        document.getElementById('sistema-principal').style.display = 'flex';
+        
+        // Si el usuario era admin, mantenemos su rol
+        if (sesion === 'admin') {
+            if (typeof rolActual !== 'undefined') rolActual = 'admin';
+            if (typeof mostrarLeyendaAdmin === 'function') mostrarLeyendaAdmin();
+        }
+        
+        // Inicializamos el mapa si la función existe
+        if (typeof inicializarMapa === 'function') inicializarMapa();
+    }
+}
 
-    // Recolectamos lo que el usuario escribió
+// Ejecutar la revisión apenas cargue la página
+window.addEventListener('load', verificarSesionAlCargar);
+
+// 2. FUNCIÓN PARA GUARDAR (Tu función original mejorada con persistencia)
+async function guardarDatos(event) {
+    event.preventDefault(); 
+
     const datos = {
         nombre: document.getElementById('nombres').value,
         apellido: document.getElementById('apellidos').value,
@@ -19,8 +41,6 @@ async function guardarDatos(event) {
         voceria: document.getElementById('voceria').value
     };
 
-    // EL TRUCO MÁGICO: .upsert en lugar de .insert
-    // Esto le dice a Supabase: "Si el correo ya existe, cámbiale los datos pero no des error"
     const { data, error } = await _supabase
         .from('registross_voceros') 
         .upsert(datos, { onConflict: 'correo' });
@@ -29,10 +49,39 @@ async function guardarDatos(event) {
         console.error("Hubo un error:", error.message);
         alert("Error: " + error.message);
     } else {
+        // MARCAMOS LA SESIÓN COMO ACTIVA ANTES DE ENTRAR
+        localStorage.setItem('sesion_activa', 'usuario');
+        
         alert("¡Excelente! Registro guardado o actualizado con éxito.");
+        
+        // Llamamos a tu animación si existe
+        if (typeof reproducirAnimacion === 'function') {
+            reproducirAnimacion('usuario');
+        }
     }
 }
 
 // 3. CONECTAR EL FORMULARIO
-// Asegúrate de que en tu HTML el <form> tenga id="form-registro"
 document.getElementById('form-registro').addEventListener('submit', guardarDatos);
+
+// 4. FUNCIÓN PARA CERRAR SESIÓN Y LIMPIAR EL RASTRO (NUEVO)
+// Así, al darle a salir, el LocalStorage se limpia y pedirá registro de nuevo
+function confirmarSalidaSegura() {
+    const comunaSeleccionada = document.getElementById('selectComuna')?.value;
+
+    if (!comunaSeleccionada || comunaSeleccionada === "") {
+        alert("⚠️ ERROR: Debe seleccionar obligatoriamente una COMUNA antes de salir.");
+        return;
+    }
+
+    if (confirm(`¿Confirma que desea guardar y salir?`)) {
+        // LIMPIAMOS EL LOCAL STORAGE PARA QUE NO ENTRE AUTOMÁTICAMENTE
+        localStorage.removeItem('sesion_activa'); 
+        
+        if (typeof publicarMapaAdmin === 'function') publicarMapaAdmin();
+        
+        setTimeout(() => {
+            window.location.reload();
+        }, 500);
+    }
+}

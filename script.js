@@ -1,38 +1,39 @@
-// 1. CONFIGURACIÓN (Aquí pones tus llaves de Supabase)
-const supabaseUrl = 'https://zezcmftcbbzplhtdqotd.supabase.co'; 
-const supabaseKey = 'sb_publishable_bNaRcykfZaVdW67HsEf3Tw_rWemQCui';
-const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+async function manejarAcceso(event) {
+    event.preventDefault();
 
-// 2. FUNCIÓN PARA GUARDAR
-async function guardarDatos(event) {
-    event.preventDefault(); // Esto evita que la página se recargue sola
+    const correoIngresado = document.getElementById('correo-electronico').value;
+    
+    // 1. INTENTAMOS BUSCAR SI EL VOCERO YA EXISTE
+    let { data: voceroExistente, error: errorBusqueda } = await _supabase
+        .from('registross_voceros')
+        .select('*')
+        .eq('correo', correoIngresado)
+        .single(); // Esto busca un solo registro
 
-    // Recolectamos lo que el usuario escribió
-    const datos = {
-        nombre: document.getElementById('nombres').value,
-        apellido: document.getElementById('apellidos').value,
-        cedula_de_identidad: document.getElementById('cedula-de-identidad').value,
-        telefono: document.getElementById('telefono').value,
-        correo: document.getElementById('correo-electronico').value,
-        sector: document.getElementById('sector').value,
-        comuna: document.getElementById('comuna').value,
-        voceria: document.getElementById('voceria').value
-    };
-
-    // EL TRUCO MÁGICO: .upsert en lugar de .insert
-    // Esto le dice a Supabase: "Si el correo ya existe, cámbiale los datos pero no des error"
-    const { data, error } = await _supabase
-        .from('registross_voceros') 
-        .upsert(datos, { onConflict: 'correo' });
-
-    if (error) {
-        console.error("Hubo un error:", error.message);
-        alert("Error: " + error.message);
+    if (voceroExistente) {
+        // CASO A: EL VOCERO YA EXISTE (LOGIN)
+        alert("¡Bienvenido de nuevo, " + voceroExistente.nombre + "!");
+        // Aquí puedes redireccionarlo a otra página o mostrar el mapa
+        // window.location.href = "dashboard.html"; 
     } else {
-        alert("¡Excelente! Registro guardado o actualizado con éxito.");
+        // CASO B: EL VOCERO NO EXISTE (REGISTRO)
+        const nuevosDatos = {
+            nombre: document.getElementById('nombres').value,
+            apellido: document.getElementById('apellidos').value,
+            correo: correoIngresado,
+            cedula_de_identidad: document.getElementById('cedula-de-identidad').value,
+            comuna: document.getElementById('comuna').value
+            // ... agrega los demás campos aquí
+        };
+
+        const { error: errorInsert } = await _supabase
+            .from('registross_voceros')
+            .insert([nuevosDatos]);
+
+        if (errorInsert) {
+            alert("Error al registrar: " + errorInsert.message);
+        } else {
+            alert("Registro exitoso. ¡Bienvenido por primera vez!");
+        }
     }
 }
-
-// 3. CONECTAR EL FORMULARIO
-// Asegúrate de que en tu HTML el <form> tenga id="form-registro"
-document.getElementById('form-registro').addEventListener('submit', guardarDatos) 

@@ -35,4 +35,4 @@ async function guardarDatos(event) {
 
 // 3. CONECTAR EL FORMULARIO
 // Asegúrate de que en tu HTML el <form> tenga id="form-registro"
-document.getElementById('form-registro').addEventListener('submit', guardarDatos);
+document.getElementById('form-registro').addEventListener('submit', guardarDatos) 

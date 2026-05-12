@@ -1,33 +1,27 @@
-async function guardarOEntrar(event) {
+async function guardarDatos(event) {
     event.preventDefault();
 
-    const email = document.getElementById('correo-electronico').value.trim();
     const datos = {
         nombre: document.getElementById('nombres').value,
         apellido: document.getElementById('apellidos').value,
         cedula_de_identidad: document.getElementById('cedula-de-identidad').value,
         telefono: document.getElementById('telefono').value,
-        correo: email,
+        correo: document.getElementById('correo-electronico').value,
         sector: document.getElementById('sector').value,
         comuna: document.getElementById('comuna').value,
         voceria: document.getElementById('voceria').value
     };
 
-    // 1. Buscamos si ya existe el correo
-    const { data: existe } = await _supabase
-        .from('registross_voceros')
-        .select('id')
-        .eq('correo', email)
-        .maybeSingle();
+    // INSERT puro: Directo a la base de datos sin restricciones
+    const { data, error } = await _supabase
+        .from('registross_voceros') 
+        .insert([datos]);
 
-    if (existe) {
-        // 2. Si ya existe, ACTUALIZAMOS su información
-        await _supabase.from('registross_voceros').update(datos).eq('correo', email);
-        alert("¡Datos actualizados con éxito!");
+    if (error) {
+        console.error("Error:", error.message);
+        alert("Lo sentimos, hubo un detalle técnico: " + error.message);
     } else {
-        // 3. Si es nuevo, lo INSERTAMOS
-        await _supabase.from('registross_voceros').insert([datos]);
-        alert("¡Registro exitoso por primera vez!");
+        alert("¡Registro guardado con éxito! Gracias por tu participación.");
+        event.target.reset(); // Esto limpia el formulario para el siguiente
     }
 }
- 

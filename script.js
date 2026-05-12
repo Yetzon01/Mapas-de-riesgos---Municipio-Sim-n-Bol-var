@@ -1,29 +1,33 @@
-async function accesoSeguro(event) {
+async function guardarOEntrar(event) {
     event.preventDefault();
 
     const email = document.getElementById('correo-electronico').value.trim();
-    const nombre = document.getElementById('nombres').value;
+    const datos = {
+        nombre: document.getElementById('nombres').value,
+        apellido: document.getElementById('apellidos').value,
+        cedula_de_identidad: document.getElementById('cedula-de-identidad').value,
+        telefono: document.getElementById('telefono').value,
+        correo: email,
+        sector: document.getElementById('sector').value,
+        comuna: document.getElementById('comuna').value,
+        voceria: document.getElementById('voceria').value
+    };
 
-    // 1. Intentamos actualizar primero
-    const { data, error } = await _supabase
+    // 1. Buscamos si ya existe el correo
+    const { data: existe } = await _supabase
         .from('registross_voceros')
-        .update({ nombre: nombre, /* agrega los otros campos aquí */ })
+        .select('id')
         .eq('correo', email)
-        .select();
+        .maybeSingle();
 
-    // 2. Si el resultado está vacío, es que el correo NO existe, entonces lo creamos
-    if (data.length === 0) {
-        const { error: insertError } = await _supabase
-            .from('registross_voceros')
-            .insert([{ correo: email, nombre: nombre /* y los demás */ }]);
-        
-        if (insertError) {
-            alert("Error al registrar: " + insertError.message);
-        } else {
-            alert("¡Registrado con éxito!");
-        }
+    if (existe) {
+        // 2. Si ya existe, ACTUALIZAMOS su información
+        await _supabase.from('registross_voceros').update(datos).eq('correo', email);
+        alert("¡Datos actualizados con éxito!");
     } else {
-        alert("¡Acceso concedido! Bienvenido " + nombre);
+        // 3. Si es nuevo, lo INSERTAMOS
+        await _supabase.from('registross_voceros').insert([datos]);
+        alert("¡Registro exitoso por primera vez!");
     }
 }
  

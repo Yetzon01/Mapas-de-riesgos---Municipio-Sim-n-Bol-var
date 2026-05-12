@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>SIG Ecosocial - Municipio Simón Bolívar</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        /* Estilos base mantenidos */
+        :root { 
+            --v-lime: #B4D445; 
+            --v-deep: #135242; 
+            --negro-card: rgba(20, 22, 21, 0.98);
+            --v-osc: #135242;
+            --v-lim: #B4D445;
+            --negro: #1a1c1b;
+        }
+
+        * { box-sizing: border-box; }
+        body, html { margin: 0; height: 100%; font-family: 'Segoe UI', sans-serif; background: #000; overflow: hidden; }
+
+        #pantalla-registro {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, var(--v-lime) 0%, var(--v-deep) 100%);
+            z-index: 5000; display: flex; align-items: center; justify-content: center;
+        }
+
+        .card-registro {
+            background: var(--negro-card); border: 2px solid var(--v-lime);
+            width: 650px; padding: 40px; border-radius: 25px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.5); text-align: center;
+        }
+
+        #video-contenedor {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 6000; display: none;
+            align-items: center; justify-content: center;
+        }
+        #animacion-video { width: 100%; height: 100%; object-fit: cover; }
+
+        .logos-registro { display: flex; justify-content: space-between; margin-bottom: 20px; height: 110px; }
+        .logo-wrapper { flex: 0 0 160px; height: 110px; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        .logos-registro img { width: 100%; height: 100%; object-fit: contain; transform: scale(2.0); }
+
+        .tabs-acceso { display: flex; justify-content: center; gap: 20px; margin-bottom: 25px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .tab-btn { background: none; border: none; color: #666; cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 12px; transition: 0.3s; padding: 5px 10px; }
+        .tab-btn.active { color: var(--v-lime); border-bottom: 2px solid var(--v-lime); }
+
+        h2 { margin: 0; font-size: 24px; color: #fff; text-transform: uppercase; letter-spacing: 1px; }
+        .subtitle { color: var(--v-lime); font-size: 13px; margin-bottom: 30px; font-weight: bold; text-transform: uppercase; }
+
+        .form-registro, .form-admin { text-align: left; display: grid; gap: 15px; }
+        .form-admin { display: none; }
+        .form-row { display: flex; gap: 15px; }
+        .form-group { flex: 1; }
+
+        #campos-dinamicos-registro { display: none; flex-direction: column; gap: 15px; }
+
+        label { font-size: 11px; color: var(--v-lime); text-transform: uppercase; font-weight: 800; margin-bottom: 5px; display: block; }
+
+        input, select { 
+            width: 100%; background: #111; border: 1px solid #333; color: white; 
+            padding: 12px; border-radius: 8px; outline: none; font-size: 14px; 
+            transition: 0.3s;
+        }
+
+        input:focus, select:focus { border-color: var(--v-lime); background: #1a1a1a; }
+
+        #segmento-otro { display: none; margin-top: 5px; border-left: 3px solid var(--v-lime); padding-left: 15px; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .btn-acceder {
+            background: var(--v-lime); color: var(--v-deep); border: none;
+            padding: 16px; border-radius: 10px; font-weight: 900; cursor: pointer;
+            font-size: 15px; margin-top: 20px; text-transform: uppercase; width: 100%;
+            box-shadow: 0 5px 15px rgba(180, 212, 69, 0.2);
+        }
+        .btn-acceder:hover { background: #fff; transform: translateY(-2px); }
+
+        .btn-verificar {
+            background: transparent; color: var(--v-lime); border: 1px solid var(--v-lime);
+            padding: 8px; border-radius: 8px; font-size: 10px; cursor: pointer; font-weight: bold;
+            margin-top: 5px; width: auto; align-self: flex-end;
+        }
+
+        #sistema-principal { display: none; width: 100vw; height: 100vh; flex-direction: column; background: #111; color: white; }
+
+        #header { height: 130px; background: var(--v-osc); border-bottom: 5px solid var(--v-lim); position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; flex-shrink: 0; }
+        .logo-box { position: absolute; top: 50%; transform: translateY(-50%); width: 260px; height: 120px; display: flex; align-items: center; justify-content: center; }
+        .logo-left { left: 20px; } .logo-right { right: 20px; }
+        .logo-box img { width: 100%; height: 100%; object-fit: contain; }
+        #titulo-principal { font-size: 22px; font-weight: 800; color: #FFFFFF; text-transform: uppercase; margin-bottom: 5px; }
+
+        #contenedor { display: flex; flex-grow: 1; overflow: hidden; }
+        #sidebar { width: 440px; background: var(--negro); color: white; padding: 15px; overflow-y: auto; border-right: 2px solid #333; transition: margin-left 0.3s ease; }
+
+        h4 { color: var(--v-lim); font-size: 11px; text-transform: uppercase; margin: 15px 0 8px 0; border-bottom: 1px solid #444; padding-bottom: 4px; letter-spacing: 1px; }
+        .grid-datos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .sidebar-form-group { margin-bottom: 8px; }
+        .sidebar-label { display: block; font-size: 9px; color: #888; margin-bottom: 2px; text-transform: uppercase; }
+        .sidebar-input, .sidebar-select { width: 100%; background: #222; border: 1px solid #444; color: white; padding: 6px 8px; font-size: 11px; border-radius: 4px; outline: none; }
+
+        .fila-historia { border-bottom: 1px solid #333; display: flex; align-items: center; gap: 5px; padding: 4px 0; }
+        .col-anio { width: 60px; background: #111 !important; border-radius: 4px; }
+        .col-suceso { flex-grow: 1; }
+        .btn-del-hist { background: transparent; color: #ff4444; border: none; cursor: pointer; font-size: 14px; padding: 0 5px; }
+        .btn-add-hist { background: var(--v-osc); color: var(--v-lim); border: 1px solid var(--v-lim); border-radius: 4px; padding: 4px 10px; cursor: pointer; font-size: 10px; margin-top: 5px; width: 100%; }
+
+        .btn-mapa { width: 100%; padding: 8px; margin: 2px 0; background: #252827; color: white; border: 1px solid #444; border-radius: 6px; cursor: pointer; text-align: left; font-size: 10.5px; display: flex; align-items: center; justify-content: space-between; }
+        .btn-mapa div { display: flex; align-items: center; gap: 8px; }
+        .count-badge { background: #333; color: var(--v-lim); padding: 2px 6px; border-radius: 10px; font-weight: bold; font-size: 10px; }
+        .btn-mapa.activo { background: var(--v-osc) !important; border-color: var(--v-lim); }
+
+        .map-icon-container { background: white !important; border-radius: 50% !important; display: flex !important; align-items: center !important; justify-content: center !important; border: none !important; box-shadow: 0 2px 4px rgba(0,0,0,0.4); width: 24px; height: 24px; font-size: 14px; position: relative; }
+        .cruz-roja { width: 16px; height: 16px; position: relative; }
+        .cruz-roja::before, .cruz-roja::after { content: ''; position: absolute; background: #ff0000; border-radius: 2px; }
+        .cruz-roja::before { width: 100%; height: 4px; top: 6px; left: 0; }
+        .cruz-roja::after { width: 4px; height: 100%; top: 0; left: 6px; }
+
+        .btn-delete-popup { background: #ff4444; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 10px; margin-top: 5px; width: 100%; }
+        .popup-desc { font-weight: bold; color: #333; font-size: 12px; margin-bottom: 5px; display: block; border-bottom: 1px solid #ccc; padding-bottom: 3px; }
+
+        #map-container { flex-grow: 1; position: relative; background: #1a1a1a; }
+        #map { width: 100%; height: 100%; }
+
+        .controles-mapa-horiz { position: absolute; top: 15px; left: 60px; z-index: 2000; display: flex; flex-direction: row; gap: 8px; }
+        .btn-float { width: 42px; height: 42px; background: white; border: none; border-radius: 50%; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .btn-float.activo-float { background: var(--v-lim); border: 2px solid var(--v-osc); }
+
+        #btnFinalizar { display: none; background: #4CAF50; color: white; font-size: 22px; border: 2px solid white; }
+
+        .zoom-preciso-panel { position: absolute; top: 15px; right: 15px; z-index: 2000; background: white; padding: 10px; border-radius: 8px; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: 2px solid var(--v-osc); }
+        .zoom-preciso-panel input[type="range"] { cursor: pointer; width: 120px; accent-color: var(--v-osc); }
+        .zoom-preciso-panel div { display: flex; align-items: center; gap: 5px; }
+        .zoom-preciso-panel input[type="text"] { width: 50px; padding: 4px; border: 1px solid #ccc; text-align: center; font-size: 11px; font-weight: bold; border-radius: 4px; color: black; }
+        .zoom-preciso-panel span { font-size: 10px; font-weight: bold; color: var(--v-osc); }
+
+        #panel-admin-comunas { display: none; width: 440px; background: var(--negro); color: white; padding: 15px; overflow-y: auto; border-right: 2px solid #333; }
+        .item-comuna-admin { background: #222; border: 1px solid #444; border-radius: 8px; padding: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.3s; }
+        .item-comuna-admin:hover { border-color: var(--v-lim); background: #2a2a2a; }
+        .comuna-nombre { font-size: 10px; font-weight: bold; color: #fff; text-transform: uppercase; flex: 1; padding-right: 10px; }
+        .badge-mapas { background: var(--v-lim); color: var(--v-osc); padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: 900; }
+        .btn-volver-admin { background: #444; color: #fff; border: none; padding: 8px; border-radius: 5px; font-size: 10px; cursor: pointer; margin-bottom: 10px; width: 100%; font-weight: bold; }
+
+        #panel-voceros-lista { position: fixed; bottom: 20px; right: 20px; width: 90%; max-height: 450px; background: var(--negro-card); border: 2px solid var(--v-lim); z-index: 4000; border-radius: 15px; display: none; flex-direction: column; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        .header-panel-v { background: var(--v-osc); padding: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .table-container { overflow-x: auto; overflow-y: auto; flex-grow: 1; padding: 10px; }
+        table { width: 100%; border-collapse: collapse; color: white; font-size: 11px; min-width: 1000px; }
+        th { background: #333; color: var(--v-lim); text-align: left; padding: 8px; border-bottom: 2px solid var(--v-lim); position: sticky; top: 0; }
+        td { padding: 6px 8px; border-bottom: 1px solid #444; border-right: 1px solid #333; }
+        .editable-cell:focus { background: rgba(180, 212, 69, 0.2); outline: 1px solid var(--v-lim); }
+        .btn-close-panel { background: red; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; padding: 5px 10px; }
+    </style>
+</head>
+<body>
+
+<div id="video-contenedor">
+    <video id="animacion-video" muted>
+        <source src="video.mp4" type="video/mp4">
+    </video>
+</div>
+
+<div id="pantalla-registro">
+    <div class="card-registro">
+        <div class="logos-registro">
+            <div class="logo-wrapper"><img src="logo1.png.png" alt="Logo 1"></div>
+            <div class="logo-wrapper"><img src="logo2.png.png" alt="Logo 2"></div>
+        </div>
+
+        <h2>SISTEMA DE GESTIÓN</h2>
+        <p class="subtitle">Municipio Simón Bolívar</p>
+
+        <div class="tabs-acceso">
+            <button class="tab-btn active" onclick="cambiarSeccion('registro')">Registro Vocero</button>
+            <button class="tab-btn" onclick="cambiarSeccion('admin')">Administrador</button>
+        </div>
+
+        <form id="form-registro-principal" class="form-registro" onsubmit="event.preventDefault(); registrarVocero();">
+            <div class="form-group">
+                <label>Correo Electrónico</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="email" id="regCor" placeholder="ejemplo@correo.com" required oninput="limpiarSiVacio(this.value)" onblur="verificarCorreo()">
+                    <button type="button" class="btn-verificar" onclick="verificarCorreo()">VERIFICAR</button>
+                </div>
+            </div>
+
+            <div id="campos-dinamicos-registro">
+                <div class="form-row">
+                    <div class="form-group"><label>Nombres</label><input type="text" id="regNom" required></div>
+                    <div class="form-group"><label>Apellidos</label><input type="text" id="regApe" required></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Cédula de Identidad</label><input type="text" id="regCed" required></div>
+                    <div class="form-group"><label>Teléfono</label><input type="tel" id="regTel" required></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Comuna</label><input type="text" id="regCom" required></div>
+                    <div class="form-group"><label>Sector</label><input type="text" id="regSec" required></div>
+                </div>
+                <div class="form-group">
+                    <label>Vocería a la que pertenece</label>
+                    <select id="selectVoceria" onchange="controlarOtro(this.value)">
+                        <option value="" disabled selected>Seleccione una opción</option>
+                        <option value="Vocero de Ecosocialismo">Vocero de Ecosocialismo</option>
+                        <option value="Otro">Otro (Especificar)</option>
+                    </select>
+                </div>
+                <div id="segmento-otro">
+                    <label>Especifique su Vocería</label>
+                    <input type="text" id="inputOtro" placeholder="¿Cuál es su vocería?">
+                </div>
+                <button type="submit" class="btn-acceder" id="btnRegistrar">INGRESAR Y GUARDAR REGISTRO</button>
+            </div>
+        </form>
+
+        <form id="form-admin-acceso" class="form-admin" onsubmit="event.preventDefault(); validarAdmin();">
+            <div class="form-group"><label>Correo Administrativo</label><input type="email" id="adminEmail" placeholder="admin@bolivar.gob.ve" required></div>
+            <div class="form-group"><label>Contraseña</label><input type="password" id="adminPass" placeholder="••••••••" required></div>
+            <button type="submit" class="btn-acceder">INICIAR SESIÓN ADMIN</button>
+        </form>
+    </div>
+</div>
+
+<div id="sistema-principal">
+    <div id="header">
+        <div class="logo-box logo-left"><img src="logo1.png.png"></div>
+        <div id="titulo-principal">MAPA DE RIESGOS COMUNITARIOS</div>
+        <div style="color: #B4D445; font-size: 13px; font-weight: bold;">Municipio Simón Bolívar - Estado Anzoátegui</div>
+        <div class="logo-box logo-right"><img src="logo2.png.png"></div>
+    </div>
+
+    <div id="contenedor">
+        <div id="panel-admin-comunas">
+            <h4 style="color:var(--v-lim)">🛡️ PANEL DE CONTROL ADMINISTRATIVO</h4>
+            <button class="btn-acceder" style="margin-bottom: 15px; padding: 10px; font-size: 11px;" onclick="togglePanelVoceros()">📋 VER LISTADO DE VOCEROS REGISTRADOS</button>
+            <div style="font-size: 9px; color: #aaa; margin-bottom: 10px; text-transform: uppercase; font-weight: bold;">Historial de Mapas por Comuna</div>
+            <div id="lista-comunas-admin"></div>
+        </div>
+
+        <div id="sidebar">
+            <button id="btnVolverAdmin" class="btn-volver-admin" style="display:none" onclick="mostrarLeyendaAdmin()">⬅️ VOLVER AL PANEL ADMINISTRATIVO</button>
+            <h4>📍 Información Territorial</h4>
+            <div class="grid-datos">
+                <div class="sidebar-form-group"><label class="sidebar-label">Estado</label><input type="text" id="infoEstado" class="sidebar-input" value="ANZOÁTEGUI" readonly></div>
+                <div class="sidebar-form-group"><label class="sidebar-label">Municipio</label><input type="text" id="infoMunicipio" class="sidebar-input" value="SIMÓN BOLÍVAR" readonly></div>
+                <div class="sidebar-form-group"><label class="sidebar-label">Parroquia</label><input type="text" id="infoParroquia" class="sidebar-input" placeholder="..."></div>
+                <div class="sidebar-form-group" style="grid-column: span 2;">
+                    <label class="sidebar-label">Comuna</label>
+                    <select id="selectComuna" class="sidebar-select">
+                        <option value="">Cargando comunas...</option>
+                    </select>
+                </div>
+                <div class="sidebar-form-group"><label class="sidebar-label">Cant. Consejos Comunales</label><input type="number" id="infoCC" class="sidebar-input" value="0"></div>
+                <div class="sidebar-form-group"><label class="sidebar-label">Cant. de Calles</label><input type="number" id="infoCalles" class="sidebar-input" value="0"></div>
+                <div class="sidebar-form-group"><label class="sidebar-label">Asfaltadas</label><input type="number" id="infoAsf" class="sidebar-input" value="0"></div>
+                <div class="sidebar-form-group"><label class="sidebar-label">Sin Asfaltar</label><input type="number" id="infoNoAsf" class="sidebar-input" value="0"></div>
+                <div class="sidebar-form-group" style="grid-column: span 2;"><label class="sidebar-label">Sector</label><input type="text" id="infoSector" class="sidebar-input" placeholder="..."></div>
+            </div>
+
+            <h4>⏳ Antecedentes Históricos</h4>
+            <div id="lista-antecedentes"></div>
+            <button class="btn-add-hist" onclick="agregarFilaHistoria()">+ AGREGAR ANTECEDENTE</button>
+
+            <!-- Botones de mapa y gestión forestal se mantienen igual... -->
+            <h4>🚩 Factores de Vulnerabilidad</h4>
+            <button class="btn-mapa" onclick="cambiarEmoji('🤰',this,'vuln_emb')"><div>🤰 Mujer Embarazada</div> <span class="count-badge" id="count-vuln_emb">0</span></button>
+            <button class="btn-mapa" onclick="cambiarEmoji('♿',this,'vuln_disc')"><div>♿ Pers. con Discapacidad</div> <span class="count-badge" id="count-vuln_disc">0</span></button>
+            <button class="btn-mapa" onclick="cambiarEmoji('👶',this,'vuln_nino')"><div>👶 Niños y Niñas</div> <span class="count-badge" id="count-vuln_nino">0</span></button>
+            <button class="btn-mapa" onclick="cambiarEmoji('👴',this,'vuln_adult')"><div>👴 Adulto Mayor</div> <span class="count-badge" id="count-vuln_adult">0</span></button>
+            
+            <h4>⚠️ Riesgos Ambientales</h4>
+            <button class="btn-mapa" onclick="cambiarEmoji('🌊',this,'inund')"><div>🌊 Zona Inundable</div> <span class="count-badge" id="count-inund">0</span></button>
+            <button class="btn-mapa" onclick="cambiarEmoji('🗑️',this,'basura')"><div>🗑️ Foco Crítico (Basura)</div> <span class="count-badge" id="count-basura">0</span></button>
+
+            <div style="margin-top: 30px; padding: 15px; border-top: 1px dashed var(--v-lim);">
+                <button class="btn-acceder" style="background: #e74c3c; color: white; margin-top: 0;" onclick="confirmarSalidaSegura()">
+                    💾 GUARDAR CAMBIOS Y SALIR
+                </button>
+            </div>
+            
+            <button class="btn-mapa" style="background:var(--v-lim); color:var(--v-osc); font-weight:bold; margin-top:5px;" onclick="window.print()">🖨️ EXPORTAR MAPA (PDF)</button>
+            <div style="height:50px;"></div>
+        </div>
+
+        <div id="map-container">
+            <div class="zoom-preciso-panel">
+                <span>ZOOM PRECISO</span>
+                <input type="range" id="zoomSlider" min="1" max="20" step="0.1" value="18" oninput="controlarZoomSlider(this.value)">
+                <div>
+                    <input type="text" id="zoomInput" value="100" onkeydown="if(event.key==='Enter') controlarZoomManual(this.value)">
+                    <span>%</span>
+                </div>
+            </div>
+
+            <div class="controles-mapa-horiz">
+                <button class="btn-float" onclick="toggleSidebar()" title="Ocultar/Mostrar Inventario">☰</button>
+                <button id="floatMano" class="btn-float activo-float" onclick="activarMano()">🖐️</button>
+                <button class="btn-float" onclick="irAMiUbicacion()" title="Mi Ubicación GPS">🎯</button>
+                <button id="btnFinalizar" class="btn-float" onclick="finalizarTrazado()">✅</button>
+                <button class="btn-float" onclick="deshacer()">↩️</button>
+                <button class="btn-float" onclick="rehacer()">↪️</button>
+            </div>
+            <div id="map"></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://npmcdn.com/leaflet-editable@1.2.0/src/Leaflet.Editable.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+    // Configuración Supabase
+    const SUPABASE_URL = 'https://zezcmftcbbzplhtdqotd.supabase.co'; 
+    const SUPABASE_KEY = 'sb_publishable_bNaRcykfZaVdW67HsEf3Tw_rWemQCui'; 
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let dbVoceros = [];
+    let listaComunasBD = []; // Lista dinámica de las 42 comunas
+    let userLocationMarker = null;
+
+    const adminPermitidos = [
+        { user: "yetzonmora@gmail.com", pass: "32568263" },
+        { user: "andreinacastro040789@gmail.com", pass: "andreina123" }
+    ];
+
+    // CARGA DINÁMICA DE COMUNAS AL INICIAR
+    async function cargarComunasDinamicas() {
+        try {
+            // Reemplaza 'nombre_de_tu_tabla_comunas' por el nombre real de tu tabla de las 42 comunas
+            const { data, error } = await _supabase
+                .from('comunas_municipio') // Asegúrate que este nombre sea el correcto
+                .select('nombre') 
+                .order('nombre', { ascending: true });
+
+            if (error) throw error;
+
+            listaComunasBD = data.map(c => c.nombre);
+            
+            // Llenar el select del sidebar
+            const select = document.getElementById('selectComuna');
+            select.innerHTML = '<option value="">Seleccione una comuna...</option>';
+            listaComunasBD.forEach(nombre => {
+                const opt = document.createElement('option');
+                opt.value = nombre;
+                opt.textContent = nombre;
+                select.appendChild(opt);
+            });
+        } catch (err) {
+            console.error("Error cargando comunas:", err);
+            // Fallback en caso de error
+            listaComunasBD = ["Error al cargar comunas"];
+        }
+    }
+
+    // GUARDAR MAPA EN SUPABASE
+    async function confirmarSalidaSegura() {
+        const comuna = document.getElementById('selectComuna').value;
+        const sector = document.getElementById('infoSector').value;
+
+        if (!comuna || !sector) { 
+            alert("⚠️ ERROR: Debe seleccionar COMUNA y escribir el SECTOR antes de guardar."); 
+            return; 
+        }
+
+        if (confirm(`¿Confirma que desea sincronizar el mapa de "${sector}" en la nube y salir?`)) {
+            const datosParaGuardar = obtenerGeoJSONCompleto();
+
+            try {
+                const { error } = await _supabase
+                    .from('mapas_comunales')
+                    .upsert({ 
+                        comuna: comuna, 
+                        sector: sector, 
+                        datos_json: datosParaGuardar 
+                    }, { onConflict: 'comuna, sector' });
+
+                if (error) throw error;
+
+                alert("✅ ¡Mapa sincronizado con éxito!");
+                localStorage.removeItem('mapa_progreso_sig');
+                localStorage.removeItem('sesion_activa');
+                setTimeout(() => { window.location.reload(); }, 500);
+            } catch (err) {
+                alert("❌ Error al guardar: " + err.message);
+            }
+        }
+    }
+
+    // PANEL ADMIN CON CONTEOS REALES
+    async function mostrarLeyendaAdmin() {
+        document.getElementById('sidebar').style.display = 'none';
+        document.getElementById('panel-admin-comunas').style.display = 'block';
+        const listaDiv = document.getElementById('lista-comunas-admin');
+        listaDiv.innerHTML = "<p style='color:var(--v-lim); font-size:10px;'>Consultando base de datos...</p>";
+
+        try {
+            const { data, error } = await _supabase.from('mapas_comunales').select('comuna');
+            if (error) throw error;
+
+            const conteoReal = {};
+            listaComunasBD.forEach(c => conteoReal[c] = 0);
+            data.forEach(reg => { if(conteoReal[reg.comuna] !== undefined) conteoReal[reg.comuna]++; });
+
+            listaDiv.innerHTML = "";
+            listaComunasBD.forEach(comuna => {
+                const div = document.createElement('div');
+                div.className = 'item-comuna-admin';
+                div.onclick = () => verSectoresDeComuna(comuna);
+                div.innerHTML = `<span class="comuna-nombre">${comuna}</span> <span class="badge-mapas">${conteoReal[comuna]}</span>`;
+                listaDiv.appendChild(div);
+            });
+        } catch (err) {
+            listaDiv.innerHTML = "<p style='color:red;'>Error al cargar conteos.</p>";
+        }
+    }
+
+    // VER SECTORES DE UNA COMUNA
+    async function verSectoresDeComuna(comuna) {
+        const listaDiv = document.getElementById('lista-comunas-admin');
+        listaDiv.innerHTML = `<h4 style="color:var(--v-lim)">SECTORES EN: ${comuna}</h4><button class="btn-volver-admin" onclick="mostrarLeyendaAdmin()">⬅️ VOLVER</button>`;
+
+        const { data, error } = await _supabase
+            .from('mapas_comunales')
+            .select('sector, datos_json')
+            .eq('comuna', comuna);
+
+        if (data && data.length > 0) {
+            data.forEach(reg => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-mapa';
+                btn.innerHTML = `<div>📂 ${reg.sector}</div> <span>👁️</span>`;
+                btn.onclick = () => { entrarAComunaAdmin(comuna); cargarDatosEnMapa(reg.datos_json); };
+                listaDiv.appendChild(btn);
+            });
+        } else {
+            listaDiv.innerHTML += "<p style='font-size:10px; color:gray;'>Sin mapas registrados.</p>";
+        }
+    }
+
+    // Resto de funciones (obtenerGeoJSONCompleto, cargarDatosEnMapa, etc.) se mantienen igual...
+    
+    window.addEventListener('load', async function() {
+        await cargarComunasDinamicas(); // Cargar las 42 comunas al abrir la página
+        const sesionActiva = localStorage.getItem('sesion_activa');
+        if (sesionActiva === 'true') {
+            document.getElementById('pantalla-registro').style.display = 'none';
+            document.getElementById('sistema-principal').style.display = 'flex';
+            if (localStorage.getItem('rol_usuario') === 'admin') mostrarLeyendaAdmin();
+            inicializarMapa();
+        }
+    });
+
+    // --- Aquí irían el resto de tus funciones de dibujo de Leaflet ---
+</script>
+</body>
+</html>

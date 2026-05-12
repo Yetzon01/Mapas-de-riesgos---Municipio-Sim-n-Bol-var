@@ -873,6 +873,140 @@
     function deshacer() { let el = stackElementos.pop(); if(el) { stackRedo.push(el); map.removeLayer(el); } }
     function rehacer() { let el = stackRedo.pop(); if(el) { stackElementos.push(el); el.addTo(map); } }
 
-</script>
+<// --- LÓGICA DE PERSISTENCIA DEL MAPA (AÑADIR AL FINAL DEL SCRIPT) ---
+
+// Esta función guarda todo: voceros, contadores y las capas del mapa (GeoJSON)
+function guardarProgresoTotal() {
+    const datosMapa = {
+        contadores: contadores,
+        elementos: []
+    };
+
+    // Convertimos cada elemento del mapa a formato JSON para poder guardarlo
+    stackElementos.forEach(capa => {
+        const json = capa.toGeoJSON();
+        // Guardamos estilos extra que el GeoJSON estándar no captura (colores, iconos)
+        json.properties = {
+            tipoId: capa.tipoId,
+            color: capa.options.color,
+            fillOpacity: capa.options.fillOpacity,
+            popupContent: capa.getPopup() ? capa.getPopup().getContent() : ""
+        };
+        datosMapa.elementos.push(json);
+    });
+
+    localStorage.setItem('mapa_progreso_sig', JSON.stringify(datosMapa));
+    localStorage.setItem('dbVoceros_SIG', JSON.stringify(dbVoceros));
+}
+
+// Esta función restaura todo al cargar la página
+function restaurarProgresoTotal() {
+    const datosGuardados = localStorage.getItem('mapa_progreso_sig');
+    if (!datosGuardados) return;
+
+    const data = JSON.parse(datosGuardados);
+    
+    // 1. Restaurar contadores
+    contadores = data.contadores;
+    actualizarBadges();
+
+    // 2. Restaurar elementos al mapa
+    data.elementos.forEach(json => {
+        let capa;
+        const latlngs = json.geometry.coordinates;
+
+        if (json.geometry.type === "Point") {
+            // Es un icono/emoji
+            const coords = [latlngs[1], latlngs[0]]; // Leaflet usa [lat, lng]
+            
+            let s = 24;
+            let emoji = json.properties.tipoId; // Usamos el ID para identificar el contenido
+            // Aquí podrías mejorar la lógica para recuperar el emoji exacto si lo deseas
+            
+            // Recreamos el marcador
+            capa = L.marker(coords, {
+                icon: L.divIcon({ 
+                    className:'', 
+                    html: `<div class="map-icon-container" style="background:white; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center;">${obtenerEmojiPorId(json.properties.tipoId)}</div>`, 
+                    iconSize:[s,s], 
+                    iconAnchor:[s/2, s/2] 
+                }),
+                draggable: true
+            }).addTo(map);
+            capa.tipoId = json.properties.tipoId;
+
+        } else {
+            // Es un polígono o línea
+            capa = L.geoJSON(json, {
+                style: {
+                    color: json.properties.color,
+                    fillColor: json.properties.color,
+                    fillOpacity: json.properties.fillOpacity,
+                    weight: 4
+                }
+            }).addTo(map);
+            
+            // Sacamos la capa del grupo GeoJSON para que sea editable individualmente
+            const layerInterna = Object.values(capa._layers)[0];
+            capa = layerInterna; 
+            capa.addTo(map);
+        }
+
+        // Restaurar popups y eventos
+        capa.bindPopup(json.properties.popupContent);
+        configurarEventosCapa(capa);
+        stackElementos.push(capa);
+    });
+}
+
+// Función auxiliar para recuperar el emoji visual basado en el ID técnico
+function obtenerEmojiPorId(id) {
+    const mapeo = {
+        'vuln_emb': '🤰', 'vuln_disc': '♿', 'vuln_nino': '👶', 'vuln_adult': '👴', 'vuln_cron': '🩺',
+        'centro_med': '🏥', 'medico': '<div class="cruz-roja"></div>', 'basura': '🗑️', 'arbol_v': '🏠🌳'
+        // Agrega aquí los demás si notas que no cargan
+    };
+    return mapeo[id] || '📍';
+}
+
+function configurarEventosCapa(capa) {
+    capa.on('click', ev => {
+        L.DomEvent.stopPropagation(ev);
+        deseleccionarTodo();
+        objetoSeleccionado = capa;
+        if(capa.enableEdit) capa.enableEdit();
+        capa.openPopup();
+    });
+}
+
+// MODIFICACIÓN DEL EVENTO LOAD PARA INCLUIR LA RESTAURACIÓN
+window.addEventListener('load', function() {
+    const datos = localStorage.getItem('dbVoceros_SIG');
+    if (datos) { 
+        dbVoceros = JSON.parse(datos); 
+        actualizarTablaVoceros(); 
+    }
+
+    const sesionActiva = localStorage.getItem('sesion_activa');
+    const rolGuardado = localStorage.getItem('rol_usuario');
+
+    if (sesionActiva === 'true') {
+        document.getElementById('pantalla-registro').style.display = 'none';
+        document.getElementById('sistema-principal').style.display = 'flex';
+        rolActual = rolGuardado;
+        
+        if (rolActual === 'admin') {
+            mostrarLeyendaAdmin();
+        }
+        
+        inicializarMapa();
+        // IMPORTANTE: Restaurar después de inicializar
+        setTimeout(restaurarProgresoTotal, 500);
+    }
+});
+
+// AÑADIR ESTO: Guardar cada vez que el stack de elementos cambie
+// (Debes llamar a guardarProgresoTotal() al final de crearIcono(), registrarObjeto() y eliminarObjeto())
+ >
 </body>
 </html>

@@ -1,28 +1,53 @@
- async function guardarDatos(event) {
+async function guardarDatos(event) {
     event.preventDefault();
 
+    const correoInput = document.getElementById('correo-electronico').value.trim();
+    
     const datos = {
         nombre: document.getElementById('nombres').value,
         apellido: document.getElementById('apellidos').value,
         cedula_de_identidad: document.getElementById('cedula-de-identidad').value,
         telefono: document.getElementById('telefono').value,
-        correo: document.getElementById('correo-electronico').value,
+        correo: correoInput,
         sector: document.getElementById('sector').value,
         comuna: document.getElementById('comuna').value,
         voceria: document.getElementById('voceria').value
     };
 
-    // USAMOS UPSERT: Si el correo existe, actualiza. Si no existe, crea.
-    const { data, error } = await _supabase
-        .from('registross_voceros') 
-        .upsert(datos, { onConflict: 'correo' }); // <--- IMPORTANTE: 'correo' debe ser el nombre exacto de la columna
+    // PASO 1: Buscar si el correo ya existe
+    const { data: existe, error: errorBusqueda } = await _supabase
+        .from('registross_voceros')
+        .select('correo')
+        .eq('correo', correoInput)
+        .maybeSingle();
 
-    if (error) {
-        // Si el error persiste aquí, es porque el nombre de la columna en 'onConflict' no coincide con Supabase
-        console.error("Error de Supabase:", error);
-        alert("Error al conectar: " + error.message);
+    if (errorBusqueda) {
+        alert("Error al consultar: " + errorBusqueda.message);
+        return;
+    }
+
+    if (existe) {
+        // PASO 2: Si existe, ACTUALIZAMOS (update)
+        const { error: errorUpdate } = await _supabase
+            .from('registross_voceros')
+            .update(datos)
+            .eq('correo', correoInput);
+
+        if (errorUpdate) {
+            alert("Error al actualizar: " + errorUpdate.message);
+        } else {
+            alert("¡Bienvenido de nuevo! Datos actualizados correctamente.");
+        }
     } else {
-        alert("¡Acceso correcto! Datos guardados/actualizados.");
-        // Aquí podrías redirigir al usuario al mapa o sistema
+        // PASO 3: Si no existe, INSERTAMOS (insert)
+        const { error: errorInsert } = await _supabase
+            .from('registross_voceros')
+            .insert([datos]);
+
+        if (errorInsert) {
+            alert("Error al registrar: " + errorInsert.message);
+        } else {
+            alert("¡Registro exitoso! Bienvenido al sistema.");
+        }
     }
 }

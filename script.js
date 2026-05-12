@@ -1,27 +1,27 @@
-async function guardarDatos(event) {
-    event.preventDefault();
+// Cambia tu función actual por esta
+async function guardarCambiosYSalir(event) {
+    if (event) event.preventDefault();
 
-    const datos = {
+    const datosMapa = {
+        // Asegúrate de que estos IDs coincidan con los de tu formulario del mapa
         nombre: document.getElementById('nombres').value,
-        apellido: document.getElementById('apellidos').value,
-        cedula_de_identidad: document.getElementById('cedula-de-identidad').value,
-        telefono: document.getElementById('telefono').value,
         correo: document.getElementById('correo-electronico').value,
-        sector: document.getElementById('sector').value,
         comuna: document.getElementById('comuna').value,
-        voceria: document.getElementById('voceria').value
+        sector: document.getElementById('sector').value,
+        // Agrega aquí cualquier otro campo que estés capturando del mapa
     };
 
-    // INSERT puro: Directo a la base de datos sin restricciones
+    // EL CAMBIO CLAVE: Solo .insert() sin nada de 'upsert' o 'onConflict'
     const { data, error } = await _supabase
-        .from('registross_voceros') 
-        .insert([datos]);
+        .from('registross_voceros')
+        .insert([datosMapa]);
 
     if (error) {
-        console.error("Error:", error.message);
-        alert("Lo sentimos, hubo un detalle técnico: " + error.message);
+        console.error("Error al guardar:", error.message);
+        alert("Error al guardar en nube: " + error.message);
     } else {
-        alert("¡Registro guardado con éxito! Gracias por tu participación.");
-        event.target.reset(); // Esto limpia el formulario para el siguiente
+        alert("¡Cambios guardados con éxito!");
+        // Aquí puedes poner la lógica para salir o cerrar el mapa
+        window.location.href = "index.html"; // O la página que prefieras
     }
 }

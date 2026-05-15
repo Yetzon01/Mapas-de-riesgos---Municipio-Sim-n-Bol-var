@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>SIG Ecosocial - Municipio Simón Bolívar</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        /* Estilos base y variables de identidad visual */
+        :root { 
+            --v-lime: #B4D445; 
+            --v-deep: #135242; 
+            --negro-card: rgba(20, 22, 21, 0.98);
+            --v-osc: #135242;
+            --v-lim: #B4D445;
+            --negro: #1a1c1b;
+        }
+
+        * { box-sizing: border-box; }
+        body, html { margin: 0; height: 100%; font-family: 'Segoe UI', sans-serif; background: #000; overflow: hidden; }
+
+        /* Pantallas de acceso */
+        #pantalla-registro {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, var(--v-lime) 0%, var(--v-deep) 100%);
+            z-index: 5000; display: flex; align-items: center; justify-content: center;
+        }
+
+        .card-registro {
+            background: var(--negro-card); border: 2px solid var(--v-lime);
+            width: 650px; padding: 40px; border-radius: 25px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.5); text-align: center;
+        }
+
+        #video-contenedor {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 6000; display: none;
+            align-items: center; justify-content: center;
+        }
+        #animacion-video { width: 100%; height: 100%; object-fit: cover; }
+
+        .logos-registro { display: flex; justify-content: space-between; margin-bottom: 20px; height: 110px; }
+        .logo-wrapper { flex: 0 0 160px; height: 110px; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        .logos-registro img { width: 100%; height: 100%; object-fit: contain; transform: scale(2.0); }
+
+        .tabs-acceso { display: flex; justify-content: center; gap: 20px; margin-bottom: 25px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .tab-btn { background: none; border: none; color: #666; cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 12px; transition: 0.3s; padding: 5px 10px; }
+        .tab-btn.active { color: var(--v-lime); border-bottom: 2px solid var(--v-lime); }
+
+        h2 { margin: 0; font-size: 24px; color: #fff; text-transform: uppercase; letter-spacing: 1px; }
+        .subtitle { color: var(--v-lime); font-size: 13px; margin-bottom: 30px; font-weight: bold; text-transform: uppercase; }
+
+        .form-registro, .form-admin { text-align: left; display: grid; gap: 15px; }
+        .form-admin { display: none; }
+        .form-row { display: flex; gap: 15px; }
+        .form-group { flex: 1; }
+
+        #campos-dinamicos-registro { display: none; flex-direction: column; gap: 15px; }
+
+        label { font-size: 11px; color: var(--v-lime); text-transform: uppercase; font-weight: 800; margin-bottom: 5px; display: block; }
+
+        input, select { 
+            width: 100%; background: #111; border: 1px solid #333; color: white; 
+            padding: 12px; border-radius: 8px; outline: none; font-size: 14px; 
+            transition: 0.3s;
+        }
+
+        input:focus, select:focus { border-color: var(--v-lime); background: #1a1a1a; }
+
+        /* Sistema Principal */
+        #sistema-principal { display: none; width: 100vw; height: 100vh; flex-direction: column; background: #111; color: white; }
+
+        #header { height: 130px; background: var(--v-osc); border-bottom: 5px solid var(--v-lim); position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; flex-shrink: 0; }
+        .logo-box { position: absolute; top: 50%; transform: translateY(-50%); width: 260px; height: 120px; display: flex; align-items: center; justify-content: center; }
+        .logo-left { left: 20px; } .logo-right { right: 20px; }
+        .logo-box img { width: 100%; height: 100%; object-fit: contain; }
+        #titulo-principal { font-size: 22px; font-weight: 800; color: #FFFFFF; text-transform: uppercase; margin-bottom: 5px; }
+
+        #contenedor { display: flex; flex-grow: 1; overflow: hidden; }
+        #sidebar { width: 440px; background: var(--negro); color: white; padding: 15px; overflow-y: auto; border-right: 2px solid #333; transition: margin-left 0.3s ease; }
+
+        /* Componentes del Mapa e Inventario */
+        h4 { color: var(--v-lim); font-size: 11px; text-transform: uppercase; margin: 15px 0 8px 0; border-bottom: 1px solid #444; padding-bottom: 4px; letter-spacing: 1px; }
+        .grid-datos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .sidebar-form-group { margin-bottom: 8px; }
+        .sidebar-label { display: block; font-size: 9px; color: #888; margin-bottom: 2px; text-transform: uppercase; }
+        .sidebar-input, .sidebar-select { width: 100%; background: #222; border: 1px solid #444; color: white; padding: 6px 8px; font-size: 11px; border-radius: 4px; outline: none; }
+
+        .btn-mapa { width: 100%; padding: 8px; margin: 2px 0; background: #252827; color: white; border: 1px solid #444; border-radius: 6px; cursor: pointer; text-align: left; font-size: 10.5px; display: flex; align-items: center; justify-content: space-between; }
+        .btn-mapa div { display: flex; align-items: center; gap: 8px; }
+        .count-badge { background: #333; color: var(--v-lim); padding: 2px 6px; border-radius: 10px; font-weight: bold; font-size: 10px; }
+        .btn-mapa.activo { background: var(--v-osc) !important; border-color: var(--v-lim); }
+
+        .map-icon-container { background: white !important; border-radius: 50% !important; display: flex !important; align-items: center !important; justify-content: center !important; border: none !important; box-shadow: 0 2px 4px rgba(0,0,0,0.4); width: 24px; height: 24px; font-size: 14px; }
+        .cruz-roja { width: 16px; height: 16px; position: relative; }
+        .cruz-roja::before, .cruz-roja::after { content: ''; position: absolute; background: #ff0000; border-radius: 2px; }
+        .cruz-roja::before { width: 100%; height: 4px; top: 6px; left: 0; }
+        .cruz-roja::after { width: 4px; height: 100%; top: 0; left: 6px; }
+
+        #map-container { flex-grow: 1; position: relative; background: #1a1a1a; }
+        #map { width: 100%; height: 100%; }
+
+        /* Controles Flotantes */
+        .controles-mapa-horiz { position: absolute; top: 15px; left: 60px; z-index: 2000; display: flex; flex-direction: row; gap: 8px; }
+        .btn-float { width: 42px; height: 42px; background: white; border: none; border-radius: 50%; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .btn-float.activo-float { background: var(--v-lim); border: 2px solid var(--v-osc); }
+
+        /* Paneles Administrativos */
+        #panel-admin-comunas { display: none; width: 440px; background: var(--negro); color: white; padding: 15px; overflow-y: auto; border-right: 2px solid #333; transition: margin-left 0.3s ease; }
+        .item-comuna-admin { background: #222; border: 1px solid #444; border-radius: 8px; padding: 10px; margin-bottom: 2px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .comuna-nombre { font-size: 10px; font-weight: bold; color: #fff; text-transform: uppercase; flex: 1; }
+        .badge-mapas { background: var(--v-lim); color: var(--v-osc); padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: 900; }
+
+        /* Utilidades */
+        .btn-acceder { background: var(--v-lime); color: var(--v-deep); border: none; padding: 16px; border-radius: 10px; font-weight: 900; cursor: pointer; text-transform: uppercase; width: 100%; margin-top: 10px; }
+        .btn-acceder:hover { background: #fff; }
+        .btn-delete-popup { background: #ff4444; color: white; border: none; padding: 5px; border-radius: 4px; width: 100%; cursor: pointer; font-weight: bold; margin-top: 5px; }
+        .popup-desc { font-weight: bold; color: #333; display: block; border-bottom: 1px solid #ccc; margin-bottom: 5px; }
+        .user-location-icon { background: #4285F4; width: 14px; height: 14px; border-radius: 50%; border: 3px solid white; }
+    </style>
+</head>
+<body>
+
+<div id="video-contenedor">
+    <video id="animacion-video" muted><source src="video.mp4" type="video/mp4"></video>
+</div>
+
+<!-- INICIO: REGISTRO Y LOGIN -->
+<div id="pantalla-registro">
+    <div class="card-registro">
+        <div class="logos-registro">
+            <div class="logo-wrapper"><img src="logo1.png.png" alt="Logo 1"></div>
+            <div class="logo-wrapper"><img src="logo2.png.png" alt="Logo 2"></div>
+        </div>
+        <h2>SISTEMA DE GESTIÓN</h2>
+        <p class="subtitle">Municipio Simón Bolívar</p>
+
+        <div class="tabs-acceso">
+            <button class="tab-btn active" onclick="cambiarSeccion('registro')">Registro Vocero</button>
+            <button class="tab-btn" onclick="cambiarSeccion('admin')">Administrador</button>
+        </div>
+
+        <form id="form-registro-principal" class="form-registro" onsubmit="event.preventDefault(); registrarVocero();">
+            <div class="form-group">
+                <label>Correo Electrónico</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="email" id="regCor" placeholder="ejemplo@correo.com" required oninput="limpiarSiVacio(this.value)" onblur="verificarCorreo()">
+                    <button type="button" style="padding: 5px; font-size: 10px; cursor: pointer;" onclick="verificarCorreo()">VERIFICAR</button>
+                </div>
+            </div>
+            <div id="campos-dinamicos-registro">
+                <div class="form-row">
+                    <div class="form-group"><label>Nombres</label><input type="text" id="regNom" required></div>
+                    <div class="form-group"><label>Apellidos</label><input type="text" id="regApe" required></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Cédula</label><input type="text" id="regCed" required></div>
+                    <div class="form-group"><label>Teléfono</label><input type="tel" id="regTel" required></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Comuna</label><input type="text" id="regCom" required></div>
+                    <div class="form-group"><label>Sector</label><input type="text" id="regSec" required></div>
+                </div>
+                <button type="submit" class="btn-acceder">INGRESAR Y GUARDAR REGISTRO</button>
+            </div>
+        </form>
+
+        <form id="form-admin-acceso" class="form-admin" onsubmit="event.preventDefault(); validarAdmin();">
+            <div class="form-group"><label>Correo Admin</label><input type="email" id="adminEmail" required></div>
+            <div class="form-group"><label>Contraseña</label><input type="password" id="adminPass" required></div>
+            <button type="submit" class="btn-acceder">INICIAR SESIÓN ADMIN</button>
+        </form>
+    </div>
+</div>
+
+<!-- SISTEMA PRINCIPAL -->
+<div id="sistema-principal">
+    <div id="header">
+        <div class="logo-box logo-left"><img src="logo1.png.png"></div>
+        <div id="titulo-principal">MAPA DE RIESGOS COMUNITARIOS</div>
+        <div style="color: #B4D445; font-size: 13px; font-weight: bold;">Municipio Simón Bolívar - Anzoátegui</div>
+        <div class="logo-box logo-right"><img src="logo2.png.png"></div>
+    </div>
+
+    <div id="contenedor">
+        <!-- PANEL ADMIN (LISTADO DE MAPAS) -->
+        <div id="panel-admin-comunas">
+            <h4 style="color:var(--v-lim)">🛡️ PANEL DE CONTROL ADMINISTRATIVO</h4>
+            <div id="lista-comunas-admin"></div>
+            <button class="btn-acceder" style="background: #e74c3c; color: white;" onclick="cerrarSesionTotal()">CERRAR SESIÓN</button>
+        </div>
+
+        <!-- SIDEBAR DE TRABAJO (INVENTARIO) -->
+        <div id="sidebar">
+            <button id="btnVolverAdmin" class="btn-acceder" style="display:none; font-size: 10px; margin-bottom: 10px;" onclick="volverAlPanelControl()">⬅️ VOLVER AL PANEL</button>
+            
+            <h4>📍 Información Territorial</h4>
+            <div class="grid-datos">
+                <div class="sidebar-form-group" style="grid-column: span 2;">
+                    <label class="sidebar-label">Comuna</label>
+                    <select id="selectComuna" class="sidebar-select">
+                        <option value="">Seleccione una comuna...</option>
+                        <option value="4F-92 COMANDANTE ETERNO HUGO RAFAEL CHAVEZ">4F-92 COMANDANTE ETERNO HUGO RAFAEL CHAVEZ</option>
+                        <option value="DESPERTAR CUMANAGOTO">DESPERTAR CUMANAGOTO</option>
+                        <option value="MI GRAN BARCELONA">MI GRAN BARCELONA</option>
+                        <!-- Agrega aquí el resto de las comunas -->
+                    </select>
+                </div>
+                <div class="sidebar-form-group" style="grid-column: span 2;">
+                    <label class="sidebar-label">Sector</label>
+                    <input type="text" id="infoSector" class="sidebar-input" placeholder="Nombre del Sector">
+                </div>
+            </div>
+
+            <h4>⚠️ Riesgos y Problemas</h4>
+            <button class="btn-mapa" onclick="cambiarEmoji('🏠🌳',this,'arbol_v')"><div>🏠🌳 Árbol Riesgo Vivienda</div> <span class="count-badge" id="count-arbol_v">0</span></button>
+            <button class="btn-mapa" onclick="cambiarEmoji('🌊',this,'inund')"><div>🌊 Zona Inundable</div> <span class="count-badge" id="count-inund">0</span></button>
+            <button class="btn-mapa" onclick="cambiarEmoji('🗑️',this,'basura')"><div>🗑️ Foco de Basura</div> <span class="count-badge" id="count-basura">0</span></button>
+            
+            <h4>📐 Herramientas Técnicas</h4>
+            <button class="btn-mapa" onclick="iniciarTrazado('pol')">✍️ TRAZAR ÁREA / RIESGO</button>
+            <button class="btn-mapa" onclick="iniciarTrazado('line')">〰️ LÍNEA / CANAL</button>
+
+            <div style="margin-top: 30px; padding: 15px; border-top: 1px dashed var(--v-lim);">
+                <button class="btn-acceder" onclick="confirmarSalidaSegura()">💾 GUARDAR Y SALIR</button>
+            </div>
+        </div>
+
+        <div id="map-container">
+            <div class="controles-mapa-horiz">
+                <button class="btn-float" onclick="toggleSidebar()">☰</button>
+                <button id="floatMano" class="btn-float activo-float" onclick="activarMano()">🖐️</button>
+                <button class="btn-float" onclick="irAMiUbicacion()">🎯</button>
+                <button id="btnFinalizar" class="btn-float" style="display:none; background: #4CAF50; color: white;" onclick="finalizarTrazado()">✅</button>
+            </div>
+            <div id="map"></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://npmcdn.com/leaflet-editable@1.2.0/src/Leaflet.Editable.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+    // CONFIGURACIÓN SUPABASE
+    const SUPABASE_URL = 'https://zezcmftcbbzplhtdqotd.supabase.co'; 
+    const SUPABASE_KEY = 'sb_publishable_bNaRcykfZaVdW67HsEf3Tw_rWemQCui'; 
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let dbVoceros = JSON.parse(localStorage.getItem('dbVoceros_SIG') || '[]');
+    let rolActual = "usuario";
+    let map, emojiActual = null, modoEspecial = "", modoNavegar = true;
+    let stackElementos = [], objetoSeleccionado = null, trazandoAhora = null;
+    let contadores = { arbol_v:0, inund:0, basura:0 };
+
+    const adminPermitidos = [{ user: "yetzonmora@gmail.com", pass: "32568263" }];
+
+    // --- LÓGICA DE ACCESO ---
+
+    function cambiarSeccion(tipo) {
+        document.getElementById('form-registro-principal').style.display = (tipo === 'registro') ? 'grid' : 'none';
+        document.getElementById('form-admin-acceso').style.display = (tipo === 'admin') ? 'grid' : 'none';
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active'));
+    }
+
+    function verificarCorreo() {
+        const correo = document.getElementById('regCor').value.trim().toLowerCase();
+        const v = dbVoceros.find(voc => voc.cor === correo);
+        document.getElementById('campos-dinamicos-registro').style.display = 'flex';
+        if(v) {
+            document.getElementById('regNom').value = v.nom; document.getElementById('regApe').value = v.ape;
+            document.getElementById('regCed').value = v.ced; document.getElementById('regTel').value = v.tel;
+            document.getElementById('regCom').value = v.com; document.getElementById('regSec').value = v.sec;
+        }
+    }
+
+    function registrarVocero() {
+        const vocero = {
+            cor: document.getElementById('regCor').value, nom: document.getElementById('regNom').value,
+            ape: document.getElementById('regApe').value, com: document.getElementById('regCom').value,
+            sec: document.getElementById('regSec').value
+        };
+        dbVoceros.push(vocero);
+        localStorage.setItem('dbVoceros_SIG', JSON.stringify(dbVoceros));
+        localStorage.setItem('user_email_active', vocero.cor);
+        reproducirAnimacion('usuario');
+    }
+
+    function validarAdmin() {
+        const email = document.getElementById('adminEmail').value.trim();
+        const pass = document.getElementById('adminPass').value;
+        if(adminPermitidos.some(a => a.user === email && a.pass === pass)) {
+            localStorage.setItem('user_email_active', email);
+            reproducirAnimacion('admin');
+        } else { alert("Acceso denegado"); }
+    }
+
+    function reproducirAnimacion(rol) {
+        document.getElementById('video-contenedor').style.display = 'flex';
+        document.getElementById('animacion-video').play();
+        document.getElementById('animacion-video').onended = () => {
+            localStorage.setItem('sesion_activa', 'true');
+            localStorage.setItem('rol_usuario', rol);
+            window.location.reload();
+        };
+    }
+
+    // --- LÓGICA DEL MAPA ---
+
+    function inicializarMapa() {
+        map = L.map('map', { editable: true }).setView([10.136, -64.686], 15);
+        L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 20 }).addTo(map);
+        
+        map.on('editable:drawing:start', e => { trazandoAhora = e.layer; document.getElementById('btnFinalizar').style.display = 'flex'; });
+        map.on('editable:drawing:end', e => { registrarObjeto(e.layer); document.getElementById('btnFinalizar').style.display = 'none'; });
+        map.on('click', e => { if (emojiActual && !modoNavegar) crearIcono(e.latlng); });
+    }
+
+    function crearIcono(latlng) {
+        const m = L.marker(latlng, {
+            icon: L.divIcon({ className: '', html: `<div class="map-icon-container">${emojiActual}</div>`, iconSize: [24, 24] }),
+            draggable: true
+        }).addTo(map);
+        m.tipoId = modoEspecial;
+        contadores[modoEspecial]++;
+        actualizarBadges();
+        m.bindPopup(`<button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button>`);
+        m.on('click', e => { L.DomEvent.stopPropagation(e); objetoSeleccionado = m; m.openPopup(); });
+        stackElementos.push(m);
+    }
+
+    function registrarObjeto(layer) {
+        layer.bindPopup(`Trazado <button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button>`);
+        layer.on('click', e => { L.DomEvent.stopPropagation(e); objetoSeleccionado = layer; layer.enableEdit(); layer.openPopup(); });
+        stackElementos.push(layer);
+    }
+
+    function eliminarObjeto(obj) {
+        if (!obj) return;
+        if (obj.tipoId) contadores[obj.tipoId]--;
+        map.removeLayer(obj);
+        stackElementos = stackElementos.filter(i => i !== obj);
+        actualizarBadges();
+    }
+
+    // --- PERSISTENCIA SUPABASE ---
+
+    async function confirmarSalidaSegura() {
+        const comuna = document.getElementById('selectComuna').value;
+        const sector = document.getElementById('infoSector').value.trim();
+        if (!comuna || !sector) { alert("Comuna y Sector obligatorios"); return; }
+
+        const geojson = L.featureGroup(stackElementos).toGeoJSON();
+        geojson.features.forEach((f, i) => {
+            f.properties = { tipoId: stackElementos[i].tipoId };
+        });
+
+        const { error } = await _supabase.from('mapas_comunales').upsert({
+            id_comuna: comuna,
+            nombre_sector: sector,
+            geometria_mapa: geojson,
+            usuario_email: localStorage.getItem('user_email_active')
+        }, { onConflict: 'id_comuna, nombre_sector' });
+
+        if (!error) { alert("Guardado con éxito"); cerrarSesionTotal(); }
+        else { alert("Error al guardar: " + error.message); }
+    }
+
+    // --- CARGA DE DATOS ---
+
+    async function mostrarLeyendaAdmin() {
+        document.getElementById('sidebar').style.display = 'none';
+        document.getElementById('panel-admin-comunas').style.display = 'block';
+        const { data } = await _supabase.from('mapas_comunales').select('id_comuna, nombre_sector');
+        const lista = document.getElementById('lista-comunas-admin');
+        lista.innerHTML = "";
+        data.forEach(reg => {
+            const div = document.createElement('div');
+            div.className = 'item-comuna-admin';
+            div.innerHTML = `<span>${reg.id_comuna} - ${reg.nombre_sector}</span><span class="badge-mapas">VER</span>`;
+            div.onclick = () => cargarMapaEspecifico(reg.id_comuna, reg.nombre_sector);
+            lista.appendChild(div);
+        });
+    }
+
+    async function cargarMapaEspecifico(comuna, sector) {
+        document.getElementById('panel-admin-comunas').style.display = 'none';
+        document.getElementById('sidebar').style.display = 'block';
+        document.getElementById('btnVolverAdmin').style.display = 'block';
+        document.getElementById('selectComuna').value = comuna;
+        document.getElementById('infoSector').value = sector;
+        
+        const { data } = await _supabase.from('mapas_comunales').select('*').eq('id_comuna', comuna).eq('nombre_sector', sector).single();
+        if(data) L.geoJSON(data.geometria_mapa).addTo(map);
+    }
+
+    // --- UTILIDADES ---
+    function iniciarTrazado(t) { (t === 'pol') ? map.editTools.startPolygon() : map.editTools.startPolyline(); }
+    function finalizarTrazado() { map.editTools.stopDrawing(); }
+    function cambiarEmoji(e, btn, esp) { emojiActual = e; modoEspecial = esp; modoNavegar = false; }
+    function activarMano() { emojiActual = null; modoNavegar = true; }
+    function actualizarBadges() { for(let k in contadores) { if(document.getElementById('count-'+k)) document.getElementById('count-'+k).innerText = contadores[k]; } }
+    function toggleSidebar() { document.getElementById('sidebar').style.display = (document.getElementById('sidebar').style.display === 'none') ? 'block' : 'none'; }
+    function volverAlPanelControl() { window.location.reload(); }
+    function cerrarSesionTotal() { localStorage.clear(); window.location.reload(); }
+    function irAMiUbicacion() { map.locate({setView: true, maxZoom: 18}); }
+
+    window.onload = () => {
+        if(localStorage.getItem('sesion_activa')) {
+            document.getElementById('pantalla-registro').style.display = 'none';
+            document.getElementById('sistema-principal').style.display = 'flex';
+            rolActual = localStorage.getItem('rol_usuario');
+            inicializarMapa();
+            if(rolActual === 'admin') mostrarLeyendaAdmin();
+        }
+    };
+</script>
+</body>
+</html>

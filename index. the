@@ -407,7 +407,7 @@
                 <button class="btn-mapa" onclick="cambiarEmoji('⚫',this,'pozo_derrumbado')"><div>⚫ Pozo Séptico Derrumbado</div> <span class="count-badge" id="count-pozo_derrumbado">0</span></button>
                 <button class="btn-mapa" onclick="cambiarEmoji('⚡',this,'poste_riesgo')"><div>⚡ Poste en Riesgo</div> <span class="count-badge" id="count-poste_riesgo">0</span></button>
                 <button class="btn-mapa" onclick="cambiarEmoji('\u{1F697}',this,'riesgo_carro')"><div>🚗 Cauchera</div> <span class="count-badge" id="count-riesgo_carro">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('🏠🌳',this,'arbol_v')"><div>🏠🌳 Árbol Riesgo Vivienda</div> <span class="count-badge" id="count-arbol_v">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🏡',this,'arbol_v')"><div>🏡 Árbol Riesgo Vivienda</div> <span class="count-badge" id="count-arbol_v">0</span></button>
                 <button class="btn-mapa" onclick="cambiarEmoji('🔌',this,'cables')"><div>🔌 Árbol/Tendido Eléctrico</div> <span class="count-badge" id="count-cables">0</span></button>
                 <button class="btn-mapa" onclick="cambiarEmoji('🏚️',this,'casa_r')"><div>🏚️ Vivienda en Riesgo</div> <span class="count-badge" id="count-casa_r">0</span></button>
                 <button class="btn-mapa" onclick="cambiarEmoji('🌊',this,'inund')"><div>🌊 Zona Inundable</div> <span class="count-badge" id="count-inund">0</span></button>
@@ -426,7 +426,7 @@
                     <input type="text" id="inputArbolPredominante" class="sidebar-input" placeholder="Ej: Mango, Cují, Samán..." style="border: 1px solid #444;">
                 </div>
                 <button class="btn-mapa" onclick="cambiarEmoji('🌳',this,'verde')"><div>🌳 Área Verde / Plaza</div> <span class="count-badge" id="count-verde">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('🏡',this,'huerto')"><div>🏡 Espacio Productivo</div> <span class="count-badge" id="count-huerto">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('👨🏼‍🌾',this,'huerto')"><div>👨🏼‍🌾 Espacio Productivo</div> <span class="count-badge" id="count-huerto">0</span></button>
                 <button class="btn-mapa" onclick="cambiarEmoji('🟡',this,'araguaney')"><div>🟡 Araguaney</div> <span class="count-badge" id="count-araguaney">0</span></button>
                 <button class="btn-mapa" onclick="cambiarEmoji('🌸',this,'apamate')"><div>🌸 Apamate</div> <span class="count-badge" id="count-apamate">0</span></button>
                 <button class="btn-mapa" onclick="cambiarEmoji('🌿',this,'cereipo')"><div>🌿 Cereipo</div> <span class="count-badge" id="count-cereipo">0</span></button>
@@ -905,9 +905,9 @@
             'vuln_emb': '🤰', 'vuln_disc': '♿', 'vuln_nino': '👶', 'vuln_adult': '👴', 'vuln_cron': '🩺',
             'centro_med': '🏥', 'cpt1': '🏥₁', 'cpt2': '🏥₂', 'cpt3': '🏥₃', 'enfermero': '👨‍⚕️', 'paramedico': '🚑',
             'pol_inst': '👮', 'bom_inst': '🚒', 'pc_inst': '🚨', 'cuadrante': '🛡️', 'medico': 'CRUZ_ROJA', 'pol_amb': '👮🌿', 'inparques': '💂',
-            'mov_amb': '✊🌿', 'riesgo_carro': '\u{1F697}', 'arbol_v': '🏠🌳', 'cables': '🔌', 'casa_r': '🏚️', 'inund': '🌊', 'terreno_i': '⛰️',
+            'mov_amb': '✊🌿', 'riesgo_carro': '\u{1F697}', 'arbol_v': '🏡', 'cables': '🔌', 'casa_r': '🏚️', 'inund': '🌊', 'terreno_i': '⛰️',
             'derrumbe': '⚠️', 'blancas': '💧', 'servidas': '🤢', 'colector': '🕳️', 'basura': '🗑️', 'autolavado': '🧼',
-            'taller': '🛠️', 'cauchera': '\u{1F6DE}', 'verde': '🌳', 'huerto': '🏡', 'araguaney': '🟡', 'apamate': '🌸', 'cereipo': '🌿',
+            'taller': '🛠️', 'cauchera': '\u{1F6DE}', 'verde': '🌳', 'huerto': '👨🏼‍🌾', 'araguaney': '🟡', 'apamate': '🌸', 'cereipo': '🌿',
             'pollos': '🐣', 'cerdo_c': '🐷', 'cerdo_s': '🐗', 'ovejos': '🐑', 'cautivo': '🦁', 'invasora': '🦎', 'recicladores': '♻️', 'poste_riesgo': '⚡',
             'pozo_derrumbado': '⚫'
         };

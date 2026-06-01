@@ -1310,6 +1310,742 @@
         } 
     }
     document.querySelectorAll('.sidebar-input, .sidebar-select').forEach(el => el.addEventListener('change', guardarProgresoMapa));
+<script>
+    const SUPABASE_URL = 'https://zezcmftcbbzplhtdqotd.supabase.co'; 
+    const SUPABASE_KEY = 'sb_publishable_bNaRcykfZaVdW67HsEf3Tw_rWemQCui'; 
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let dbVoceros = [];
+    let dbMapasCount = {};
+    let rolActual = "usuario";
+    let userLocationMarker = null;
+
+    const adminPermitidos = [
+        { user: "yetzonmora@gmail.com", pass: "32568263" },
+        { user: "andreinacastro040789@gmail.com", pass: "andreina123" }
+    ];
+
+    const listaComunas = [
+        "4F-92 COMANDANTE ETERNO HUGO RAFAEL CHAVEZ", "AGROINDUSTRIAL CACIQUE GUAICAIPURO", "AGROECOLOGICA Y TURISTICA BERGANTIN",
+        "AGROTURISTICA Y SOCIALISTA LA FE DE TODOS", "ANTONIO RICAURTE 4F", "DESPERTAR CUMANAGOTO", "DONATO CONSTANTINO MARADEI",
+        "ECO AMBIENTAL EL GRAN EL SAMAN DORADO", "EZEQUIEL ZAMORA", "FRANCISCO DE MIRANDA DE CRUZ VERDE", "GOLPE DE TIMON",
+        "GRUTA SAN FELIPE NERI", "GUERREROS DE BOYACA", "HUGO CHAVEZ FRIAS 2013", "INDIGENA CUMANAGOTO SAN BERNARDINO",
+        "INDIGENA GRAN CACIQUE CAYAURIMA", "INDIOS CUMANAGOTOS", "JOSE ANTONIO ANZOATEGUI 14-15", "JUANA PETRONILA HERNANDEZ",
+        "LAS ORQUIDEAS DE CHAVEZ", "LINA RON", "LOS ESFUERZOS EN VICTORIA", "LOS HIJOS REBELDES DE CHAVEZ", "LOS MESONES UNIDOS CON CHAVEZ",
+        "LUISA CACERES DE ARISMENDI", "MI GRAN BARCELONA", "PARQUE VIDOÑO", "POR EL LEGADO DEL COMANDANTE CHAVEZ", "POTOTUCUAL",
+        "PRODUCTIVA LA LUCHA DE UN PUEBLO UNIDO", "PRODUCTIVA VENCEDORES DE LA PATRIA", "SIMON BOLIVAR NARICUAL", "SOCIO PRODUCTIVA SIMON BOLIVAR",
+        "SOCIALISTA BAHIA DE BARCELONA SIMON BOLIVAR", "SOCIALISTA EL VIÑEDO", "SOCIALISTA INDIGENA EL PILAR DE LOS CUMANAGOTOS",
+        "SOCIALISTA LA VICTORIA PERFECTA 29 DE MARZO", "SOCIALISTA MAYORQUIN III", "SOCIALISTA TRIUNFADORES INDIGENAS CUMANAGOTOS",
+        "SOCIALISTA VALLES DEL NEVERI", "SOCIOPRODUCTIVA BICENTENARIO DE LA INDEPENDENCIA", "VENCEDORES INDIGENAS CUMANAGOTO"
+    ];
+
+    listaComunas.forEach(c => dbMapasCount[c] = 0);
+
+    // ==========================================
+    // 🛡️ CONTROL DE SESIÓN Y SEGURIDAD OPTIMIZADO
+    // ==========================================
+    window.addEventListener('load', async function() {
+        // Carga de voceros locales de respaldo
+        const datos = localStorage.getItem('dbVoceros_SIG'); 
+        if (datos) { dbVoceros = JSON.parse(datos); actualizarTablaVoceros(); }
+
+        // Verificar el estado de la sesión local
+        const sesionActiva = localStorage.getItem('sesion_activa');
+        const rolGuardado = localStorage.getItem('rol_usuario');
+        const correoActivo = localStorage.getItem('user_email_active');
+
+        if (sesionActiva === 'true' && rolGuardado && correoActivo) {
+            // El usuario tiene sesión válida: Forzar vista del sistema principal
+            rolActual = rolGuardado;
+            document.getElementById('pantalla-registro').style.display = 'none'; 
+            document.getElementById('sistema-principal').style.display = 'flex';
+            
+            inicializarMapa(); 
+            cargarContadoresReales(); 
+
+            if (rolActual === 'admin') {
+                mostrarLeyendaAdmin();
+            } else {
+                cargarMapaUsuario(correoActivo);
+            }
+            setTimeout(restaurarProgresoMapa, 500);
+        } else {
+            // No hay sesión: Garantizar que se quede bloqueado en el Registro/Login
+            localStorage.clear(); // Limpia residuos viejos por seguridad
+            document.getElementById('pantalla-registro').style.display = 'flex'; 
+            document.getElementById('sistema-principal').style.display = 'none';
+        }
+    });
+
+    function alternarLeyendaRecicladores() {
+        document.getElementById('leyenda-normal').style.display = 'none';
+        document.getElementById('leyenda-recicladores').style.display = 'block';
+    }
+
+    function alternarLeyendaNormal() {
+        document.getElementById('leyenda-recicladores').style.display = 'none';
+        document.getElementById('leyenda-normal').style.display = 'block';
+    }
+
+    async function eliminarMapaDelSistema(comuna, sector) {
+        const advertencia = `⚠ ADVERTENCIA CRÍTICA ⚠\n\nEstá a punto de VACIAR el nombre del sector: "${sector}" en la comuna: "${comuna}" de la base de datos.\n\nEsta acción quitará el sector de la lista pero mantendrá los datos geográficos base.\n\n¿Está absolutamente seguro?`;
+        if (confirm(advertencia)) {
+            try {
+                const { error } = await _supabase
+                    .from('mapas_comunales')
+                    .update({ nombre_sector: null })
+                    .eq('id_comuna', comuna)
+                    .eq('nombre_sector', sector);
+                if (error) throw error;
+                alert("El sector ha sido removido con éxito en la base de datos.");
+                limpiarMapaCompletamente();
+                mostrarLeyendaAdmin();
+            } catch (err) { alert("Error al eliminar: " + err.message); }
+        }
+    }
+
+    async function mostrarLeyendaAdmin() {
+        document.getElementById('sidebar').style.display = 'none';
+        document.getElementById('panel-admin-comunas').style.display = 'block';
+        const listaDiv = document.getElementById('lista-comunas-admin'); 
+        listaDiv.innerHTML = "";
+        try {
+            const { data, error } = await _supabase.from('mapas_comunales').select('id_comuna, nombre_sector');
+            if (error) throw error;
+            const sectoresPorComuna = {};
+            listaComunas.forEach(c => sectoresPorComuna[c] = []);
+            data.forEach(reg => {
+                if (reg.nombre_sector && sectoresPorComuna[reg.id_comuna] && !sectoresPorComuna[reg.id_comuna].includes(reg.nombre_sector)) {
+                    sectoresPorComuna[reg.id_comuna].push(reg.nombre_sector);
+                }
+            });
+            listaComunas.forEach(comuna => {
+                const sectores = sectoresPorComuna[comuna];
+                const cantSectores = sectores.length;
+                const contenedorComuna = document.createElement('div');
+                contenedorComuna.style.marginBottom = "5px";
+                const divComuna = document.createElement('div'); 
+                divComuna.className = 'item-comuna-admin';
+                divComuna.innerHTML = `<span class="comuna-nombre">${comuna}</span><span class="badge-mapas">${cantSectores}</span>`;
+                const subListaSectores = document.createElement('div');
+                subListaSectores.style.display = "none";
+                subListaSectores.style.paddingLeft = "20px";
+                subListaSectores.style.borderLeft = "2px solid var(--v-lim)";
+                if (cantSectores > 0) {
+                    sectores.forEach(sectorNombre => {
+                        const rowSector = document.createElement('div');
+                        rowSector.style.display = "flex"; 
+                        rowSector.style.gap = "5px";
+                        const btnSector = document.createElement('button');
+                        btnSector.className = 'btn-mapa'; btnSector.style.fontSize = "9px"; btnSector.innerHTML = `<div>📂 Sector: ${sectorNombre}</div>`;
+                        btnSector.onclick = (e) => { e.stopPropagation(); cargarMapaEspecifico(comuna, sectorNombre); };
+                        const btnDel = document.createElement('button');
+                        btnDel.className = 'btn-mini-delete'; btnDel.innerHTML = "🗑️";
+                        btnDel.onclick = (e) => { e.stopPropagation(); eliminarMapaDelSistema(comuna, sectorNombre); };
+                        rowSector.appendChild(btnSector); rowSector.appendChild(btnDel);
+                        subListaSectores.appendChild(rowSector);
+                    });
+
+                    const rowGeneral = document.createElement('div');
+                    rowGeneral.style.display = "flex";
+                    rowGeneral.style.marginTop = "5px";
+                    const btnGeneral = document.createElement('button');
+                    btnGeneral.className = 'btn-mapa';
+                    btnGeneral.style.fontSize = "9px";
+                    btnGeneral.style.background = "var(--v-osc)";
+                    btnGeneral.style.borderColor = "var(--v-lim)";
+                    btnGeneral.style.fontWeight = "bold";
+                    btnGeneral.innerHTML = `<div>🌐 Ver Mapa Generalizado (Consolidado)</div>`;
+                    btnGeneral.onclick = (e) => { e.stopPropagation(); cargarMapaGeneralComuna(comuna); };
+                    rowGeneral.appendChild(btnGeneral);
+                    subListaSectores.appendChild(rowGeneral);
+                } else {
+                    const aviso = document.createElement('div');
+                    aviso.style.fontSize = "9px"; aviso.style.color = "#666"; aviso.innerText = "Sin sectores registrados";
+                    subListaSectores.appendChild(aviso);
+                }
+                divComuna.onclick = () => { subListaSectores.style.display = subListaSectores.style.display === "block" ? "none" : "block"; };
+                contenedorComuna.appendChild(divComuna); contenedorComuna.appendChild(subListaSectores);
+                listaDiv.appendChild(contenedorComuna);
+            });
+        } catch (e) { console.error(e); }
+    }
+
+    async function cargarMapaGeneralComuna(comuna) {
+        limpiarMapaCompletamente();
+        document.getElementById('panel-admin-comunas').style.display = 'none';
+        document.getElementById('sidebar').style.display = 'block';
+        document.getElementById('btnVolverAdmin').style.display = 'block';
+        document.getElementById('selectComuna').value = comuna;
+        document.getElementById('infoSector').value = "GENERAL / CONSOLIDADO";
+        try {
+            const { data, error } = await _supabase.from('mapas_comunales').select('*').eq('id_comuna', comuna);
+            if (error) throw error;
+            if (data && data.length > 0) {
+                let totalCC = 0, totalCalles = 0, totalAsf = 0, totalNoAsf = 0;
+                let parroquiaDetectada = "";
+                data.forEach(reg => {
+                    if (reg.parroquia) parroquiaDetectada = reg.parroquia;
+                    totalCC += parseInt(reg.cant_consejo_comunales) || 0;
+                    totalCalles += parseInt(reg.cant_de_calles) || 0;
+                    totalAsf += parseInt(reg.asfaltadas) || 0;
+                    totalNoAsf += parseInt(reg.sin_asfaltar) || 0;
+                    if (reg.geometria_mapa) {
+                        restaurarDatosDesdeNube(reg.geometria_mapa);
+                    }
+                    if (reg.antecedentes) {
+                        reg.antecedentes.forEach(ant => agregarFilaHistoria(ant.anio, `[${reg.nombre_sector}] ${ant.suceso}`));
+                    }
+                });
+                document.getElementById('infoParroquia').value = parroquiaDetectada;
+                document.getElementById('infoCC').value = totalCC;
+                document.getElementById('infoCalles').value = totalCalles;
+                document.getElementById('infoAsf').value = totalAsf;
+                document.getElementById('infoNoAsf').value = totalNoAsf;
+                alert(`Cargando Mapa Generalizado de la comuna: ${comuna}\nSe consolidaron ${data.length} sectores.`);
+            } else {
+                alert("No se encontraron sectores con mapas para consolidar en esta comuna.");
+            }
+        } catch (err) { alert("Error al generalizar mapas: " + err.message); }
+        map.invalidateSize();
+    }
+
+    async function cargarContadoresReales() {
+        try {
+            const { data, error } = await _supabase.from('mapas_comunales').select('id_comuna');
+            if (data) {
+                listaComunas.forEach(c => dbMapasCount[c] = 0);
+                data.forEach(reg => { if (dbMapasCount[reg.id_comuna] !== undefined) dbMapasCount[reg.id_comuna]++; });
+                if(rolActual === 'admin') mostrarLeyendaAdmin();
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    function limpiarMapaCompletamente() {
+        stackElementos.forEach(capa => { map.removeLayer(capa); if(capa._decoradorFlechas) map.removeLayer(capa._decoradorFlechas); });
+        stackElementos = []; for (let k in contadores) contadores[k] = 0;
+        actualizarBadges(); document.getElementById('infoSector').value = ""; document.getElementById('lista-antecedentes').innerHTML = "";
+        document.getElementById('infoParroquia').value = "";
+        document.getElementById('infoCC').value = "0";
+        document.getElementById('infoCalles').value = "0";
+        document.getElementById('infoAsf').value = "0";
+        document.getElementById('infoNoAsf').value = "0";
+        alternarLeyendaNormal();
+    }
+
+    function restaurarDatosDesdeNube(geoJSONData) {
+        if (!geoJSONData) return;
+        L.geoJSON(geoJSONData, {
+            pointToLayer: function (feature, latlng) {
+                const tipoId = feature.properties.tipoId;
+                let contenidoIcono = (tipoId === 'medico') ? `<div class="cruz-roja"></div>` : obtenerEmojiPorId(tipoId);
+                const marker = L.marker(latlng, {
+                    icon: L.divIcon({
+                        className: '',
+                        html: `<div class="map-icon-container">${contenidoIcono}</div>`,
+                        iconSize: [24, 24],
+                        iconAnchor: [12, 12]
+                    }),
+                    draggable: true
+                });
+                marker.tipoId = tipoId;
+                if (feature.properties.especificacion) marker.especificacionDiscapacidad = feature.properties.especificacion;
+                if (feature.properties.datosReciclador) marker.datosReciclador = feature.properties.datosReciclador;
+                if (contadores[tipoId] !== undefined) contadores[tipoId]++;
+                return marker;
+            },
+            onEachFeature: function (feature, layer) {
+                let popupContenido = document.createElement('div');
+                popupContenido.style.display = 'flex'; popupContenido.style.flexDirection = 'column';
+                layer.tipoId = feature.properties.tipoId || "";
+                if (layer.tipoId === 'vuln_disc' || layer.tipoId === 'poste_riesgo') {
+                    const esteValue = feature.properties.especificacion || "";
+                    const labelTitulo = layer.tipoId === 'poste_riesgo' ? "ESPECIFICAR RIESGO POSTE:" : "ESPECIFICAR DISCAPACIDAD:";
+                    popupContenido.innerHTML = `<span class="popup-desc">${labelTitulo}</span><input type="text" id="input-spec-${L.stamp(layer)}" value="${esteValue}" style="width:100%; font-size:11px; color:black; background:white;" onchange="guardarEspecificacion(${L.stamp(layer)}, this.value)"><button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button>`;
+                } else if (layer.tipoId === 'cautivo' || layer.tipoId === 'invasora') {
+                    const esteValue = feature.properties.especificacion || "";
+                    const labelTitulo = layer.tipoId === 'cautivo' ? "DESCRIPCIÓN ANIMAL CAUTIVERIO:" : "DESCRIPCIÓN ESPECIE INVASORA:";
+                    popupContenido.innerHTML = `<span class="popup-desc">${labelTitulo}</span><input type="text" id="input-spec-${L.stamp(layer)}" value="${esteValue}" style="width:100%; font-size:11px; color:black; background:white;" onchange="guardarEspecificacion(${L.stamp(layer)}, this.value)"><button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button>`;
+                } else {
+                    popupContenido.innerHTML = `<div><span class="popup-desc">${feature.properties.popupContent || "Elemento"}</span><button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button></div>`;
+                }
+                layer.bindPopup(popupContenido);
+                if (layer.tipoId === 'ruta_evacuacion' && layer instanceof L.Polyline) {
+                    layer.setStyle({ color: '#00FF00', weight: 0, fill: false });
+                    recrearFlechasRuta(layer);
+                }
+
+                layer.on('click', ev => {
+                    L.DomEvent.stopPropagation(ev);
+                    if (emojiActual && !modoNavegar) {
+                        crearIcono(ev.latlng);
+                    } else {
+                        deseleccionarTodo(); 
+                        objetoSeleccionado = layer;
+                        if (layer.enableEdit) layer.enableEdit();
+                        if (layer.tipoId === 'recicladores') { 
+                            alternarLeyendaRecicladores(); 
+                            if(layer.datosReciclador) restaurarCamposReciclador(layer.datosReciclador); 
+                        }
+                        layer.openPopup();
+                    }
+                });
+
+                layer.on('dragend', function() {
+                    if (layer.tipoId === 'recicladores') {
+                        const nuevaPos = layer.getLatLng(); document.getElementById('recCoordenadas').value = `${nuevaPos.lat.toFixed(6)}, ${nuevaPos.lng.toFixed(6)}`;
+                        if (!layer.datosReciclador) layer.datosReciclador = {}; layer.datosReciclador.coordenadas = document.getElementById('recCoordenadas').value;
+                    }
+                    guardarProgresoMapa();
+                });
+                stackElementos.push(layer);
+            },
+            style: function (feature) { 
+                if (feature.properties.tipoId === 'ruta_evacuacion') {
+                    return { color: '#00FF00', weight: 0, fill: false };
+                }
+                return { color: feature.properties.color || "#B4D445", fillColor: feature.properties.color || "#B4D445", fillOpacity: feature.properties.fillOpacity || 0.4, weight: 4 }; 
+            }
+        }).addTo(map);
+        actualizarBadges();
+    }
+
+    function guardarEspecificacion(idMarcador, valor) {
+        const marcador = stackElementos.find(el => L.stamp(el) === idMarcador);
+        if (marcador) { marcador.especificacionDiscapacidad = valor; guardarProgresoMapa(); }
+    }
+
+    function guardarProgresoMapa() {
+        if (localStorage.getItem('sesion_activa') !== 'true') return; // Evita fugas si no están logueados
+
+        const antecedentes = [];
+        document.querySelectorAll('.fila-historia').forEach(fila => {
+            const inputs = fila.querySelectorAll('input');
+            if(inputs[0].value || inputs[1].value) antecedentes.push({ anio: inputs[0].value, suceso: inputs[1].value });
+        });
+        if (objetoSeleccionado && objetoSeleccionado.tipoId === 'recicladores') objetoSeleccionado.datosReciclador = capturarCamposReciclador();
+        const datosCompletos = {
+            infoTerritorial: {
+                parroquia: document.getElementById('infoParroquia').value, comuna: document.getElementById('selectComuna').value,
+                consejosC: document.getElementById('infoCC').value, calles: document.getElementById('infoCalles').value,
+                asfaltadas: document.getElementById('infoAsf').value, noAsfaltadas: document.getElementById('infoNoAsf').value, sector: document.getElementById('infoSector').value
+            },
+            antecedentes: antecedentes, contadores: contadores, arbolPredominante: document.getElementById('inputArbolPredominante').value, elementos: []
+        };
+        stackElementos.forEach(capa => {
+            const json = capa.toGeoJSON();
+            json.properties = { 
+                tipoId: capa.tipoId, color: capa.options.color || (capa.options.style ? capa.options.style.color : "#B4D445"), 
+                fillOpacity: capa.options.fillOpacity !== undefined ? capa.options.fillOpacity : 0.4, 
+                popupContent: capa.getPopup() ? (typeof capa.getPopup().getContent() === 'string' ? capa.getPopup().getContent().replace(/<button.*<\/button>/, "") : "Elemento") : "",
+                especificacion: capa.especificacionDiscapacidad || "", datosReciclador: capa.datosReciclador || null
+            };
+            datosCompletos.elementos.push(json);
+        });
+        localStorage.setItem('mapa_progreso_sig', JSON.stringify(datosCompletos));
+    }
+
+    function cortarCamposReciclador() { return capturarCamposReciclador(); }
+
+    function capturarCamposReciclador() {
+        return {
+            estado: document.getElementById('recEstado').value, municipio: document.getElementById('recMunicipio').value,
+            parroquia: document.getElementById('recParroquia').value, comuna: document.getElementById('recComuna').value,
+            cc: document.getElementById('recCC').value, sector: document.getElementById('recSector').value,
+            direccion: document.getElementById('recDireccion').value, coordenadas: document.getElementById('recCoordenadas').value,
+            geo: document.getElementById('recGeo').value, encargado: document.getElementById('recEncargado').value,
+            nomApe: document.getElementById('recNomApe').value, cedula: document.getElementById('recCedula').value,
+            sexo: document.getElementById('recSexo').value, correo: document.getElementById('recCorreo').value,
+            telefono: document.getElementById('recTelefono').value, razonSocial: document.getElementById('recRazonSocial').value,
+            tipoPropiedad: document.getElementById('recTipoPropiedad').value, rif: document.getElementById('recRif').value,
+            sabat: document.getElementById('recSabat').value, racda: document.getElementById('recRacda').value,
+            cantMensual: document.getElementById('recCantMensual').value, lugarDescarte: document.getElementById('recLugarDescarte').value, dispFinal: document.getElementById('recDispFinal').value
+        };
+    }
+
+    function restaurarCamposReciclador(d) {
+        if(!d) return;
+        document.getElementById('recEstado').value = d.estado || ""; document.getElementById('recMunicipio').value = d.municipio || "";
+        document.getElementById('recParroquia').value = d.parroquia || ""; document.getElementById('recComuna').value = d.comuna || "";
+        document.getElementById('recCC').value = d.cc || ""; document.getElementById('recSector').value = d.sector || "";
+        document.getElementById('recDireccion').value = d.direccion || ""; document.getElementById('recCoordenadas').value = d.coordenadas || "";
+        document.getElementById('recGeo').value = d.geo || ""; document.getElementById('recEncargado').value = d.encargado || "";
+        document.getElementById('recNomApe').value = d.nomApe || ""; document.getElementById('recCedula').value = d.cedula || "";
+        document.getElementById('recSexo').value = d.sexo || ""; document.getElementById('recCorreo').value = d.correo || "";
+        document.getElementById('recTelefono').value = d.telefono || ""; document.getElementById('recRazonSocial').value = d.razonSocial || "";
+        document.getElementById('recTipoPropiedad').value = d.tipoPropiedad || ""; document.getElementById('recRif').value = d.rif || "";
+        document.getElementById('recSabat').value = d.sabat || ""; document.getElementById('recRacda').value = d.racda || "";
+        document.getElementById('recCantMensual').value = d.cantMensual || ""; document.getElementById('recLugarDescarte').value = d.lugarDescarte || ""; document.getElementById('recDispFinal').value = d.dispFinal || "";
+    }
+
+    function limpiarCamposReciclador() { restaurarCamposReciclador({ estado:"", municipio:"", parroquia:"", comuna:"", cc:"", sector:"", direccion:"", coordenadas:"", geo:"", encargado:"", nomApe:"", cedula:"", sexo:"", correo:"", telephone:"", razonSocial:"", tipoPropiedad:"", rif:"", sabat:"", racda:"", cantMensual:"", lugarDescarte:"", dispFinal:"" }); }
+
+    function restaurarProgresoMapa() {
+        const datosGuardados = localStorage.getItem('mapa_progreso_sig'); if (!datosGuardados) return;
+        const data = JSON.parse(datosGuardados);
+        if(data.infoTerritorial) {
+            document.getElementById('infoParroquia').value = data.infoTerritorial.parroquia || ""; document.getElementById('selectComuna').value = data.infoTerritorial.comuna || "";
+            document.getElementById('infoCC').value = data.infoTerritorial.consejosC || 0; document.getElementById('infoCalles').value = data.infoTerritorial.calles || 0;
+            document.getElementById('infoAsf').value = data.infoTerritorial.asfaltadas || 0; document.getElementById('infoNoAsf').value = data.infoTerritorial.noAsfaltadas || 0; document.getElementById('infoSector').value = data.infoTerritorial.sector || "";
+        }
+        if(data.antecedentes) { document.getElementById('lista-antecedentes').innerHTML = ""; data.antecedentes.forEach(ant => agregarFilaHistoria(ant.anio, ant.suceso)); }
+        if(data.arbolPredominante) document.getElementById('inputArbolPredominante').value = data.arbolPredominante;
+        if(data.elementos && data.elementos.length > 0) restaurarDatosDesdeNube({ type: "FeatureCollection", features: data.elementos });
+    }
+
+    async function cargarMapaUsuario(correo) {
+        try {
+            const { data, error } = await _supabase.from('mapas_comunales').select('*').eq('usuario_email', correo).maybeSingle();
+            if (data) {
+                limpiarMapaCompletamente(); 
+                document.getElementById('infoSector').value = data.nombre_sector || ""; 
+                document.getElementById('selectComuna').value = data.id_comuna || "";
+                document.getElementById('infoParroquia').value = data.parroquia || "";
+                document.getElementById('infoCC').value = data.cant_consejo_comunales || 0;
+                document.getElementById('infoCalles').value = data.cant_de_calles || 0;
+                document.getElementById('infoAsf').value = data.asfaltadas || 0;
+                document.getElementById('infoNoAsf').value = data.sin_asfaltar || 0;
+
+                if (data.antecedentes) {
+                    document.getElementById('lista-antecedentes').innerHTML = "";
+                    data.antecedentes.forEach(ant => agregarFilaHistoria(ant.anio, ant.suceso));
+                }
+
+                if (data.geometria_mapa) {
+                    restaurarDatosDesdeNube(data.geometria_mapa);
+                }
+                guardarProgresoMapa();
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    function agregarFilaHistoria(anio = "", suceso = "") {
+        let div = document.createElement('div'); div.className = 'fila-historia';
+        div.innerHTML = `<input type="text" class="col-anio sidebar-input" placeholder="Año" value="${anio}"><input type="text" class="col-suceso sidebar-input" placeholder="Hito" value="${suceso}"><button class="btn-del-hist" onclick="this.parentElement.remove(); guardarProgresoMapa();">🗑️</button>`;
+        document.getElementById('lista-antecedentes').appendChild(div);
+    }
+
+    function obtenerEmojiPorId(id) {
+        const mapeo = {
+            'refugio_iglesia': '⛪', 'refugio_escuela': '🏫', 'refugio_comedor': '🍽️', 'refugio_misiones': '🎪',
+            'vuln_emb': '🤰', 'vuln_disc': '♿', 'vuln_nino': '👶', 'vuln_adult': '👴', 'vuln_cron': '🩺',
+            'centro_med': '🏥', 'cpt1': '🏥1', 'cpt2': '🏥2', 'cpt3': '🏥3', 'enfermero': '👨‍⚕️', 'paramedico': '🚑',
+            'pol_inst': '👮', 'bom_inst': '🚒', 'pc_inst': '🚨', 'cuadrante': '🛡️', 'medico': 'CRUZ_ROJA', 'pol_amb': '👮🌿', 'inparques': '💂',
+            'mov_amb': '✊🌿', 'riesgo_carro': '\u{1F697}', 'arbol_v': '🏠🌳', 'cables': '🔌', 'casa_r': '🏚️', 'inund': '🌊', 'terreno_i': '⛰️',
+            'derrumbe': '⚠️', 'blancas': '💧', 'servidas': '🤢', 'colector': '🕳️', 'basura': '🗑️', 'autolavado': '🧼',
+            'taller': '🛠️', 'cauchera': '\u{1F6DE}', 'verde': '🌳', 'huerto': '👨🏼‍🌾', 'araguaney': '🟡', 'apamate': '🌸', 'cereipo': '🌿',
+            'pollos': '🐣', 'cerdo_c': '🐷', 'cerdo_s': '🐗', 'ovejos': '🐑', 'cautivo': '🦁', 'invasora': '🦎', 'recicladores': '♻️', 'poste_riesgo': '⚡',
+            'pozo_derrumbado': '⚫'
+        };
+        return mapeo[id] || '📍';
+    }
+
+    async function registrarVocero() {
+        const correo = document.getElementById('regCor').value.trim().toLowerCase();
+        const voceriaSelect = document.getElementById('selectVoceria').value;
+        const especificacion = (voceriaSelect === 'Otro') ? document.getElementById('inputOtro').value : '—';
+        const vocero = {
+            nom: document.getElementById('regNom').value, ape: document.getElementById('regApe').value, ced: document.getElementById('regCed').value, tel: document.getElementById('regTel').value, cor: correo, com: document.getElementById('regCom').value, sec: document.getElementById('regSec').value, voc: voceriaSelect, esp: especificacion
+        };
+        try {
+            const { error } = await _supabase.from('registross_voceros').insert([{ 'nombres': vocero.nom, 'apellidos': vocero.ape, 'cédula de identidad': vocero.ced, 'telefono': vocero.tel, 'correo': vocero.cor, 'comuna': vocero.com, 'sector': vocero.sec, 'voceria': vocero.voc, 'especificacion': vocero.esp }]);
+            if (error) throw error; alert("Registro exitoso");
+            dbVoceros.push(vocero); guardarDB(); actualizarTablaVoceros(); reproducirAnimacion('usuario');
+        } catch (err) { alert("Error: " + err.message); }
+    }
+
+    function volverAlPanelControl() {
+        if (confirm("¿Volver al panel? Cambios no guardados se perderán.")) {
+            document.getElementById('sidebar').style.display = 'none'; document.getElementById('panel-admin-comunas').style.display = 'block';
+            document.getElementById('btnVolverAdmin').style.display = 'none'; limpiarMapaCompletamente();
+            map.setView([10.136, -64.686], 13); cargarContadoresReales();
+        }
+    }
+
+    async function confirmarSalidaSegura() {
+        const comunaSeleccionada = document.getElementById('selectComuna').value;
+        const sectorNombre = document.getElementById('infoSector').value.trim();
+        const estadoValor = document.getElementById('infoEstado').value;
+        const municipioValor = document.getElementById('infoMunicipio').value;
+        const parroquiaValor = document.getElementById('infoParroquia').value.trim();
+        const ccValor = parseInt(document.getElementById('infoCC').value) || 0;
+        const callesValor = parseInt(document.getElementById('infoCalles').value) || 0;
+        const asfValor = parseInt(document.getElementById('infoAsf').value) || 0;
+        const noAsfValor = parseInt(document.getElementById('infoNoAsf').value) || 0;
+
+        const correoUsuario = localStorage.getItem('user_email_active') || 'anonimo@bolivar.gob.ve';
+        if (rolActual === 'admin' && document.getElementById('panel-admin-comunas').style.display !== 'none') { cerrarSesionTotal(); return; }
+        if (!comunaSeleccionada || !sectorNombre) { alert("ERROR: Comuna y Sector obligatorios."); return; }
+        if (sectorNombre === "GENERAL / CONSOLIDADO") { alert("AVISO: El mapa general consolidado es de solo lectura y no se puede sobreescribir."); return; }
+        if (confirm(`¿Guardar sector "${sectorNombre}" y salir?`)) {
+            if (objetoSeleccionado && objetoSeleccionado.tipoId === 'recicladores') objetoSeleccionado.datosReciclador = capturarCamposReciclador();
+            const grupoCapa = L.featureGroup(stackElementos); const geojsonActual = grupoCapa.toGeoJSON();
+            geojsonActual.features.forEach((feature, index) => {
+                const capaOriginal = stackElementos[index];
+                feature.properties = { tipoId: capaOriginal.tipoId, color: capaOriginal.options.color || (capaOriginal.options.style ? capaOriginal.options.style.color : "#B4D445"), fillOpacity: capaOriginal.options.fillOpacity !== undefined ? capaOriginal.options.fillOpacity : 0.4, popupContent: capaOriginal.getPopup() ? (typeof capaOriginal.getPopup().getContent() === 'string' ? capaOriginal.getPopup().getContent().replace(/<button.*<\/button>/, "") : "Elemento") : "", especificacion: capaOriginal.especificacionDiscapacidad || "", datosReciclador: capaOriginal.datosReciclador || null };
+            });
+
+            const antecedentes = [];
+            document.querySelectorAll('.fila-historia').forEach(fila => {
+                const inputs = fila.querySelectorAll('input');
+                if(inputs[0].value || inputs[1].value) antecedentes.push({ anio: inputs[0].value, suceso: inputs[1].value });
+            });
+
+            try {
+                const { error } = await _supabase.from('mapas_comunales').upsert({ 
+                    id_comuna: comunaSeleccionada, 
+                    nombre_sector: sectorNombre, 
+                    geometria_mapa: geojsonActual, 
+                    usuario_email: correoUsuario,
+                    estado: estadoValor,
+                    municipio: municipioValor,
+                    parroquia: parroquiaValor,
+                    cant_consejo_comunales: ccValor,
+                    cant_de_calles: callesValor,
+                    asfaltadas: asfValor,
+                    sin_asfaltar: noAsfValor,
+                    antecedentes: antecedentes
+                }, { onConflict: 'id_comuna, nombre_sector' });
+                if (error) throw error; alert("Guardado."); cerrarSesionTotal();
+            } catch (err) { alert("Error: " + err.message); }
+        }
+    }
+
+    function cerrarSesionTotal() { 
+        localStorage.clear(); // Borra credenciales de manera contundente
+        window.location.reload(); 
+    }
+    
+    function controlarOtro(valor) { document.getElementById('segmento-otro').style.display = valor === 'Otro' ? 'block' : 'none'; }
+
+    var map, emojiActual = null, modoEspecial = "", modoNavegar = true;
+    var stackElementos = [], stackRedo = [];
+    var objetoSeleccionado = null, trazandoAhora = null, tipoDeTrazadoActivo = "";
+    var contadores = { refugio_iglesia:0, refugio_escuela:0, refugio_comedor:0, refugio_misiones:0, centro_med:0, cpt1:0, cpt2:0, cpt3:0, pol_inst:0, bom_inst:0, pc_inst:0, cuadrante:0, medico:0, enfermero:0, paramedico:0, pol_amb:0, inparques:0, mov_amb:0, riesgo_carro: 0, arbol_v:0, cables:0, casa_r:0, inund:0, terrain_i:0, footer:0, derrumbe:0, blancas:0, servidas:0, basura:0, colector:0, autolavado:0, taller:0, cauchera:0, verde:0, huerto:0, araguaney:0, apamate:0, cereipo:0, pollos:0, cerdo_c:0, cerdo_s:0, ovejos:0, cautivo:0, invasora:0, vuln_emb:0, vuln_disc:0, vuln_nino:0, vuln_adult:0, vuln_cron:0, recicladores: 0, poste_riesgo: 0, pozo_derrumbado: 0 };
+
+    function actualizarTablaVoceros() {
+        const tbody = document.getElementById('tbody-voceros'); if(!tbody) return; tbody.innerHTML = "";
+        dbVoceros.forEach((v, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td contenteditable="true" onblur="editarDato(${index}, 'nom', this.innerText)">${v.nom}</td><td contenteditable="true" onblur="editarDato(${index}, 'ape', this.innerText)">${v.ape}</td><td contenteditable="true" onblur="editarDato(${index}, 'ced', this.innerText)">${v.ced}</td><td contenteditable="true" onblur="editarDato(${index}, 'tel', this.innerText)">${v.tel}</td><td contenteditable="true" onblur="editarDato(${index}, 'cor', this.innerText)">${v.cor}</td><td contenteditable="true" onblur="editarDato(${index}, 'com', this.innerText)">${v.com}</td><td contenteditable="true" onblur="editarDato(${index}, 'sec', this.innerText)">${v.sec}</td><td><select class="select-voceria-table" onchange="editarDato(${index}, 'voc', this.value)"><option value="Vocero de Ecosocialismo" ${v.voc === 'Vocero de Ecosocialismo' ? 'selected' : ''}>Ecosocialismo</option><option value="Otro" ${v.voc === 'Otro' ? 'selected' : ''}>Otro</option></select></td><td contenteditable="true" onblur="editarDato(${index}, 'esp', this.innerText)">${v.esp}</td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function editarDato(idx, campo, valor) { dbVoceros[idx][campo] = valor; guardarDB(); }
+    function guardarDB() { localStorage.setItem('dbVoceros_SIG', JSON.stringify(dbVoceros)); }
+    function togglePanelVoceros() { const p = document.getElementById('panel-voceros-lista'); p.style.display = p.style.display === 'flex' ? 'none' : 'flex'; }
+
+    function verificarCorreo() {
+        const correo = document.getElementById('regCor').value.trim().toLowerCase(); if(!correo) return; 
+        const contenedorCampos = document.getElementById('campos-dinamicos-registro');
+        const v = dbVoceros.find(voc => voc.cor.toLowerCase() === correo);
+        localStorage.setItem('user_email_active', correo);
+        if(v) {
+            contenedorCampos.style.display = 'flex';
+            document.getElementById('regNom').value = v.nom; document.getElementById('regApe').value = v.ape; document.getElementById('regCed').value = v.ced; document.getElementById('regTel').value = v.tel; document.getElementById('regCom').value = v.com; document.getElementById('regSec').value = v.sec; document.getElementById('selectVoceria').value = v.voc; controlarOtro(v.voc); if(v.voc === 'Otro') document.getElementById('inputOtro').value = v.esp;
+            cargarMapaUsuario(correo);
+        } else { contenedorCampos.style.display = 'flex'; }
+    }
+
+    function limpiarSiVacio(val) { if(val === "") document.getElementById('campos-dinamicos-registro').style.display = 'none'; }
+
+    function validarAdmin() {
+        const emailIngresado = document.getElementById('adminEmail').value.trim().toLowerCase();
+        const passIngresada = document.getElementById('adminPass').value;
+        const esValido = adminPermitidos.find(acc => acc.user === emailIngresado && acc.pass === passIngresada);
+        if (esValido) { 
+            rolActual = "admin"; 
+            localStorage.setItem('user_email_active', emailIngresado); 
+            reproducirAnimacion('admin'); 
+        } else { alert("Acceso Denegado."); }
+    }
+
+    function cambiarSeccion(tipo) {
+        const btns = document.querySelectorAll('.tab-btn'); btns.forEach(btn => btn.classList.remove('active'));
+        if(tipo === 'registro') { document.getElementById('form-registro-principal').style.display = 'grid'; document.getElementById('form-admin-acceso').style.display = 'none'; btns[0].classList.add('active'); } 
+        else { document.getElementById('form-registro-principal').style.display = 'none'; document.getElementById('form-admin-acceso').style.display = 'grid'; btns[1].classList.add('active'); }
+    }
+
+    function reproducirAnimacion(rol) {
+        const videoContenedor = document.getElementById('video-contenedor'); const video = document.getElementById('animacion-video');
+        videoContenedor.style.display = 'flex'; video.play();
+        video.onended = function() {
+            videoContenedor.style.display = 'none'; document.getElementById('pantalla-registro').style.display = 'none'; document.getElementById('sistema-principal').style.display = 'flex';
+            localStorage.setItem('sesion_activa', 'true'); localStorage.setItem('rol_usuario', rol);
+            inicializarMapa(); cargarContadoresReales(); if(rol === 'admin') mostrarLeyendaAdmin();
+            setTimeout(restaurarProgresoMapa, 500);
+        };
+    }
+
+    async function cargarMapaEspecifico(comuna, sector) {
+        limpiarMapaCompletamente(); document.getElementById('panel-admin-comunas').style.display = 'none'; document.getElementById('sidebar').style.display = 'block'; document.getElementById('btnVolverAdmin').style.display = 'block';
+        document.getElementById('selectComuna').value = comuna; document.getElementById('infoSector').value = sector;
+        try {
+            const { data, error } = await _supabase.from('mapas_comunales').select('*').eq('id_comuna', comuna).eq('nombre_sector', sector).maybeSingle();
+            if (data) { 
+                document.getElementById('infoParroquia').value = data.parroquia || "";
+                document.getElementById('infoCC').value = data.cant_consejo_comunales || 0;
+                document.getElementById('infoCalles').value = data.cant_de_calles || 0;
+                document.getElementById('infoAsf').value = data.asfaltadas || 0;
+                document.getElementById('infoNoAsf').value = data.sin_asfaltar || 0;
+
+                if (data.antecedentes) {
+                    document.getElementById('lista-antecedentes').innerHTML = "";
+                    data.antecedentes.forEach(ant => agregarFilaHistoria(ant.anio, ant.suceso));
+                }
+
+                if (data.geometria_mapa) {
+                    restaurarDatosDesdeNube(data.geometria_mapa);
+                }
+                alert(`Cargando Sector: ${sector}`); 
+            }
+        } catch (err) { console.error(err.message); }
+        map.invalidateSize();
+    }
+
+    function inicializarMapa() {
+        if (map) return;
+        map = L.map('map', { editable: true, zoomControl: true }).setView([10.136, -64.686], 18);
+        L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 20 }).addTo(map);
+        map.on('editable:drawing:start', e => { trazandoAhora = e.layer; document.getElementById('btnFinalizar').style.display = 'flex'; });
+        map.on('editable:drawing:click', e => { if (tipoDeTrazadoActivo === 'evac' && trazandoAhora) { trazandoAhora.setStyle({ color: '#00FF00', weight: 0, fill: false }); recrearFlechasRuta(trazandoAhora); } });
+        map.on('editable:drawing:end', e => { registrarObjeto(e.layer); activarMano(); document.getElementById('btnFinalizar').style.display = 'none'; trazandoAhora = null; tipoDeTrazadoActivo = ""; document.getElementById('desplegable-riesgos-trazado').style.display = 'none'; guardarProgresoMapa(); });
+        map.on('click', e => { if (emojiActual && !modoNavegar) crearIcono(e.latlng); else deseleccionarTodo(); });
+    }
+
+    function toggleSidebar() { document.getElementById('sidebar').style.display = document.getElementById('sidebar').style.display === 'none' ? 'block' : 'none'; map.invalidateSize(); }
+
+    function irAMiUbicacion() { 
+        if (!navigator.geolocation) return;
+        navigator.geolocation.getCurrentPosition(pos => { 
+            const lat = pos.coords.latitude, lng = pos.coords.longitude; map.setView([lat, lng], 19); 
+            if (userLocationMarker) map.removeLayer(userLocationMarker);
+            userLocationMarker = L.marker([lat, lng], { icon: L.divIcon({ className: '', html: '<div class="user-location-icon"></div>', iconSize: [20, 20] }) }).addTo(map);
+        }); 
+    }
+
+    function abrirPopupDesdeFlecha(linea, ev) {
+        L.DomEvent.stopPropagation(ev);
+        if (emojiActual && !modoNavegar) {
+            crearIcono(ev.latlng);
+        } else {
+            deseleccionarTodo();
+            objetoSeleccionado = linea;
+            if (linea.enableEdit) linea.enableEdit();
+            linea.openPopup(ev.latlng);
+        }
+    }
+
+    function iniciarTrazado(tipo) { deseleccionarTodo(); tipoDeTrazadoActivo = tipo; if(tipo === 'pol') { document.getElementById('desplegable-riesgos-trazado').style.display = 'flex'; map.editTools.startPolygon(); } else { document.getElementById('desplegable-riesgos-trazado').style.display = 'none'; map.editTools.startPolyline(); } }
+    function finalizarTrazado() { if(trazandoAhora) map.editTools.stopDrawing(); }
+    function controlarZoomSlider(val) { map.setZoom(parseFloat(val)); }
+
+    function crearIcono(latlng) {
+        let contenidoIcono = (emojiActual === 'CRUZ_ROJA') ? `<div class="cruz-roja"></div>` : emojiActual;
+        let m = L.marker(latlng, { icon: L.divIcon({ className:'', html: `<div class="map-icon-container">${contenidoIcono}</div>`, iconSize:[24,24] }), draggable: true }).addTo(map);
+        m.tipoId = modoEspecial; contadores[modoEspecial]++; actualizarBadges();
+        let popupContenido = document.createElement('div');
+        if (m.tipoId === 'vuln_disc' || m.tipoId === 'poste_riesgo') {
+            const labelTitulo = m.tipoId === 'poste_riesgo' ? "ESPECIFICAR RIESGO POSTE:" : "ESPECIFICAR DISCAPACIDAD:";
+            popupContenido.innerHTML = `<span class="popup-desc">${labelTitulo}</span><input type="text" id="input-spec-${L.stamp(m)}" style="color:black; background:white;" onchange="guardarEspecificacion(${L.stamp(m)}, this.value)"><button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button>`;
+        } else if (m.tipoId === 'cautivo' || m.tipoId === 'invasora') {
+            const labelTitulo = m.tipoId === 'cautivo' ? "DESCRIPCIÓN ANIMAL CAUTIVERIO:" : "DESCRIPCIÓN ESPECIE INVASORA:";
+            popupContenido.innerHTML = `<span class="popup-desc">${labelTitulo}</span><input type="text" id="input-spec-${L.stamp(m)}" style="color:black; background:white; width: 100%;" onchange="guardarEspecificacion(${L.stamp(m)}, this.value)"><button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button>`;
+        } else {
+            popupContenido.innerHTML = `<button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button>`;
+        }
+        m.bindPopup(popupContenido);
+        m.on('click', ev => { L.DomEvent.stopPropagation(ev); deseleccionarTodo(); objetoSeleccionado = m; if (m.tipoId === 'recicladores') alternarLeyendaRecicladores(); m.openPopup(); });
+        m.on('dragend', function() { if (m.tipoId === 'recicladores') { m.datosReciclador = capturarCamposReciclador(); } guardarProgresoMapa(); });
+        if (modoEspecial === 'recicladores') { alternarLeyendaRecicladores(); limpiarCamposReciclador(); document.getElementById('recCoordenadas').value = `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`; m.datosReciclador = capturarCamposReciclador(); }
+        stackElementos.push(m); guardarProgresoMapa();
+    }
+
+    function recrearFlechasRuta(linea) {
+        if (linea._decoradorFlechas) map.removeLayer(linea._decoradorFlechas);
+        const latlngs = linea.getLatLngs(); if (latlngs.length < 2) return;
+        const groupoFlechas = L.layerGroup(); const distanciaPaso = 30;
+        let acumPuntosPantala = []; latlngs.forEach(ll => acumPuntosPantala.push(map.latLngToLayerPoint(ll)));
+        let distanciaRemanente = 15;
+        for (let i = 0; i < acumPuntosPantala.length - 1; i++) {
+            let p1 = acumPuntosPantala[i]; let p2 = acumPuntosPantala[i+1];
+            let dx = p2.x - p1.x; let dy = p2.y - p1.y; let distSegmento = Math.sqrt(dx * dx + dy * dy);
+            if (distSegmento === 0) continue;
+            let angulo = Math.atan2(dy, dx) * 180 / Math.PI; let distanciaActual = distSegmento;
+            while (distanciaActual >= distanciaRemanente) {
+                let ratio = distanciaRemanente / distSegmento;
+                let latlngFlecha = map.layerPointToLatLng([p1.x + dx * ratio, p1.y + dy * ratio]);
+                let mFlecha = L.marker(latlngFlecha, { icon: L.divIcon({ className: '', html: `<div style="transform: rotate(${angulo}deg); width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M4 12H20M20 12L12 4M20 12L12 20" stroke="#00FF00" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`, iconSize: [34, 34] }), interactive: true });
+                mFlecha.on('click', ev => abrirPopupDesdeFlecha(linea, ev));
+                groupoFlechas.addLayer(mFlecha); distanciaRemanente += distanciaPaso;
+            }
+            distanciaRemanente -= distSegmento;
+        }
+        groupoFlechas.addTo(map); linea._decoradorFlechas = groupoFlechas;
+        map.off('zoomend', linea._zoomListener); linea._zoomListener = () => { if(stackElementos.includes(linea)) recrearFlechasRuta(linea); }; map.on('zoomend', linea._zoomListener);
+    }
+
+    function registrarObjeto(obj) {
+        let descripcion = "";
+        if (tipoDeTrazadoActivo === 'evac') { obj.tipoId = 'ruta_evacuacion'; obj.setStyle({ color: '#00FF00', weight: 0, fill: false }); recrearFlechasRuta(obj); descripcion = "VÍA DE EVACUACIÓN (VERDE)"; obj.bindPopup(`<div><span class="popup-desc">${descripcion}</span><button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button></div>`); } 
+        else if (tipoDeTrazadoActivo === 'pol') {
+            let col = document.getElementById('colorPol').value; let fill = document.getElementById('checkRelleno').checked; obj.tipoId = 'poligono_riesgo';
+            let textoRiesgo = col === '#ff0000' ? "ALTO RIESGO 🔴" : col === '#ffa500' ? "MEDIANO RIESGO 🪚" : col === '#ffff00' ? "BAJO RIESGO 🟡" : "SECTOR DELIMITADO ⚫";
+            descripcion = `${textoRiesgo} - ${prompt("Detalles:") || "Sin detalles"}`; obj.setStyle({ color: col, fillColor: col, fillOpacity: fill ? 0.4 : 0, weight: 4 });
+            obj.bindPopup(`<div><span class="popup-desc">${descripcion}</span><button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button></div>`);
+        } else { obj.tipoId = 'linea_tecnica'; obj.setStyle({ color: "#B4D445", weight: 4 }); obj.bindPopup(`<div><span class="popup-desc">${prompt("Detalles:") || "Trazado"}</span><button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button></div>`); }
+
+        obj.on('click', e => { 
+            L.DomEvent.stopPropagation(e);
+            if (emojiActual && !modoNavegar) {
+                crearIcono(e.latlng);
+            } else {
+                if (modoNavegar) { deseleccionarTodo(); objetoSeleccionado = obj; obj.enableEdit(); obj.openPopup(); } 
+            }
+        });
+        stackElementos.push(obj); guardarProgresoMapa();
+    }
+
+    function eliminarObjeto(obj) {
+        if (!obj) return; if (obj.tipoId && contadores[obj.tipoId] !== undefined) contadores[obj.tipoId]--; actualizarBadges();
+        if (obj.tipoId === 'recicladores') alternarLeyendaNormal(); if (obj._decoradorFlechas) map.removeLayer(obj._decoradorFlechas);
+        map.removeLayer(obj); stackElementos = stackElementos.filter(i => i !== obj); objetoSeleccionado = null; guardarProgresoMapa();
+    }
+
+    function deseleccionarTodo() { if (objetoSeleccionado && objetoSeleccionado.disableEdit) objetoSeleccionado.disableEdit(); objetoSeleccionado = null; }
+    function activarMano() { emojiActual = null; modoNavegar = true; document.querySelectorAll('.btn-mapa').forEach(b => b.classList.remove('active')); document.getElementById('floatMano').classList.add('activo-float'); }
+    function cambiarEmoji(e, btn, esp) { emojiActual = e; modoEspecial = esp; modoNavegar = false; document.querySelectorAll('.btn-mapa').forEach(b => b.classList.remove('active')); btn.classList.add('active'); document.getElementById('floatMano').classList.remove('adjustable-float'); document.getElementById('floatMano').classList.add('activo-float'); }
+    function actualizarBadges() { for(let k in contadores) { let el = document.getElementById('count-'+k); if(el) el.innerText = contadores[k]; } }
+    
+    function deshacer() { 
+        let el = stackElementos.pop(); 
+        if(el) { 
+            stackRedo.push(el); 
+            map.removeLayer(el); 
+            if (el._decoradorFlechas) map.removeLayer(el._decoradorFlechas); 
+            if (el.tipoId && contadores[el.tipoId] !== undefined && contadores[el.tipoId] > 0) {
+                contadores[el.tipoId]--;
+                actualizarBadges();
+            }
+            guardarProgresoMapa(); 
+        } 
+    }
+    
+    function rehacer() { 
+        let el = stackRedo.pop(); 
+        if(el) { 
+            stackElementos.push(el); 
+            el.addTo(map); 
+            if (el._decoradorFlechas) el._decoradorFlechas.addTo(map); 
+            if (el.tipoId && contadores[el.tipoId] !== undefined) {
+                contadores[el.tipoId]++;
+                actualizarBadges();
+            }
+            guardarProgresoMapa(); 
+        } 
+    }
+    document.querySelectorAll('.sidebar-input, .sidebar-select').forEach(el => el.addEventListener('change', guardarProgresoMapa));
 </script>
 </body>
 </html>

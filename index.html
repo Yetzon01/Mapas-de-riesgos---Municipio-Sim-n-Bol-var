@@ -1,5 +1,3 @@
-Este es el código index.html: 
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -370,31 +368,11 @@ Este es el código index.html:
                 </div>
                     <h4>📂 Mapas Realizados</h4>
 <div id="contenedor-mapas-realizados">
-    <button class="btn-mapa" onclick="alternarListaMapas()">
+    <button class="btn-mapa" onclick="cargarMapasDelUsuario(); alternarListaMapas()">
         <div>📁 Ver Mapas Guardados</div>
         <span class="count-badge" id="count-mapas-totales">0</span>
     </button>
-    <div id="lista-mapas-desplegable" style=#lista-mapas-desplegable {
-    animation: fadeIn 0.3s ease;
-}
-
-.item-mapa-guardado {
-    padding: 8px;
-    background: #252827;
-    border: 1px solid #444;
-    border-radius: 4px;
-    margin-bottom: 5px;
-    cursor: pointer;
-    font-size: 11px;
-    color: white;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.item-mapa-guardado:hover {
-    border-color: var(--v-lim);
-}"display: none; background: #1a1c1b; border: 1px solid #333; padding: 10px; margin-top: 5px; border-radius: 6px;">
+    <div id="lista-mapas-desplegable" style="display: none; background: #1a1c1b; border: 1px solid #333; padding: 10px; margin-top: 5px; border-radius: 6px;">
         <p style="font-size: 10px; color: #888; text-align: center;">No hay mapas registrados aún.</p>
     </div>
 </div>
@@ -669,6 +647,40 @@ Este es el código index.html:
 
     listaComunas.forEach(c => dbMapasCount[c] = 0);
 
+    // --- NUEVA FUNCIÓN ---
+    async function cargarMapasDelUsuario() {
+        const correoUsuario = localStorage.getItem('user_email_active');
+        const contenedorLista = document.getElementById('lista-mapas-desplegable');
+        
+        if (!correoUsuario) return;
+
+        try {
+            const { data, error } = await _supabase
+                .from('mapas_comunales')
+                .select('id_comuna, nombre_sector')
+                .eq('usuario_email', correoUsuario);
+
+            if (error) throw error;
+
+            contenedorLista.innerHTML = "";
+            
+            if (data && data.length > 0) {
+                data.forEach(mapa => {
+                    const item = document.createElement('div');
+                    item.className = 'item-mapa-guardado';
+                    item.innerHTML = `<span><strong>${mapa.nombre_sector}</strong><br><small>${mapa.id_comuna}</small></span>`;
+                    item.onclick = () => cargarMapaEspecifico(mapa.id_comuna, mapa.nombre_sector); 
+                    contenedorLista.appendChild(item);
+                });
+            } else {
+                contenedorLista.innerHTML = '<p style="font-size: 10px; color: #888; text-align: center;">No tienes mapas guardados aún.</p>';
+            }
+        } catch (err) {
+            console.error("Error al cargar mapas:", err.message);
+        }
+    }
+    // ---------------------
+
     function alternarLeyendaRecicladores() {
         document.getElementById('leyenda-normal').style.display = 'none';
         document.getElementById('leyenda-recicladores').style.display = 'block';
@@ -677,6 +689,11 @@ Este es el código index.html:
     function alternarLeyendaNormal() {
         document.getElementById('leyenda-recicladores').style.display = 'none';
         document.getElementById('leyenda-normal').style.display = 'block';
+    }
+    
+    function alternarListaMapas() {
+        const lista = document.getElementById('lista-mapas-desplegable');
+        lista.style.display = lista.style.display === 'none' ? 'block' : 'none';
     }
 
     async function eliminarMapaDelSistema(comuna, sector) {

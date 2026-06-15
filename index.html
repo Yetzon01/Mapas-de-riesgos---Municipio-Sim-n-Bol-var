@@ -651,7 +651,7 @@
     async function cargarMapasDelUsuario() {
         const correoUsuario = localStorage.getItem('user_email_active');
         const contenedorLista = document.getElementById('lista-mapas-desplegable');
-        
+
         if (!correoUsuario) return;
 
         try {
@@ -663,7 +663,7 @@
             if (error) throw error;
 
             contenedorLista.innerHTML = "";
-            
+
             if (data && data.length > 0) {
                 data.forEach(mapa => {
                     const item = document.createElement('div');
@@ -690,7 +690,7 @@
         document.getElementById('leyenda-recicladores').style.display = 'none';
         document.getElementById('leyenda-normal').style.display = 'block';
     }
-    
+
     function alternarListaMapas() {
         const lista = document.getElementById('lista-mapas-desplegable');
         lista.style.display = lista.style.display === 'none' ? 'block' : 'none';

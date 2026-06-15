@@ -372,9 +372,7 @@
         <div>📁 Ver Mapas Guardados</div>
         <span class="count-badge" id="count-mapas-totales">0</span>
     </button>
-    <div id="lista-mapas-desplegable" style=#lista-mapas-desplegable {
-    animation: fadeIn 0.3s ease;
-        function mostrarMapasEnInterfaz(mapas) {
+    <div id=        function mostrarMapasEnInterfaz(mapas) {
     const contenedor = document.getElementById('lista-mapas');
     contenedor.innerHTML = ''; // Limpiar previo
 
@@ -394,7 +392,9 @@
         `;
         contenedor.appendChild(item);
     });
-}
+}"lista-mapas-desplegable" style=#lista-mapas-desplegable {
+    animation: fadeIn 0.3s ease;
+
 }
 
 .item-mapa-guardado {

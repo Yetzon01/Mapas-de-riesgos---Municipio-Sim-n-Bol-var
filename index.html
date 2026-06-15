@@ -1492,6 +1492,74 @@
             console.error("Error al cargar mapas:", err.message);
         }
     }
+    async function cargarMapasDelUsuario() {
+        const correoUsuario = localStorage.getItem('user_email_active');
+        const contenedorLista = document.getElementById('lista-mapas-desplegable');
+
+        if (!correoUsuario) return;
+
+        try {
+            const { data, error } = await _supabase
+                .from('mapas_comunales')
+                .select('id_comuna, nombre_sector')
+                .eq('usuario_email', correoUsuario);
+
+            if (error) throw error;
+
+            contenedorLista.innerHTML = "";
+
+            if (data && data.length > 0) {
+                data.forEach(mapa => {
+                    const item = document.createElement('div');
+                    item.className = 'item-mapa-guardado';
+                    // Estructura: Flexbox para alinear contenido (Izq: 🔰+Info, Der: 🗑️)
+                    item.innerHTML = `
+                        <div style="padding: 10px; border-bottom: 1px solid #333; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                            <div style="display: flex; align-items: center; gap: 10px; cursor: pointer; flex-grow: 1;" 
+                                 onclick="cargarMapaEspecifico('${mapa.id_comuna}', '${mapa.nombre_sector}')">
+                                <span style="font-size: 16px;">🔰</span>
+                                <div>
+                                    <strong style="color: white; font-size: 11px;">${mapa.nombre_sector}</strong><br>
+                                    <small style="color: var(--v-lim); font-size: 9px;">${mapa.id_comuna}</small>
+                                </div>
+                            </div>
+                            <button onclick="confirmarEliminarMapa('${mapa.id_comuna}', '${mapa.nombre_sector}')" 
+                                    style="background: transparent; border: 1px solid #555; cursor: pointer; padding: 5px; border-radius: 4px;"
+                                    title="Eliminar este sector">
+                                🗑️
+                            </button>
+                        </div>`;
+                    contenedorLista.appendChild(item);
+                });
+            } else {
+                contenedorLista.innerHTML = '<p style="font-size: 10px; color: #888; text-align: center;">No hay mapas registrados aún.</p>';
+            }
+        } catch (err) {
+            console.error("Error al cargar mapas:", err.message);
+        }
+    }
+
+    // Nueva función para gestionar la eliminación con advertencia
+    async function confirmarEliminarMapa(comuna, sector) {
+        if (confirm(`⚠️ ADVERTENCIA: ¿Estás seguro de eliminar el mapa del sector "${sector}"?\nEsta acción no se puede deshacer.`)) {
+            try {
+                // Aquí llamamos a la función de Supabase para eliminar el registro
+                const { error } = await _supabase
+                    .from('mapas_comunales')
+                    .delete()
+                    .eq('id_comuna', comuna)
+                    .eq('nombre_sector', sector);
+
+                if (error) throw error;
+
+                alert("Mapa eliminado correctamente.");
+                // Recargamos la lista para actualizar la vista
+                cargarMapasDelUsuario();
+            } catch (err) {
+                alert("Error al intentar eliminar: " + err.message);
+            }
+        }
+    }
     document.querySelectorAll('.sidebar-input, .sidebar-select').forEach(el => el.addEventListener('change', guardarProgresoMapa));
 </script>
 </body>

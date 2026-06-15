@@ -1455,6 +1455,43 @@
             guardarProgresoMapa(); 
         } 
     }
+    // --- FUNCIÓN ACTUALIZADA CON EL ICONO 🔰 ---
+    async function cargarMapasDelUsuario() {
+        const correoUsuario = localStorage.getItem('user_email_active');
+        const contenedorLista = document.getElementById('lista-mapas-desplegable');
+
+        if (!correoUsuario) return;
+
+        try {
+            const { data, error } = await _supabase
+                .from('mapas_comunales')
+                .select('id_comuna, nombre_sector')
+                .eq('usuario_email', correoUsuario);
+
+            if (error) throw error;
+
+            contenedorLista.innerHTML = "";
+
+            if (data && data.length > 0) {
+                data.forEach(mapa => {
+                    const item = document.createElement('div');
+                    item.className = 'item-mapa-guardado';
+                    // AQUÍ SE AGREGA EL ICONO 🔰 ANTES DEL NOMBRE DEL SECTOR
+                    item.innerHTML = `
+                        <div style="padding: 8px; border-bottom: 1px solid #333; cursor: pointer; display: flex; align-items: center; gap: 10px;" 
+                             onclick="cargarMapaEspecifico('${mapa.id_comuna}', '${mapa.nombre_sector}')">
+                            <span style="font-size: 16px;">🔰</span>
+                            <span><strong>${mapa.nombre_sector}</strong><br><small style="color:var(--v-lim)">${mapa.id_comuna}</small></span>
+                        </div>`;
+                    contenedorLista.appendChild(item);
+                });
+            } else {
+                contenedorLista.innerHTML = '<p style="font-size: 10px; color: #888; text-align: center;">No hay mapas registrados aún.</p>';
+            }
+        } catch (err) {
+            console.error("Error al cargar mapas:", err.message);
+        }
+    }
     document.querySelectorAll('.sidebar-input, .sidebar-select').forEach(el => el.addEventListener('change', guardarProgresoMapa));
 </script>
 </body>

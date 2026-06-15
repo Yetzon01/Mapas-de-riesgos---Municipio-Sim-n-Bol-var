@@ -1517,10 +1517,10 @@
                         <div style="padding: 10px; border-bottom: 1px solid #333; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
                             <div style="display: flex; align-items: center; gap: 10px; cursor: pointer; flex-grow: 1;" 
                                  onclick="cargarMapaEspecifico('${mapa.id_comuna}', '${mapa.nombre_sector}')">
-                                <span style="font-size: 16px;">🔰</span>
+                                <span style="font-size: 20px;">🔰</span>
                                 <div>
-                                    <strong style="color: white; font-size: 11px;">${mapa.nombre_sector}</strong><br>
-                                    <small style="color: var(--v-lim); font-size: 9px;">${mapa.id_comuna}</small>
+                                    <strong style="color: white; font-size: 15px;">${mapa.nombre_sector}</strong><br>
+                                    <small style="color: var(--v-lim); font-size: 15px;">${mapa.id_comuna}</small>
                                 </div>
                             </div>
                             <button onclick="confirmarEliminarMapa('${mapa.id_comuna}', '${mapa.nombre_sector}')" 
@@ -1532,7 +1532,7 @@
                     contenedorLista.appendChild(item);
                 });
             } else {
-                contenedorLista.innerHTML = '<p style="font-size: 10px; color: #888; text-align: center;">No hay mapas registrados aún.</p>';
+                contenedorLista.innerHTML = '<p style="font-size: 20px; color: #888; text-align: center;">No hay mapas registrados aún.</p>';
             }
         } catch (err) {
             console.error("Error al cargar mapas:", err.message);

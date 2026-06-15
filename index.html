@@ -372,7 +372,27 @@
         <div>📁 Ver Mapas Guardados</div>
         <span class="count-badge" id="count-mapas-totales">0</span>
     </button>
-    <div id="lista-mapas-desplegable" style="display: none; background: #1a1c1b; border: 1px solid #333; padding: 10px; margin-top: 5px; border-radius: 6px;">
+    <div id="lista-mapas-desplegable" style=#lista-mapas-desplegable {
+    animation: fadeIn 0.3s ease;
+}
+
+.item-mapa-guardado {
+    padding: 8px;
+    background: #252827;
+    border: 1px solid #444;
+    border-radius: 4px;
+    margin-bottom: 5px;
+    cursor: pointer;
+    font-size: 11px;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.item-mapa-guardado:hover {
+    border-color: var(--v-lim);
+}"display: none; background: #1a1c1b; border: 1px solid #333; padding: 10px; margin-top: 5px; border-radius: 6px;">
         <p style="font-size: 10px; color: #888; text-align: center;">No hay mapas registrados aún.</p>
     </div>
 </div>

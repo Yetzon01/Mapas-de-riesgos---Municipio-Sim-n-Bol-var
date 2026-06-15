@@ -374,6 +374,27 @@
     </button>
     <div id="lista-mapas-desplegable" style=#lista-mapas-desplegable {
     animation: fadeIn 0.3s ease;
+        function mostrarMapasEnInterfaz(mapas) {
+    const contenedor = document.getElementById('lista-mapas');
+    contenedor.innerHTML = ''; // Limpiar previo
+
+    if (mapas.length === 0) {
+        contenedor.innerHTML = '<p>No tienes mapas registrados aún.</p>';
+        return;
+    }
+
+    mapas.forEach(mapa => {
+        const item = document.createElement('div');
+        item.innerHTML = `
+            <div class="tarjeta-mapa">
+                <p><strong>Sector:</strong> ${mapa.nombre_sector}</p>
+                <p><em>Creado el:</em> ${new Date(mapa.created_at).toLocaleDateString()}</p>
+                <button onclick="cargarMapa(${mapa.id})">Cargar este mapa</button>
+            </div>
+        `;
+        contenedor.appendChild(item);
+    });
+}
 }
 
 .item-mapa-guardado {
@@ -1438,6 +1459,31 @@
             guardarProgresoMapa(); 
         } 
     }
+    async function cargarMapasDelUsuario() {
+    // 1. Obtener el usuario actual
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+        alert("Debes iniciar sesión para ver tus mapas.");
+        return;
+    }
+
+    const emailUsuario = session.user.email;
+
+    // 2. Consultar la base de datos filtrando por el correo
+    const { data, error } = await supabase
+        .from('mapas_comunales')
+        .select('id, nombre_sector, created_at') // Traemos lo necesario
+        .eq('usuario_email', emailUsuario);
+
+    if (error) {
+        console.error("Error al cargar mapas:", error);
+        return;
+    }
+
+    // 3. Mostrar los resultados en tu HTML
+    mostrarMapasEnInterfaz(data);
+}
     document.querySelectorAll('.sidebar-input, .sidebar-select').forEach(el => el.addEventListener('change', guardarProgresoMapa));
 </script>
 </body>

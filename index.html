@@ -54,7 +54,7 @@
             width: 90%; 
             height: 90%; 
             object-fit: contain; 
-        transform: scale(2.3);
+            transform: scale(2.3);
         }
 
         .tabs-acceso { display: flex; justify-content: center; gap: 20px; margin-bottom: 25px; border-bottom: 1px solid #333; padding-bottom: 10px; }
@@ -283,18 +283,7 @@
         </form>
     </div>
 </div>
-<div id="dashboard-selector" style="display:none; width:100vw; height:100vh; background:#111; color:white; padding: 40px; overflow-y:auto;">
-    <header style="border-bottom: 2px solid var(--v-lime); padding-bottom: 20px; margin-bottom: 30px;">
-        <h1 style="color:white;">Mis Mapas de Riesgo</h1>
-        <p style="color:#aaa;">Selecciona un sector para trabajar o crea uno nuevo</p>
-    </header>
-    
-    <div id="grid-mapas" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
-        <div class="card-agregar" style="border: 2px dashed var(--v-lime); border-radius: 15px; padding: 30px; text-align:center; cursor:pointer;" onclick="iniciarNuevoMapa()">
-            <h2 style="color:var(--v-lime)">+ Agregar nuevo mapa</h2>
-        </div>
-    </div>
-</div>
+
 <div id="sistema-principal">
     <div id="header">
         <div class="logo-box logo-left"><img src="logo1.png.png"></div>
@@ -841,7 +830,6 @@
                     const labelTitulo = layer.tipoId === 'cautivo' ? "DESCRIPCIÓN ANIMAL CAUTIVERIO:" : "DESCRIPCIÓN ESPECIE INVASORA:";
                     popupContenido.innerHTML = `<span class="popup-desc">${labelTitulo}</span><input type="text" id="input-spec-${L.stamp(layer)}" value="${esteValue}" style="width:100%; font-size:11px; color:black; background:white;" onchange="guardarEspecificacion(${L.stamp(layer)}, this.value)"><button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button>`;
                 } else if (layer instanceof L.Polygon) {
-                    // IMPLEMENTACIÓN ADAPTATIVA DEL RELLENO PARA POLÍGONOS EXISTENTES
                     const descripcionActual = feature.properties.popupContent || "Polígono de Riesgo";
                     const tieneRelleno = feature.properties.fillOpacity !== 0;
                     popupContenido.innerHTML = `
@@ -901,7 +889,6 @@
         actualizarBadges();
     }
 
-    // CONTROLADORES INTERACTIVOS DINÁMICOS PARA PONER O QUITAR RELLENO EN EL POPUP
     function alternarRellenoPoligonoEnVivo(idCapa, checked) {
         const capaPoligono = stackElementos.find(el => L.stamp(el) === idCapa);
         if (capaPoligono && typeof capaPoligono.setStyle === 'function') {
@@ -944,8 +931,6 @@
         });
         localStorage.setItem('mapa_progreso_sig', JSON.stringify(datosCompletos));
     }
-
-    function cortarCamposReciclador() { return capturarCamposReciclador(); }
 
     function capturarCamposReciclador() {
         return {
@@ -1359,9 +1344,8 @@
 
             let opacidadRellenoElegida = fill ? 0.4 : 0;
             obj.setStyle({ color: col, fillColor: col, fillOpacity: opacidadRellenoElegida, weight: 4 });
-            obj.options.fillOpacity = opacidadRellenoElegida; // Sincronización explícita con opciones Leaflet
+            obj.options.fillOpacity = opacidadRellenoElegida;
 
-            // CONSTRUCCIÓN DEL POPUP DINÁMICO PARA EL NUEVO POLÍGONO CON EL CHECK DE CONTROL DE RELLENO EN VIVO
             let popupContenido = document.createElement('div');
             popupContenido.innerHTML = `
                 <div>
@@ -1410,8 +1394,6 @@
             guardarProgresoMapa(); 
         } 
     }
-
-    function Reinhardt() { }
 
     function rehacer() { 
         let el = stackRedo.pop(); 

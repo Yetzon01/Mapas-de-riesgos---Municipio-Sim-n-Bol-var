@@ -1471,6 +1471,30 @@
     
     document.querySelectorAll('.sidebar-input, .sidebar-select').forEach(el => el.addEventListener('change', guardarProgresoMapa));
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    async function obtenerDatosRiesgos() {
+  // Consultamos la tabla usando los nombres que me diste
+  const { data, error } = await supabase
+    .from('mapas_comunales')
+    .select('id_comuna'); // Solo necesitamos el ID para contar
+
+  if (error) {
+    console.error("Error al obtener datos de mapas_comunales:", error);
+    return;
+  }
+
+  // Lógica de conteo
+  const conteo = data.reduce((acc, item) => {
+    const id = item.id_comuna;
+    acc[id] = (acc[id] || 0) + 1;
+    return acc;
+  }, {});
+
+  // Preparamos para Chart.js
+  const labels = Object.keys(conteo);
+  const dataValues = Object.values(conteo);
+
+  renderizarGrafica(labels, dataValues);
+}
 </script>
 </body>
 </html>

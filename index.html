@@ -1,0 +1,51 @@
+Quiero que en el segmento de administrador me agregues un boton de ver gráficas y ate paso el Index.html para que me agregues la función sin cambiar nada de lo que hemos avanzado:
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard Estadístico - SIG Ecosocial</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { background: #1a1c1b; color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
+        .header-dash { border-bottom: 2px solid #B4D445; padding-bottom: 10px; margin-bottom: 20px; }
+        .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
+        .card-stat { background: #222; padding: 20px; border-radius: 10px; border: 1px solid #333; }
+        h1 { color: #B4D445; }
+    </style>
+</head>
+<body>
+
+    <div class="header-dash">
+        <h1>📊 Dashboard de Control Territorial</h1>
+        <button onclick="window.close()" style="background:#444; color:white; border:none; padding:10px; cursor:pointer;">Cerrar Dashboard</button>
+    </div>
+
+    <div class="grid-stats">
+        <div class="card-stat"><canvas id="graficoBarras"></canvas></div>
+        <div class="card-stat"><canvas id="graficoPastel"></canvas></div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'TU_URL_SUPABASE';
+        const SUPABASE_KEY = 'TU_KEY_SUPABASE';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function cargarDatos() {
+            const { data } = await _supabase.from('mapas_comunales').select('id_comuna, cant_consejo_comunales');
+            
+            const agrupado = data.reduce((acc, curr) => {
+                acc[curr.id_comuna] = (acc[curr.id_comuna] || 0) + (parseInt(curr.cant_consejo_comunales) || 0);
+                return acc;
+            }, {});
+
+            new Chart(document.getElementById('graficoBarras'), {
+                type: 'bar',
+                data: { labels: Object.keys(agrupado), datasets: [{ label: 'Consejos Comunales por Comuna', data: Object.values(agrupado), backgroundColor: '#B4D445' }] }
+            });
+        }
+        cargarDatos();
+    </script>
+</body>
+</html>

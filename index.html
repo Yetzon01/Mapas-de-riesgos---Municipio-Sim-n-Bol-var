@@ -179,11 +179,15 @@
     <button>Guardar Mapa</button>
     <button>Cargar Mapa</button>
     
-    <button class="btn-mapa" onclick="window.open('estadisticas.html', '_blank')">
-        <div>📈 Ver Estadísticas Generales</div>
-    </button>
-</div>
+    <div class="header-dash">
+        <h1>📊 Dashboard de Control Territorial</h1>
+        <div>
+            <button class="btn-action" onclick="verGraficas()">Ver Gráficas</button>
+            <button onclick="window.close()" style="background:#444; color:white; border:none; padding:10px; cursor:pointer;">Cerrar Dashboard</button>
+        </div>
+    </div>
 
+   <button class="btn
 
         #panel-voceros-lista { position: fixed; bottom: 20px; right: 20px; width: 90%; max-height: 450px; background: var(--negro-card); border: 2px solid var(--v-lim); z-index: 4000; border-radius: 15px; display: none; flex-direction: column; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
         .header-panel-v { background: var(--v-osc); padding: 10px; display: flex; justify-content: space-between; align-items: center; }

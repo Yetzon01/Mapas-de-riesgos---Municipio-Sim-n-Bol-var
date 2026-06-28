@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <meta charset="UTF-8">
     <title>SIG Ecosocial - Municipio Simón Bolívar</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -1470,6 +1470,35 @@
     }
 
     document.querySelectorAll('.sidebar-input, .sidebar-select').forEach(el => el.addEventListener('change', guardarProgresoMapa));
-</script>
+<// Variable global para la instancia de la gráfica
+let miGrafica;
+
+function renderizarGrafica() {
+    const ctx = document.getElementById('miGrafica').getContext('2d');
+    
+    // Si la gráfica ya existe, la destruimos para actualizarla (evita errores)
+    if (miGrafica) { miGrafica.destroy(); }
+
+    miGrafica = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(contadores), // Esto usa tus llaves actuales
+            datasets: [{
+                label: 'Elementos en Mapa',
+                data: Object.values(contadores), // Esto usa tus valores actuales
+                backgroundColor: 'rgba(54, 162, 235, 0.5)'
+            }]
+        }
+    });
+}
+
+// IMPORTANTE: Llama a esta función cada vez que cambies el mapa
+// Ejemplo: al final de tu función que guarda un icono:
+// renderizarGrafica();>
+    <!-- Agrega esto al final de tu archivo .html -->
+<div id="contenedor-graficas" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000; background: rgba(0,0,0,0.8); padding: 15px; border-radius: 8px; width: 300px;">
+    <h3 style="color: white; margin-top: 0;">Análisis del SIGP</h3>
+    <canvas id="miGrafica" width="300" height="200"></canvas>
+</div>
 </body>
 </html>

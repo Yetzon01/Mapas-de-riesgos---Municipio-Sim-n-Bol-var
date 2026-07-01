@@ -312,7 +312,7 @@
         <div style="color: #B4D445; font-size: 13px; font-weight: bold;">Municipio Simón Bolívar - Estado Anzoátegui</div>
         <div class="logo-box logo-right"><img src="logo2.png.png"></div>
     </div>
-            <button id="btnVolverAdmin" class="btn-volver-admin" style="display:none" onclick="volverAlPanelControl()"></button>
+            <button id="btnVolverAdmin" class="btn-volver-admin" style="display:none" onclick="volverAlPanelControl()">⬅️ VOLVER AL PANEL ADMINISTRATIVO</button>
     <div id="contenedor">
         <div id="panel-admin-comunas">
             <h4 style="color:var(--v-lim)">🛡️ PANEL DE CONTROL ADMINISTRATIVO</h4>
@@ -599,7 +599,10 @@
                 <button class="btn-acceder" style="background: #e74c3c; color: white; margin-top: 0;" onclick="confirmarSalidaSegura()">
                     💾 GUARDAR CAMBIOS Y SALIR
                 </button>
-                <p style="font-size: 9px; color: #888; text-align: center; margin-top: 8px;">Debe seleccionar una Comuna antes de salir. El sistema autoguarda cada minuto.</p>
+                <button class="btn-acceder" style="background: #444; color: #fff; border: 1px solid #777; margin-top: 10px;" onclick="salirSinGuardarMapa()">
+                    🚪 SALIR SIN GUARDAR
+                </button>
+                <p style="font-size: 9px; color: #888; text-align: center; margin-top: 8px;">Guardar y salir pide Comuna y Sector. El sistema además autoguarda cada minuto mientras editas.</p>
             </div>
 
             <button class="btn-mapa" style="background:var(--v-lim); color:var(--v-osc); font-weight:bold; margin-top:5px;" onclick="window.print()">🖨️ EXPORTAR MAPA (PDF)</button>
@@ -879,7 +882,7 @@
         limpiarMapaCompletamente();
         document.getElementById('panel-admin-comunas').style.display = 'none';
         document.getElementById('sidebar').style.display = 'block';
-        document.getElementById('btnVolverAdmin').style.display = 'block';
+        document.getElementById('btnVolverAdmin').style.display = (rolActual === 'admin') ? 'block' : 'none';
         document.getElementById('selectComuna').value = comuna;
         document.getElementById('infoSector').value = "GENERAL / CONSOLIDADO";
         try {
@@ -1223,30 +1226,47 @@
         if(data.elementos && data.elementos.length > 0) restaurarDatosDesdeNube({ type: "FeatureCollection", features: data.elementos });
     }
 
+    // Aplica al lienzo los datos de UN registro de mapas_comunales ya consultado
+    function aplicarDatosMapaCargado(data) {
+        limpiarMapaCompletamente();
+        document.getElementById('infoSector').value = data.nombre_sector || "";
+        document.getElementById('selectComuna').value = data.id_comuna || "";
+        document.getElementById('infoParroquia').value = data.parroquia || "";
+        document.getElementById('infoCC').value = data.cant_consejo_comunales || 0;
+        document.getElementById('infoCalles').value = data.cant_de_calles || 0;
+        document.getElementById('infoAsf').value = data.asfaltadas || 0;
+        document.getElementById('infoNoAsf').value = data.sin_asfaltar || 0;
+
+        if (data.antecedentes) {
+            document.getElementById('lista-antecedentes').innerHTML = "";
+            data.antecedentes.forEach(ant => agregarFilaHistoria(ant.anio, ant.suceso));
+        }
+
+        if (data.geometria_mapa) {
+            restaurarDatosDesdeNube(data.geometria_mapa);
+        }
+
+        guardarProgresoMapa();
+        enfocarMapaEnElementos();
+    }
+
+    // Busca en Supabase TODOS los mapas guardados con este correo (usuario_email).
+    // Si ya tiene exactamente un mapa de sector guardado, lo carga automáticamente (edición directa).
+    // Si tiene varios sectores guardados, abre su inventario para que elija cuál editar.
+    // Si no tiene ninguno todavía, deja el lienzo limpio y listo para crear su primer mapa.
     async function cargarMapaUsuario(correo) {
         try {
-            const { data, error } = await _supabase.from('mapas_comunales').select('*').eq('usuario_email', correo).maybeSingle();
-            if (data) {
-                limpiarMapaCompletamente(); 
-                document.getElementById('infoSector').value = data.nombre_sector || ""; 
-                document.getElementById('selectComuna').value = data.id_comuna || "";
-                document.getElementById('infoParroquia').value = data.parroquia || "";
-                document.getElementById('infoCC').value = data.cant_consejo_comunales || 0;
-                document.getElementById('infoCalles').value = data.cant_de_calles || 0;
-                document.getElementById('infoAsf').value = data.asfaltadas || 0;
-                document.getElementById('infoNoAsf').value = data.sin_asfaltar || 0;
+            const { data, error } = await _supabase.from('mapas_comunales').select('*').eq('usuario_email', correo);
+            if (error) throw error;
 
-                if (data.antecedentes) {
-                    document.getElementById('lista-antecedentes').innerHTML = "";
-                    data.antecedentes.forEach(ant => agregarFilaHistoria(ant.anio, ant.suceso));
-                }
-
-                if (data.geometria_mapa) {
-                    restaurarDatosDesdeNube(data.geometria_mapa);
-                }
-
-                guardarProgresoMapa();
-                enfocarMapaEnElementos();
+            if (data && data.length === 1) {
+                aplicarDatosMapaCargado(data[0]);
+            } else if (data && data.length > 1) {
+                limpiarMapaCompletamente();
+                await cargarMapasDelUsuario();
+                document.getElementById('lista-mapas-desplegable').style.display = 'block';
+            } else {
+                limpiarMapaCompletamente();
             }
         } catch (e) { console.error(e); }
     }
@@ -1305,6 +1325,7 @@
     }
 
     function volverAlPanelControl() {
+        if (rolActual !== 'admin') return; // Esta opción es exclusiva del administrador
         if (confirm("¿Volver al panel? Cambios no guardados se perderán.")) {
             document.getElementById('sidebar').style.display = 'none'; document.getElementById('panel-admin-comunas').style.display = 'block';
             document.getElementById('btnVolverAdmin').style.display = 'none'; limpiarMapaCompletamente();
@@ -1377,6 +1398,14 @@
         if (confirm(`¿Guardar sector "${sectorNombre}" y salir?`)) {
             const ok = await guardarMapaEnNube(true);
             if (ok) { alert("Guardado exitoso."); cerrarSesionTotal(); }
+        }
+    }
+
+    // Salir sin guardar: no exige Comuna/Sector, solo advierte que se perderán los cambios no guardados
+    // (nota: si el autoguardado ya alcanzó a correr en el último minuto, esos cambios previos sí quedaron en Supabase)
+    function salirSinGuardarMapa() {
+        if (confirm("⚠️ ADVERTENCIA: Vas a salir SIN GUARDAR los cambios más recientes de este mapa. Los cambios no guardados se perderán. ¿Deseas continuar de todas formas?")) {
+            cerrarSesionTotal();
         }
     }
 
@@ -1496,7 +1525,8 @@
     }
 
     async function cargarMapaEspecifico(comuna, sector) {
-        limpiarMapaCompletamente(); document.getElementById('panel-admin-comunas').style.display = 'none'; document.getElementById('sidebar').style.display = 'block'; document.getElementById('btnVolverAdmin').style.display = 'block';
+        limpiarMapaCompletamente(); document.getElementById('panel-admin-comunas').style.display = 'none'; document.getElementById('sidebar').style.display = 'block';
+        document.getElementById('btnVolverAdmin').style.display = (rolActual === 'admin') ? 'block' : 'none';
         document.getElementById('selectComuna').value = comuna; document.getElementById('infoSector').value = sector;
         try {
             const { data, error } = await _supabase.from('mapas_comunales').select('*').eq('id_comuna', comuna).eq('nombre_sector', sector).maybeSingle();

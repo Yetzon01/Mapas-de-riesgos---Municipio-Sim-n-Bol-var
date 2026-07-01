@@ -469,11 +469,20 @@
                                 <option value="#ffff00">🟡 Bajo Riesgo</option>
                                 <option value="#000000">⚫ Trazar Sector</option>
                             </select>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <label style="font-size:9px; color:#aaa; text-transform:uppercase; font-weight:bold;">Relleno interno:</label>
-                            <input type="checkbox" id="checkRelleno" checked style="width:auto; cursor:pointer;">
-                        </div>
+                       <div id="desplegable-riesgos-trazado">
+    <div class="sidebar-form-group">
+        <label class="sidebar-label" style="color: var(--v-lim);">Color de Línea/Polígono</label>
+        <input type="color" id="colorPol" value="#B4D445" style="height: 35px; cursor: pointer;">
+    </div>
+    <div class="sidebar-form-group">
+        <label class="sidebar-label" style="color: var(--v-lim);">Grosor (Peso)</label>
+        <input type="range" id="weightPol" min="1" max="15" value="4" style="width: 100%;">
+    </div>
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <label style="font-size:9px; color:#aaa; text-transform:uppercase; font-weight:bold;">Relleno interno:</label>
+        <input type="checkbox" id="checkRelleno" checked style="width:auto; cursor:pointer;">
+    </div>
+</div>
                     </div>
                 </div>
             </div>

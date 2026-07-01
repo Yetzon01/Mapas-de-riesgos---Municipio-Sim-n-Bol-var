@@ -152,7 +152,12 @@
         .cruz-roja::after { width: 4px; height: 100%; top: 0; left: 6px; }
 
         .btn-delete-popup { background: #ff4444; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 10px; margin-top: 5px; width: 100%; }
+        .btn-rename-popup { background: var(--v-osc); color: var(--v-lim); border: 1px solid var(--v-lim); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 10px; margin-top: 5px; width: 100%; }
         .popup-desc { font-weight: bold; color: #333; font-size: 12px; margin-bottom: 5px; display: block; border-bottom: 1px solid #ccc; padding-bottom: 3px; }
+        .popup-style-row { display:flex; align-items:center; justify-content:space-between; gap:6px; margin:4px 0; }
+        .popup-style-row label { font-size: 9px; color:#333; font-weight:bold; text-transform:uppercase; margin:0; }
+        .popup-style-row input[type=color] { width: 36px; height: 22px; padding:0; border:1px solid #ccc; cursor:pointer; }
+        .popup-style-row input[type=range] { width: 100px; }
 
         #map-container { flex-grow: 1; position: relative; background: #1a1a1a; }
         #map { width: 100%; height: 100%; }
@@ -212,6 +217,22 @@
             border-radius: 8px;
             margin-top: 8px;
             animation: fadeIn 0.3s ease;
+        }
+
+        #indicador-autoguardado {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(19,82,66,0.95);
+            color: var(--v-lim);
+            font-size: 10px;
+            font-weight: bold;
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--v-lim);
+            z-index: 9999;
+            display: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
         }
     </style>
 </head>
@@ -461,18 +482,42 @@
                     <button id="btnEvacuacion" class="btn-mapa" onclick="iniciarTrazado('evac')">🟢➡️ VÍA DE EVACUACIÓN</button>
 
                     <div id="desplegable-riesgos-trazado">
-                        <div class="sidebar-form-group">
-                            <label class="sidebar-label" style="color: var(--v-lim);">Nivel de Riesgo / Sector</label>
-                            <select id="colorPol" class="sidebar-select" style="background:#222; border:1px solid #444; color:#fff; padding:4px;">
-                                <option value="#ff0000">🔴 Alto Riesgo</option>
-                                <option value="#ffa500">🟠 Mediano Riesgo</option>
-                                <option value="#ffff00">🟡 Bajo Riesgo</option>
-                                <option value="#000000">⚫ Trazar Sector</option>
-                            </select>
+                        <div id="opciones-poligono" style="display:none; flex-direction:column; gap:8px;">
+                            <div class="sidebar-form-group">
+                                <label class="sidebar-label" style="color: var(--v-lim);">Nivel de Riesgo / Sector</label>
+                                <select id="colorPol" class="sidebar-select" style="background:#222; border:1px solid #444; color:#fff; padding:4px;">
+                                    <option value="#ff0000">🔴 Alto Riesgo</option>
+                                    <option value="#ffa500">🟠 Mediano Riesgo</option>
+                                    <option value="#ffff00">🟡 Bajo Riesgo</option>
+                                    <option value="#000000">⚫ Trazar Sector</option>
+                                </select>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <label style="font-size:9px; color:#aaa; text-transform:uppercase; font-weight:bold;">Relleno interno:</label>
+                                <input type="checkbox" id="checkRelleno" checked style="width:auto; cursor:pointer;">
+                            </div>
                         </div>
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <label style="font-size:9px; color:#aaa; text-transform:uppercase; font-weight:bold;">Relleno interno:</label>
-                            <input type="checkbox" id="checkRelleno" checked style="width:auto; cursor:pointer;">
+
+                        <div id="opciones-linea" style="display:none; flex-direction:column; gap:8px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <label style="font-size:9px; color:#aaa; text-transform:uppercase; font-weight:bold;">Color (Río/Arroyo/Canal):</label>
+                                <input type="color" id="colorLinea" value="#3388ff" style="width:36px; height:24px; padding:0; cursor:pointer; border:1px solid #444;">
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <label style="font-size:9px; color:#aaa; text-transform:uppercase; font-weight:bold;">Grosor: <span id="valGrosorLinea">4</span>px</label>
+                                <input type="range" id="grosorLinea" min="1" max="15" step="1" value="4" style="width:120px;" oninput="document.getElementById('valGrosorLinea').innerText=this.value">
+                            </div>
+                        </div>
+
+                        <div id="opciones-evac" style="display:none; flex-direction:column; gap:8px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <label style="font-size:9px; color:#aaa; text-transform:uppercase; font-weight:bold;">Color de Flechas:</label>
+                                <input type="color" id="colorEvac" value="#00FF00" style="width:36px; height:24px; padding:0; cursor:pointer; border:1px solid #444;">
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <label style="font-size:9px; color:#aaa; text-transform:uppercase; font-weight:bold;">Grosor: <span id="valGrosorEvac">6</span>px</label>
+                                <input type="range" id="grosorEvac" min="2" max="14" step="1" value="6" style="width:120px;" oninput="document.getElementById('valGrosorEvac').innerText=this.value">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -554,7 +599,7 @@
                 <button class="btn-acceder" style="background: #e74c3c; color: white; margin-top: 0;" onclick="confirmarSalidaSegura()">
                     💾 GUARDAR CAMBIOS Y SALIR
                 </button>
-                <p style="font-size: 9px; color: #888; text-align: center; margin-top: 8px;">Debe seleccionar una Comuna antes de salir.</p>
+                <p style="font-size: 9px; color: #888; text-align: center; margin-top: 8px;">Debe seleccionar una Comuna antes de salir. El sistema autoguarda cada minuto.</p>
             </div>
 
             <button class="btn-mapa" style="background:var(--v-lim); color:var(--v-osc); font-weight:bold; margin-top:5px;" onclick="window.print()">🖨️ EXPORTAR MAPA (PDF)</button>
@@ -580,6 +625,7 @@
                 <button class="btn-float" onclick="rehacer()">↪️</button>
             </div>
             <div id="map"></div>
+            <div id="indicador-autoguardado">💾 Autoguardado...</div>
         </div>
     </div>
 </div>
@@ -625,6 +671,7 @@
     let dbMapasCount = {};
     let rolActual = "usuario";
     let userLocationMarker = null;
+    let intervaloAutoguardado = null;
 
     const adminPermitidos = [{ user: "yetzonmora@gmail.com", pass: "32568263y" }];
 
@@ -661,6 +708,22 @@
 
             contenedorLista.innerHTML = "";
 
+            // Botón para crear un nuevo mapa desde cero
+            const btnNuevo = document.createElement('div');
+            btnNuevo.innerHTML = `
+                <button class="btn-mapa" style="background:var(--v-osc); border-color:var(--v-lim); color:var(--v-lim); font-weight:bold;" onclick="crearNuevoMapaUsuario()">
+                    <div>➕ Crear Nuevo Mapa</div>
+                </button>`;
+            contenedorLista.appendChild(btnNuevo);
+
+            // Botón para ver el mapa generalizado de la comuna actualmente seleccionada
+            const btnGeneral = document.createElement('div');
+            btnGeneral.innerHTML = `
+                <button class="btn-mapa" style="background:#1a2e28; border-color:var(--v-lim); color:var(--v-lim); font-weight:bold;" onclick="verMiMapaGeneralizado()">
+                    <div>🌐 Ver Mapa Generalizado de mi Comuna</div>
+                </button>`;
+            contenedorLista.appendChild(btnGeneral);
+
             if (data && data.length > 0) {
                 data.forEach(mapa => {
                     const item = document.createElement('div');
@@ -684,11 +747,32 @@
                     contenedorLista.appendChild(item);
                 });
             } else {
-                contenedorLista.innerHTML = '<p style="font-size: 20px; color: #888; text-align: center;">No hay mapas registrados aún.</p>';
+                const aviso = document.createElement('p');
+                aviso.style.cssText = "font-size: 11px; color: #888; text-align: center; margin-top:8px;";
+                aviso.innerText = "No hay mapas registrados aún.";
+                contenedorLista.appendChild(aviso);
             }
         } catch (err) {
             console.error("Error al cargar mapas:", err.message);
         }
+    }
+
+    // Nuevo Mapa: limpia el lienzo y deja al usuario listo para trazar un sector nuevo
+    function crearNuevoMapaUsuario() {
+        if (confirm("¿Crear un nuevo mapa? Se limpiará el lienzo actual. Si tenía cambios sin guardar, guárdelos antes.")) {
+            limpiarMapaCompletamente();
+            document.getElementById('lista-mapas-desplegable').style.display = 'none';
+            document.getElementById('infoSector').focus();
+            map.setView([10.136, -64.686], 15);
+        }
+    }
+
+    // Muestra el mapa generalizado/consolidado de la comuna que el usuario tenga seleccionada
+    function verMiMapaGeneralizado() {
+        const comuna = document.getElementById('selectComuna').value;
+        if (!comuna) { alert("Primero seleccione su Comuna en el panel de Información Territorial."); return; }
+        document.getElementById('lista-mapas-desplegable').style.display = 'none';
+        cargarMapaGeneralComuna(comuna);
     }
 
     async function confirmarEliminarMapa(comuna, sector) {
@@ -855,6 +939,85 @@
         alternarLeyendaNormal();
     }
 
+    // Construye el contenido HTML del popup para un elemento (polígono, línea o vía de evacuación)
+    function generarPopupHTML(layer) {
+        const idCapa = L.stamp(layer);
+        if (layer.tipoId === 'ruta_evacuacion') {
+            const nombre = layer.nombrePersonalizado || "VÍA DE EVACUACIÓN (VERDE)";
+            const col = layer.colorEvac || '#00FF00';
+            const gro = layer.grosorEvac || 6;
+            return `<div>
+                <span class="popup-desc">${nombre}</span>
+                <div class="popup-style-row"><label>Color flechas:</label><input type="color" value="${col}" onchange="actualizarEstiloEvac(${idCapa}, this.value, null)"></div>
+                <div class="popup-style-row"><label>Grosor:</label><input type="range" min="2" max="14" value="${gro}" onchange="actualizarEstiloEvac(${idCapa}, null, this.value)"></div>
+                <button class="btn-rename-popup" onclick="renombrarElemento(${idCapa})">✏️ RENOMBRAR</button>
+                <button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button>
+            </div>`;
+        } else if (layer.tipoId === 'linea_tecnica') {
+            const nombre = layer.nombrePersonalizado || "Trazado Técnico";
+            const col = (layer.options && layer.options.color) || '#3388ff';
+            const gro = (layer.options && layer.options.weight) || 4;
+            return `<div>
+                <span class="popup-desc">${nombre}</span>
+                <div class="popup-style-row"><label>Color:</label><input type="color" value="${col}" onchange="actualizarEstiloLinea(${idCapa}, this.value, null)"></div>
+                <div class="popup-style-row"><label>Grosor:</label><input type="range" min="1" max="15" value="${gro}" onchange="actualizarEstiloLinea(${idCapa}, null, this.value)"></div>
+                <button class="btn-rename-popup" onclick="renombrarElemento(${idCapa})">✏️ RENOMBRAR</button>
+                <button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button>
+            </div>`;
+        } else if (layer.tipoId === 'poligono_riesgo') {
+            const nombre = layer.nombrePersonalizado || "Polígono de Riesgo";
+            const tieneRelleno = layer.options.fillOpacity !== 0;
+            return `<div>
+                <span class="popup-desc">${nombre}</span>
+                <div class="popup-style-row"><label>Relleno Interno:</label><input type="checkbox" id="check-relleno-popup-${idCapa}" ${tieneRelleno ? 'checked' : ''} onchange="alternarRellenoPoligonoEnVivo(${idCapa}, this.checked)"></div>
+                <button class="btn-rename-popup" onclick="renombrarElemento(${idCapa})">✏️ RENOMBRAR</button>
+                <button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button>
+            </div>`;
+        } else {
+            return `<div><span class="popup-desc">${layer.nombrePersonalizado || "Elemento"}</span><button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button></div>`;
+        }
+    }
+
+    function refrescarPopup(layer) {
+        if (layer.getPopup()) { layer.setPopupContent(generarPopupHTML(layer)); }
+        else { layer.bindPopup(generarPopupHTML(layer)); }
+    }
+
+    // Permite cambiar el nombre asignado a un polígono, línea o vía de evacuación
+    function renombrarElemento(idCapa) {
+        const capa = stackElementos.find(el => L.stamp(el) === idCapa);
+        if (!capa) return;
+        const nombreActual = capa.nombrePersonalizado || "";
+        const nuevoNombre = prompt("Nuevo nombre para este elemento:", nombreActual);
+        if (nuevoNombre !== null && nuevoNombre.trim() !== "") {
+            capa.nombrePersonalizado = nuevoNombre.trim();
+            refrescarPopup(capa);
+            capa.openPopup();
+            guardarProgresoMapa();
+        }
+    }
+
+    // Cambia en vivo el color y/o grosor de una línea (arroyo/río/canal) y lo persiste
+    function actualizarEstiloLinea(idCapa, nuevoColor, nuevoGrosor) {
+        const capa = stackElementos.find(el => L.stamp(el) === idCapa);
+        if (!capa || typeof capa.setStyle !== 'function') return;
+        const estilo = {};
+        if (nuevoColor) estilo.color = nuevoColor;
+        if (nuevoGrosor) estilo.weight = parseInt(nuevoGrosor);
+        capa.setStyle(estilo);
+        guardarProgresoMapa();
+    }
+
+    // Cambia en vivo el color y/o grosor de las flechas de una vía de evacuación y lo persiste
+    function actualizarEstiloEvac(idCapa, nuevoColor, nuevoGrosor) {
+        const capa = stackElementos.find(el => L.stamp(el) === idCapa);
+        if (!capa) return;
+        if (nuevoColor) capa.colorEvac = nuevoColor;
+        if (nuevoGrosor) capa.grosorEvac = parseInt(nuevoGrosor);
+        recrearFlechasRuta(capa);
+        guardarProgresoMapa();
+    }
+
     function restaurarDatosDesdeNube(geoJSONData) {
         if (!geoJSONData) return;
         L.geoJSON(geoJSONData, {
@@ -880,6 +1043,7 @@
                 let popupContenido = document.createElement('div');
                 popupContenido.style.display = 'flex'; popupContenido.style.flexDirection = 'column';
                 layer.tipoId = feature.properties.tipoId || "";
+                layer.nombrePersonalizado = feature.properties.popupContent || "";
 
                 if (layer.tipoId === 'vuln_disc' || layer.tipoId === 'poste_riesgo') {
                     const esteValue = feature.properties.especificacion || "";
@@ -889,26 +1053,28 @@
                     const esteValue = feature.properties.especificacion || "";
                     const labelTitulo = layer.tipoId === 'cautivo' ? "DESCRIPCIÓN ANIMAL CAUTIVERIO:" : "DESCRIPCIÓN ESPECIE INVASORA:";
                     popupContenido.innerHTML = `<span class="popup-desc">${labelTitulo}</span><input type="text" id="input-spec-${L.stamp(layer)}" value="${esteValue}" style="width:100%; font-size:11px; color:black; background:white;" onchange="guardarEspecificacion(${L.stamp(layer)}, this.value)"><button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button>`;
-                } else if (layer instanceof L.Polygon) {
-                    const descripcionActual = feature.properties.popupContent || "Polígono de Riesgo";
-                    const tieneRelleno = feature.properties.fillOpacity !== 0;
-                    popupContenido.innerHTML = `
-                        <div>
-                            <span class="popup-desc">${descripcionActual}</span>
-                            <div style="margin: 5px 0; display: flex; align-items: center; justify-content: space-between;">
-                                <label style="font-size: 10px; color: #333; font-weight: bold;">Relleno Interno:</label>
-                                <input type="checkbox" id="check-relleno-popup-${L.stamp(layer)}" ${tieneRelleno ? 'checked' : ''} style="width: auto; cursor: pointer;" onchange="alternarRellenoPoligonoEnVivo(${L.stamp(layer)}, this.checked)">
-                            </div>
-                            <button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button>
-                        </div>`;
+                } else if (layer instanceof L.Polygon || layer instanceof L.Polyline) {
+                    // Polígonos, líneas técnicas y vías de evacuación usan el popup dinámico con edición de nombre/estilo
+                    popupContenido = null;
                 } else {
                     popupContenido.innerHTML = `<div><span class="popup-desc">${feature.properties.popupContent || "Elemento"}</span><button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button></div>`;
                 }
 
-                layer.bindPopup(popupContenido);
+                if (popupContenido) {
+                    layer.bindPopup(popupContenido);
+                } else {
+                    layer.bindPopup(generarPopupHTML(layer));
+                }
+
                 if (layer.tipoId === 'ruta_evacuacion' && layer instanceof L.Polyline) {
-                    layer.setStyle({ color: '#00FF00', weight: 0, fill: false });
+                    layer.colorEvac = feature.properties.colorEvac || '#00FF00';
+                    layer.grosorEvac = feature.properties.grosorEvac || 6;
+                    layer.setStyle({ color: layer.colorEvac, weight: 0, fill: false });
                     recrearFlechasRuta(layer);
+                } else if (layer.tipoId === 'linea_tecnica' && layer instanceof L.Polyline) {
+                    const colorLinea = feature.properties.color || "#3388ff";
+                    const grosorLinea = feature.properties.weight || 4;
+                    layer.setStyle({ color: colorLinea, weight: grosorLinea });
                 }
 
                 layer.on('click', ev => {
@@ -940,7 +1106,10 @@
             },
             style: function (feature) { 
                 if (feature.properties.tipoId === 'ruta_evacuacion') {
-                    return { color: '#00FF00', weight: 0, fill: false };
+                    return { color: feature.properties.colorEvac || '#00FF00', weight: 0, fill: false };
+                }
+                if (feature.properties.tipoId === 'linea_tecnica') {
+                    return { color: feature.properties.color || "#3388ff", weight: feature.properties.weight || 4 };
                 }
                 let opacidadRellenoDefecto = feature.properties.fillOpacity !== undefined ? feature.properties.fillOpacity : 0.4;
                 return { color: feature.properties.color || "#B4D445", fillColor: feature.properties.color || "#B4D445", fillOpacity: opacidadRellenoDefecto, weight: 4 }; 
@@ -964,6 +1133,32 @@
         if (marcador) { marcador.especificacionDiscapacidad = valor; guardarProgresoMapa(); }
     }
 
+    // Construye el arreglo de "elementos" (GeoJSON con propiedades) a partir del stack actual
+    function construirElementosParaGuardar() {
+        const elementos = [];
+        stackElementos.forEach(capa => {
+            const json = capa.toGeoJSON();
+            const props = {
+                tipoId: capa.tipoId,
+                color: capa.options.color || (capa.options.style ? capa.options.style.color : "#B4D445"),
+                fillOpacity: capa.options.fillOpacity !== undefined ? capa.options.fillOpacity : 0.4,
+                popupContent: capa.nombrePersonalizado || "",
+                especificacion: capa.especificacionDiscapacidad || "",
+                datosReciclador: capa.datosReciclador || null
+            };
+            if (capa.tipoId === 'linea_tecnica') {
+                props.weight = capa.options.weight || 4;
+            }
+            if (capa.tipoId === 'ruta_evacuacion') {
+                props.colorEvac = capa.colorEvac || '#00FF00';
+                props.grosorEvac = capa.grosorEvac || 6;
+            }
+            json.properties = props;
+            elementos.push(json);
+        });
+        return elementos;
+    }
+
     function guardarProgresoMapa() {
         const antecedentes = [];
         document.querySelectorAll('.fila-historia').forEach(fila => {
@@ -977,18 +1172,8 @@
                 consejosC: document.getElementById('infoCC').value, calles: document.getElementById('infoCalles').value,
                 asfaltadas: document.getElementById('infoAsf').value, noAsfaltadas: document.getElementById('infoNoAsf').value, sector: document.getElementById('infoSector').value
             },
-            antecedentes: antecedentes, contadores: contadores, arbolPredominante: document.getElementById('inputArbolPredominante').value, elementos: []
+            antecedentes: antecedentes, contadores: contadores, arbolPredominante: document.getElementById('inputArbolPredominante').value, elementos: construirElementosParaGuardar()
         };
-        stackElementos.forEach(capa => {
-            const json = capa.toGeoJSON();
-            json.properties = { 
-                tipoId: capa.tipoId, color: capa.options.color || (capa.options.style ? capa.options.style.color : "#B4D445"), 
-                fillOpacity: capa.options.fillOpacity !== undefined ? capa.options.fillOpacity : 0.4, 
-                popupContent: capa.getPopup() ? (typeof capa.getPopup().getContent() === 'string' ? capa.getPopup().getContent().replace(/<button.*<\/button>/, "") : "Elemento") : "",
-                especificacion: capa.especificacionDiscapacidad || "", datosReciclador: capa.datosReciclador || null
-            };
-            datosCompletos.elementos.push(json);
-        });
         localStorage.setItem('mapa_progreso_sig', JSON.stringify(datosCompletos));
     }
 
@@ -1127,7 +1312,8 @@
         }
     }
 
-    async function confirmarSalidaSegura() {
+    // --- GUARDADO (manual y automático) ---
+    async function guardarMapaEnNube(mostrarAlertas) {
         const comunaSeleccionada = document.getElementById('selectComuna').value;
         const sectorNombre = document.getElementById('infoSector').value.trim();
         const estadoValor = document.getElementById('infoEstado').value;
@@ -1137,46 +1323,85 @@
         const callesValor = parseInt(document.getElementById('infoCalles').value) || 0;
         const asfValor = parseInt(document.getElementById('infoAsf').value) || 0;
         const noAsfValor = parseInt(document.getElementById('infoNoAsf').value) || 0;
-
         const correoUsuario = localStorage.getItem('user_email_active') || 'anonimo@bolivar.gob.ve';
+
+        if (!comunaSeleccionada || !sectorNombre) {
+            if (mostrarAlertas) alert("⚠️ ERROR: Comuna y Sector obligatorios.");
+            return false;
+        }
+        if (sectorNombre === "GENERAL / CONSOLIDADO") {
+            if (mostrarAlertas) alert("⚠️ AVISO: El mapa general consolidado es de solo lectura y no se puede sobreescribir.");
+            return false;
+        }
+
+        if (objetoSeleccionado && objetoSeleccionado.tipoId === 'recicladores') objetoSeleccionado.datosReciclador = capturarCamposReciclador();
+
+        const elementos = construirElementosParaGuardar();
+        const geojsonActual = { type: "FeatureCollection", features: elementos };
+
+        const antecedentes = [];
+        document.querySelectorAll('.fila-historia').forEach(fila => {
+            const inputs = fila.querySelectorAll('input');
+            if(inputs[0].value || inputs[1].value) antecedentes.push({ anio: inputs[0].value, suceso: inputs[1].value });
+        });
+
+        try {
+            const { error } = await _supabase.from('mapas_comunales').upsert({ 
+                id_comuna: comunaSeleccionada, 
+                nombre_sector: sectorNombre, 
+                geometria_mapa: geojsonActual, 
+                usuario_email: correoUsuario,
+                estado: estadoValor,
+                municipio: municipioValor,
+                parroquia: parroquiaValor,
+                cant_consejo_comunales: ccValor,
+                cant_de_calles: callesValor,
+                asfaltadas: asfValor,
+                sin_asfaltar: noAsfValor,
+                antecedentes: antecedentes
+            }, { onConflict: 'id_comuna, nombre_sector, usuario_email' });
+            if (error) throw error;
+            return true;
+        } catch (err) {
+            if (mostrarAlertas) alert("Error: " + err.message);
+            return false;
+        }
+    }
+
+    async function confirmarSalidaSegura() {
+        const comunaSeleccionada = document.getElementById('selectComuna').value;
+        const sectorNombre = document.getElementById('infoSector').value.trim();
         if (rolActual === 'admin' && document.getElementById('panel-admin-comunas').style.display !== 'none') { cerrarSesionTotal(); return; }
         if (!comunaSeleccionada || !sectorNombre) { alert("⚠️ ERROR: Comuna y Sector obligatorios."); return; }
         if (sectorNombre === "GENERAL / CONSOLIDADO") { alert("⚠️ AVISO: El mapa general consolidado es de solo lectura y no se puede sobreescribir."); return; }
         if (confirm(`¿Guardar sector "${sectorNombre}" y salir?`)) {
-            if (objetoSeleccionado && objetoSeleccionado.tipoId === 'recicladores') objetoSeleccionado.datosReciclador = capturarCamposReciclador();
-            const grupoCapa = L.featureGroup(stackElementos); const geojsonActual = grupoCapa.toGeoJSON();
-            geojsonActual.features.forEach((feature, index) => {
-                const capaOriginal = stackElementos[index];
-                feature.properties = { tipoId: capaOriginal.tipoId, color: capaOriginal.options.color || (capaOriginal.options.style ? capaOriginal.options.style.color : "#B4D445"), fillOpacity: capaOriginal.options.fillOpacity !== undefined ? capaOriginal.options.fillOpacity : 0.4, popupContent: capaOriginal.getPopup() ? (typeof capaOriginal.getPopup().getContent() === 'string' ? capaOriginal.getPopup().getContent().replace(/<button.*<\/button>/, "") : "Elemento") : "", especificacion: capaOriginal.especificacionDiscapacidad || "", datosReciclador: capaOriginal.datosReciclador || null };
-            });
-
-            const antecedentes = [];
-            document.querySelectorAll('.fila-historia').forEach(fila => {
-                const inputs = fila.querySelectorAll('input');
-                if(inputs[0].value || inputs[1].value) antecedentes.push({ anio: inputs[0].value, suceso: inputs[1].value });
-            });
-
-            try {
-                const { error } = await _supabase.from('mapas_comunales').upsert({ 
-                    id_comuna: comunaSeleccionada, 
-                    nombre_sector: sectorNombre, 
-                    geometria_mapa: geojsonActual, 
-                    usuario_email: correoUsuario,
-                    estado: estadoValor,
-                    municipio: municipioValor,
-                    parroquia: parroquiaValor,
-                    cant_consejo_comunales: ccValor,
-                    cant_de_calles: callesValor,
-                    asfaltadas: asfValor,
-                    sin_asfaltar: noAsfValor,
-                    antecedentes: antecedentes
-                }, { onConflict: 'id_comuna, nombre_sector, usuario_email' });
-                if (error) throw error; alert("Guardado exitoso."); cerrarSesionTotal();
-            } catch (err) { alert("Error: " + err.message); }
+            const ok = await guardarMapaEnNube(true);
+            if (ok) { alert("Guardado exitoso."); cerrarSesionTotal(); }
         }
     }
 
-    function cerrarSesionTotal() { localStorage.removeItem('sesion_activa'); localStorage.removeItem('rol_usuario'); localStorage.removeItem('mapa_progreso_sig'); window.location.reload(); }
+    // Autoguardado silencioso cada 60 segundos mientras haya una comuna/sector válidos en edición
+    async function autoguardarMapa() {
+        if (document.getElementById('sistema-principal').style.display === 'none') return;
+        if (rolActual === 'admin' && document.getElementById('panel-admin-comunas').style.display !== 'none') return;
+        const comunaSeleccionada = document.getElementById('selectComuna').value;
+        const sectorNombre = document.getElementById('infoSector').value.trim();
+        if (!comunaSeleccionada || !sectorNombre || sectorNombre === "GENERAL / CONSOLIDADO") return;
+        const ok = await guardarMapaEnNube(false);
+        if (ok) {
+            const ind = document.getElementById('indicador-autoguardado');
+            ind.style.display = 'block';
+            ind.innerText = '💾 Autoguardado ' + new Date().toLocaleTimeString();
+            setTimeout(() => { ind.style.display = 'none'; }, 4000);
+        }
+    }
+
+    function iniciarAutoguardado() {
+        if (intervaloAutoguardado) clearInterval(intervaloAutoguardado);
+        intervaloAutoguardado = setInterval(autoguardarMapa, 60000);
+    }
+
+    function cerrarSesionTotal() { if (intervaloAutoguardado) clearInterval(intervaloAutoguardado); localStorage.removeItem('sesion_activa'); localStorage.removeItem('rol_usuario'); localStorage.removeItem('mapa_progreso_sig'); window.location.reload(); }
     function controlarOtro(valor) { document.getElementById('segmento-otro').style.display = valor === 'Otro' ? 'block' : 'none'; }
 
     var map, emojiActual = null, modoEspecial = "", modoNavegar = true;
@@ -1223,11 +1448,12 @@
             const correoActivo = localStorage.getItem('user_email_active'); 
             if(correoActivo && rolActual !== 'admin') {
                 await cargarMapaUsuario(correoActivo);
-            } else {
+            } else if (rolActual !== 'admin') {
                 restaurarProgresoMapa();
                 enfocarMapaEnElementos();
             }
             map.invalidateSize();
+            iniciarAutoguardado();
         }
     });
 
@@ -1265,6 +1491,7 @@
                 }
             }
             map.invalidateSize();
+            iniciarAutoguardado();
         };
     }
 
@@ -1301,7 +1528,7 @@
         map = L.map('map', { editable: true, zoomControl: true }).setView([10.136, -64.686], 18);
         L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 20 }).addTo(map);
         map.on('editable:drawing:start', e => { trazandoAhora = e.layer; document.getElementById('btnFinalizar').style.display = 'flex'; });
-        map.on('editable:drawing:click', e => { if (tipoDeTrazadoActivo === 'evac' && trazandoAhora) { trazandoAhora.setStyle({ color: '#00FF00', weight: 0, fill: false }); recrearFlechasRuta(trazandoAhora); } });
+        map.on('editable:drawing:click', e => { if (tipoDeTrazadoActivo === 'evac' && trazandoAhora) { trazandoAhora.colorEvac = document.getElementById('colorEvac').value; trazandoAhora.grosorEvac = parseInt(document.getElementById('grosorEvac').value); trazandoAhora.setStyle({ color: trazandoAhora.colorEvac, weight: 0, fill: false }); recrearFlechasRuta(trazandoAhora); } });
         map.on('editable:drawing:end', e => { registrarObjeto(e.layer); activarMano(); document.getElementById('btnFinalizar').style.display = 'none'; trazandoAhora = null; tipoDeTrazadoActivo = ""; document.getElementById('desplegable-riesgos-trazado').style.display = 'none'; guardarProgresoMapa(); });
         map.on('click', e => { if (emojiActual && !modoNavegar) crearIcono(e.latlng); else deseleccionarTodo(); });
     }
@@ -1325,6 +1552,7 @@
             deseleccionarTodo();
             objetoSeleccionado = linea;
             if (linea.enableEdit) linea.enableEdit();
+            refrescarPopup(linea);
             linea.openPopup(ev.latlng);
         }
     }
@@ -1337,11 +1565,22 @@
         document.getElementById('floatMano').classList.add('activo-float');
 
         tipoDeTrazadoActivo = tipo; 
+
+        document.getElementById('opciones-poligono').style.display = 'none';
+        document.getElementById('opciones-linea').style.display = 'none';
+        document.getElementById('opciones-evac').style.display = 'none';
+
         if(tipo === 'pol') { 
             document.getElementById('desplegable-riesgos-trazado').style.display = 'flex'; 
+            document.getElementById('opciones-poligono').style.display = 'flex';
             map.editTools.startPolygon(); 
+        } else if (tipo === 'evac') {
+            document.getElementById('desplegable-riesgos-trazado').style.display = 'flex';
+            document.getElementById('opciones-evac').style.display = 'flex';
+            map.editTools.startPolyline();
         } else { 
-            document.getElementById('desplegable-riesgos-trazado').style.display = 'none'; 
+            document.getElementById('desplegable-riesgos-trazado').style.display = 'flex';
+            document.getElementById('opciones-linea').style.display = 'flex';
             map.editTools.startPolyline(); 
         } 
     }
@@ -1373,6 +1612,9 @@
     function recrearFlechasRuta(linea) {
         if (linea._decoradorFlechas) map.removeLayer(linea._decoradorFlechas);
         const latlngs = linea.getLatLngs(); if (latlngs.length < 2) return;
+        const colorFlecha = linea.colorEvac || '#00FF00';
+        const grosorFlecha = linea.grosorEvac || 6;
+        const tamanoIcono = Math.max(24, grosorFlecha * 5);
         const groupoFlechas = L.layerGroup(); const distanciaPaso = 30;
         let acumPuntosPantala = []; latlngs.forEach(ll => acumPuntosPantala.push(map.latLngToLayerPoint(ll)));
         let distanciaRemanente = 15;
@@ -1384,10 +1626,11 @@
             while (distanciaActual >= distanciaRemanente) {
                 let ratio = distanciaRemanente / distSegmento;
                 let latlngFlecha = map.layerPointToLatLng([p1.x + dx * ratio, p1.y + dy * ratio]);
-                let mFlecha = L.marker(latlngFlecha, { icon: L.divIcon({ className: '', html: `<div style="transform: rotate(${angulo}deg); width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M4 12H20M20 12L12 4M20 12L12 20" stroke="#00FF00" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`, iconSize: [34, 34] }), interactive: true });
+                let mFlecha = L.marker(latlngFlecha, { icon: L.divIcon({ className: '', html: `<div style="transform: rotate(${angulo}deg); width: ${tamanoIcono+2}px; height: ${tamanoIcono+2}px; display: flex; align-items: center; justify-content: center;"><svg width="${tamanoIcono}" height="${tamanoIcono}" viewBox="0 0 24 24" fill="none"><path d="M4 12H20M20 12L12 4M20 12L12 20" stroke="${colorFlecha}" stroke-width="${grosorFlecha}" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`, iconSize: [tamanoIcono+2, tamanoIcono+2] }), interactive: true });
                 mFlecha.on('click', ev => abrirPopupDesdeFlecha(linea, ev));
                 groupoFlechas.addLayer(mFlecha); distanciaRemanente += distanciaPaso;
             }
+            distanciaActual -= 0; // no-op, mantiene compatibilidad
             distanciaRemanente -= distSegmento;
         }
         groupoFlechas.addTo(map); linea._decoradorFlechas = groupoFlechas;
@@ -1396,35 +1639,41 @@
 
     function registrarObjeto(obj) {
         let descripcion = "";
-        if (tipoDeTrazadoActivo === 'evac') { obj.tipoId = 'ruta_evacuacion'; obj.setStyle({ color: '#00FF00', weight: 0, fill: false }); recrearFlechasRuta(obj); descripcion = "VÍA DE EVACUACIÓN (VERDE)"; obj.bindPopup(`<div><span class="popup-desc">${descripcion}</span><button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button></div>`); } 
+        if (tipoDeTrazadoActivo === 'evac') {
+            obj.tipoId = 'ruta_evacuacion';
+            obj.colorEvac = document.getElementById('colorEvac').value || '#00FF00';
+            obj.grosorEvac = parseInt(document.getElementById('grosorEvac').value) || 6;
+            obj.setStyle({ color: obj.colorEvac, weight: 0, fill: false });
+            recrearFlechasRuta(obj);
+            obj.nombrePersonalizado = "VÍA DE EVACUACIÓN (VERDE)";
+            obj.bindPopup(generarPopupHTML(obj));
+        } 
         else if (tipoDeTrazadoActivo === 'pol') {
             let col = document.getElementById('colorPol').value; let fill = document.getElementById('checkRelleno').checked; obj.tipoId = 'poligono_riesgo';
             let textoRiesgo = col === '#ff0000' ? "ALTO RIESGO 🔴" : col === '#ffa500' ? "MEDIANO RIESGO 🟠" : col === '#ffff00' ? "BAJO RIESGO 🟡" : "SECTOR DELIMITADO ⚫";
             descripcion = `${textoRiesgo} - ${prompt("Detalles:") || "Sin detalles"}`;
+            obj.nombrePersonalizado = descripcion;
 
             let opacidadRellenoElegida = fill ? 0.4 : 0;
             obj.setStyle({ color: col, fillColor: col, fillOpacity: opacidadRellenoElegida, weight: 4 });
             obj.options.fillOpacity = opacidadRellenoElegida;
 
-            let popupContenido = document.createElement('div');
-            popupContenido.innerHTML = `
-                <div>
-                    <span class="popup-desc">${descripcion}</span>
-                    <div style="margin: 5px 0; display: flex; align-items: center; justify-content: space-between;">
-                        <label style="font-size: 10px; color: #333; font-weight: bold;">Relleno Interno:</label>
-                        <input type="checkbox" id="check-relleno-popup-${L.stamp(obj)}" ${fill ? 'checked' : ''} style="width: auto; cursor: pointer;" onchange="alternarRellenoPoligonoEnVivo(${L.stamp(obj)}, this.checked)">
-                    </div>
-                    <button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button>
-                </div>`;
-            obj.bindPopup(popupContenido);
-        } else { obj.tipoId = 'linea_tecnica'; obj.setStyle({ color: "#B4D445", weight: 4 }); obj.bindPopup(`<div><span class="popup-desc">${prompt("Detalles:") || "Trazado"}</span><button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button></div>`); }
+            obj.bindPopup(generarPopupHTML(obj));
+        } else {
+            obj.tipoId = 'linea_tecnica';
+            const colorElegido = document.getElementById('colorLinea').value || "#3388ff";
+            const grosorElegido = parseInt(document.getElementById('grosorLinea').value) || 4;
+            obj.setStyle({ color: colorElegido, weight: grosorElegido });
+            obj.nombrePersonalizado = prompt("Detalles (Ej: Río, Arroyo, Canal):") || "Trazado Técnico";
+            obj.bindPopup(generarPopupHTML(obj));
+        }
 
         obj.on('click', e => { 
             L.DomEvent.stopPropagation(e);
             if (emojiActual && !modoNavegar) {
                 crearIcono(e.latlng);
             } else {
-                if (modoNavegar) { deseleccionarTodo(); objetoSeleccionado = obj; obj.enableEdit(); obj.openPopup(); } 
+                if (modoNavegar) { deseleccionarTodo(); objetoSeleccionado = obj; obj.enableEdit(); refrescarPopup(obj); obj.openPopup(); } 
             }
         });
         stackElementos.push(obj); guardarProgresoMapa();

@@ -409,6 +409,48 @@
             font-size: 12.5px;
         }
 
+        /* SLOTS PARA LAS 3 FOTOGRAFÍAS OBLIGATORIAS */
+        .slot-foto {
+            background: #111;
+            border: 2px dashed #444;
+            border-radius: 8px;
+            height: 75px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: 0.2s;
+        }
+        .slot-foto:hover {
+            border-color: var(--v-lime);
+            background: #1a1e1b;
+        }
+        .slot-foto.foto-cargada {
+            border: 2px solid #25D366;
+            background: #0d140f;
+        }
+        .slot-foto-icono {
+            font-size: 18px;
+            line-height: 1;
+            margin-bottom: 3px;
+        }
+        .slot-foto-texto {
+            font-size: 9px;
+            font-weight: bold;
+            color: #aaa;
+            text-transform: uppercase;
+        }
+        .preview-foto-img {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+
         .preview-whatsapp-box {
             background: #0b141a;
             border: 1px solid #233d2a;
@@ -420,7 +462,7 @@
             font-size: 11px;
             line-height: 1.45;
             white-space: pre-wrap;
-            max-height: 140px;
+            max-height: 130px;
             overflow-y: auto;
         }
 
@@ -1000,7 +1042,7 @@
     </div>
 </div>
 
-<!-- MODAL DE REPORTE VISUAL (WHATSAPP) -->
+<!-- MODAL DE REPORTE VISUAL (WHATSAPP) CON ADJUNCIÓN OBLIGATORIA DE 3 FOTOS -->
 <div id="modal-reporte-riesgo" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 99999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
     <div class="card-reporte-whatsapp">
         <div class="header-modal-reporte">
@@ -1051,7 +1093,41 @@
                 <textarea id="rep-observacion" rows="2" class="sidebar-input" style="height:auto; resize:none; font-family:inherit;" placeholder="Ej: Frente a la casa #12, cerca de la cancha principal..." oninput="actualizarVistaPreviaReporte()"></textarea>
             </div>
 
-            <div class="reporte-campo" style="margin-top:12px;">
+            <!-- ADJUNTAR 3 FOTOGRAFÍAS OBLIGATORIAS (QUEDAN EN EL TELÉFONO, NO SATURAN SUPABASE) -->
+            <div class="reporte-campo" style="margin-top:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                    <label style="margin:0;">📸 Evidencia Fotográfica (3 Fotos Obligatorias)</label>
+                    <span id="contador-fotos-reporte" style="font-size:9.5px; font-weight:bold; color:#ff4d4d; background:#2a1a1a; padding:2px 8px; border-radius:10px; border:1px solid #ff4d4d;">0 / 3 Fotos</span>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px; margin-top:5px;">
+                    <!-- Foto 1 -->
+                    <div class="slot-foto" id="slot-foto-1" onclick="document.getElementById('input-foto-1').click()">
+                        <input type="file" id="input-foto-1" accept="image/*" capture="environment" style="display:none;" onchange="procesarFotoReporte(0, this)">
+                        <div class="slot-foto-icono" id="icono-slot-1">📷</div>
+                        <div class="slot-foto-texto" id="texto-slot-1">Foto 1 *</div>
+                        <img id="preview-foto-1" class="preview-foto-img" style="display:none;">
+                    </div>
+                    <!-- Foto 2 -->
+                    <div class="slot-foto" id="slot-foto-2" onclick="document.getElementById('input-foto-2').click()">
+                        <input type="file" id="input-foto-2" accept="image/*" capture="environment" style="display:none;" onchange="procesarFotoReporte(1, this)">
+                        <div class="slot-foto-icono" id="icono-slot-2">📷</div>
+                        <div class="slot-foto-texto" id="texto-slot-2">Foto 2 *</div>
+                        <img id="preview-foto-2" class="preview-foto-img" style="display:none;">
+                    </div>
+                    <!-- Foto 3 -->
+                    <div class="slot-foto" id="slot-foto-3" onclick="document.getElementById('input-foto-3').click()">
+                        <input type="file" id="input-foto-3" accept="image/*" capture="environment" style="display:none;" onchange="procesarFotoReporte(2, this)">
+                        <div class="slot-foto-icono" id="icono-slot-3">📷</div>
+                        <div class="slot-foto-texto" id="texto-slot-3">Foto 3 *</div>
+                        <img id="preview-foto-3" class="preview-foto-img" style="display:none;">
+                    </div>
+                </div>
+                <small style="font-size:8.5px; color:#888; display:block; margin-top:5px;">
+                    ℹ️ Las fotos se toman desde tu teléfono y se envían a WhatsApp sin ocupar espacio en la base de datos de Supabase.
+                </small>
+            </div>
+
+            <div class="reporte-campo" style="margin-top:10px;">
                 <label style="color:#25D366;">Vista Previa del Reporte (Formato WhatsApp)</label>
                 <div id="rep-preview-texto" class="preview-whatsapp-box"></div>
             </div>
@@ -1085,6 +1161,7 @@
     let emailPropietarioMapaActual = null; 
     let objetoReporteActivo = null;
     let dbHistorialReportes = [];
+    let fotosReporteActual = [null, null, null]; // Guarda los 3 archivos en memoria temporal sin subirlos a Supabase
 
     const adminPermitidos = [{ user: "yetzonmora@gmail.com", pass: "32568263y" }];
 
@@ -1146,6 +1223,65 @@
         return `<div class="${clase}">${contenido}${badge}</div>`;
     }
 
+    /* === GESTIÓN DE LAS 3 FOTOS OBLIGATORIAS (QUEDAN EN EL TELÉFONO) === */
+    function procesarFotoReporte(indice, input) {
+        if (input.files && input.files[0]) {
+            const archivo = input.files[0];
+            fotosReporteActual[indice] = archivo;
+            
+            const preview = document.getElementById(`preview-foto-${indice + 1}`);
+            const slot = document.getElementById(`slot-foto-${indice + 1}`);
+            const icono = document.getElementById(`icono-slot-${indice + 1}`);
+            const texto = document.getElementById(`texto-slot-${indice + 1}`);
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                slot.classList.add('foto-cargada');
+                icono.style.display = 'none';
+                texto.style.display = 'none';
+            };
+            reader.readAsDataURL(archivo);
+        }
+        actualizarContadorFotosReporte();
+        actualizarVistaPreviaReporte();
+    }
+
+    function limpiarFotosReporte() {
+        fotosReporteActual = [null, null, null];
+        for (let i = 1; i <= 3; i++) {
+            const input = document.getElementById(`input-foto-${i}`);
+            const preview = document.getElementById(`preview-foto-${i}`);
+            const slot = document.getElementById(`slot-foto-${i}`);
+            const icono = document.getElementById(`icono-slot-${i}`);
+            const texto = document.getElementById(`texto-slot-${i}`);
+            if (input) input.value = "";
+            if (preview) { preview.src = ""; preview.style.display = 'none'; }
+            if (slot) slot.classList.remove('foto-cargada');
+            if (icono) icono.style.display = 'block';
+            if (texto) texto.style.display = 'block';
+        }
+        actualizarContadorFotosReporte();
+    }
+
+    function actualizarContadorFotosReporte() {
+        const cant = fotosReporteActual.filter(f => f !== null).length;
+        const badge = document.getElementById('contador-fotos-reporte');
+        if (badge) {
+            badge.innerText = `${cant} / 3 Fotos`;
+            if (cant === 3) {
+                badge.style.color = '#25D366';
+                badge.style.borderColor = '#25D366';
+                badge.style.background = '#122417';
+            } else {
+                badge.style.color = '#ff4d4d';
+                badge.style.borderColor = '#ff4d4d';
+                badge.style.background = '#2a1a1a';
+            }
+        }
+    }
+
     /* === SINCRONIZAR MARCADORES DEL MAPA CON EL HISTORIAL === */
     function sincronizarHistorialConMarcadores() {
         stackElementos.forEach(capa => {
@@ -1167,6 +1303,7 @@
                         coords: coords,
                         urgencia: "MEDIO 🟡",
                         observacion: capa.especificacionDiscapacidad || "",
+                        fotosAdjuntadas: 3,
                         fecha: new Date().toLocaleDateString()
                     });
                 }
@@ -1201,6 +1338,7 @@
                     <span style="font-size: 8.5px; font-weight: bold; color: ${rep.urgencia && rep.urgencia.includes('ALTO') ? '#ff4d4d' : rep.urgencia && rep.urgencia.includes('MEDIO') ? '#ffa500' : '#2fe772'}">${rep.urgencia || 'REPORTADO'}</span>
                 </div>
                 <div class="card-hist-sub">📍 <b>Sector:</b> ${rep.sector || "No especificado"}</div>
+                <div class="card-hist-sub">📸 <b>Evidencia:</b> 3 Fotos adjuntas</div>
                 <div class="card-hist-sub">📅 <b>Fecha:</b> ${rep.fecha || "Reciente"}</div>
                 <div class="card-hist-acciones">
                     <button class="btn-hist-ver" onclick="verDetalleReporteHistorial(${index})">👁️ Ver Detalles</button>
@@ -1267,6 +1405,8 @@
         if (!elemento) { alert("Seleccione un elemento de riesgo en el mapa primero."); return; }
         objetoReporteActivo = elemento;
 
+        limpiarFotosReporte();
+
         const nombreRiesgo = obtenerNombreRiesgo(elemento.tipoId);
         document.getElementById('rep-tipo-riesgo').innerText = nombreRiesgo;
 
@@ -1293,6 +1433,7 @@
     function cerrarModalReporte() {
         document.getElementById('modal-reporte-riesgo').style.display = 'none';
         objetoReporteActivo = null;
+        limpiarFotosReporte();
     }
 
     function actualizarVistaPreviaReporte() {
@@ -1303,6 +1444,7 @@
         const coords = document.getElementById('rep-coordenadas').value;
         const urgencia = document.getElementById('rep-nivel-urgencia').value;
         const obs = document.getElementById('rep-observacion').value.trim();
+        const cantFotos = fotosReporteActual.filter(f => f !== null).length;
 
         const correoUsuario = localStorage.getItem('user_email_active') || "Empadronador Comunal";
         let voceroInfo = correoUsuario;
@@ -1325,6 +1467,7 @@
         textoReporte += `🏘 *Sector:* ${sector ? sector : '(Sin especificar)'}\n`;
         textoReporte += `📍 *Coordenadas:* ${coords}\n`;
         if (linkMaps) textoReporte += `🗺 *Mapa GPS:* ${linkMaps}\n`;
+        textoReporte += `📸 *Evidencia:* 3 Fotografías adjuntas (${cantFotos}/3 listas)\n`;
         if (obs) textoReporte += `📝 *Detalle/Ref:* ${obs}\n`;
         textoReporte += `👤 *Empadronador:* ${voceroInfo}\n`;
         textoReporte += `📅 *Fecha:* ${new Date().toLocaleString()}\n`;
@@ -1334,8 +1477,16 @@
         document.getElementById('rep-preview-texto').innerText = textoReporte;
     }
 
-    function simularEnvioWhatsApp() {
+    async function simularEnvioWhatsApp() {
         if (!objetoReporteActivo) return;
+
+        // VALIDACIÓN ESTRICTA DE 3 FOTOS OBLIGATORIAS
+        const cantFotos = fotosReporteActual.filter(f => f !== null).length;
+        if (cantFotos < 3) {
+            alert(`⚠️ ATENCIÓN: Es OBLIGATORIO adjuntar las 3 fotografías de evidencia del riesgo ambiental antes de enviar.\n\nActualmente has cargado ${cantFotos} de 3 fotos.`);
+            return;
+        }
+
         const texto = document.getElementById('rep-preview-texto').innerText;
         const nombreRiesgo = document.getElementById('rep-tipo-riesgo').innerText;
         const comuna = document.getElementById('rep-comuna').value;
@@ -1357,7 +1508,7 @@
             iconAnchor: [12, 12]
         }));
 
-        // 2. Guardar en el historial de reportes
+        // 2. Guardar en el historial (SOLO METADATOS: NO guarda las fotos para no colapsar la memoria de Supabase)
         const existeIdx = dbHistorialReportes.findIndex(r => r.layerStamp === stampActual);
         const itemHistorial = {
             layerStamp: stampActual,
@@ -1368,6 +1519,7 @@
             coords: coords,
             urgencia: urgencia,
             observacion: obs,
+            fotosAdjuntadas: 3,
             fecha: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
             textoCompleto: texto
         };
@@ -1382,8 +1534,27 @@
         renderizarHistorialReportes();
         guardarProgresoMapa();
 
+        // 3. Envío directo a WhatsApp con las 3 fotos desde el almacenamiento local del teléfono
+        const archivosCompartir = fotosReporteActual.filter(f => f !== null);
+
+        if (navigator.canShare && navigator.canShare({ files: archivosCompartir })) {
+            try {
+                await navigator.share({
+                    title: `Reporte Ambiental: ${nombreRiesgo}`,
+                    text: texto,
+                    files: archivosCompartir
+                });
+                cerrarModalReporte();
+                return;
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    console.log("WebShare falló, usando método web:", err);
+                }
+            }
+        }
+
         const enlaceWA = "https://api.whatsapp.com/send?text=" + encodeURIComponent(texto);
-        if (confirm("📢 REPORTE GENERADO CON ÉXITO\n\nEl punto quedó marcado con el distintivo rojo en el mapa y guardado en tu historial.\n\n¿Deseas abrir WhatsApp para compartir este reporte?")) {
+        if (confirm("📢 REPORTE GENERADO CON ÉXITO\n\nLas 3 fotografías de evidencia fueron capturadas y no ocuparán memoria en la base de datos de Supabase.\n\n¿Deseas abrir WhatsApp para compartir este reporte con sus datos?")) {
             window.open(enlaceWA, '_blank');
         }
         cerrarModalReporte();

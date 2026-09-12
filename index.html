@@ -483,7 +483,6 @@
                 width: 100%; height: auto;
             }
 
-            /* Ocultar todo lo que no debe salir en el papel */
             #pantalla-registro, #video-contenedor, #modal-reporte-riesgo,
             .controles-mapa-horiz, .zoom-preciso-panel, #indicador-autoguardado,
             #btnVolverAdmin, #panel-admin-comunas, #panel-voceros-lista,
@@ -538,7 +537,6 @@
             .grid-datos { gap: 3px; }
             .count-badge { font-size: 8px; padding: 1px 4px; }
 
-            /* Íconos del mapa más pequeños y discretos al imprimir */
             .map-icon-container { width: 14px !important; height: 14px !important; font-size: 8px !important; }
             .cruz-roja { width: 9px !important; height: 9px !important; }
             .cruz-roja::before { height: 2.5px !important; top: 3.5px !important; }
@@ -860,7 +858,7 @@
                 </div>
 
                 <!-- HISTORIAL DE REPORTES REALIZADOS EN LA LEYENDA -->
-                <h4>📋 Historial de Reportes Realizados</h4>
+                <h4>📋 Historial de Reportes Realizados (<span id="badge-total-reportes" style="color:var(--v-lim)">0</span>)</h4>
                 <div id="lista-historial-reportes" style="margin-top: 5px;"></div>
             </div>
 
@@ -1039,7 +1037,6 @@
                 </div>
                 <div class="reporte-campo">
                     <label>Sector de la Comuna</label>
-                    <!-- CAMPO TOTALMENTE EDITABLE SIN VALOR POR DEFECTO -->
                     <input type="text" id="rep-sector" class="sidebar-input" placeholder="Escriba el nombre del sector..." oninput="actualizarVistaPreviaReporte()" style="border: 1px solid var(--v-lime);">
                 </div>
             </div>
@@ -1087,7 +1084,7 @@
     let mapaSoloLectura = false; 
     let emailPropietarioMapaActual = null; 
     let objetoReporteActivo = null;
-    let dbHistorialReportes = []; // Historial de reportes activos
+    let dbHistorialReportes = [];
 
     const adminPermitidos = [{ user: "yetzonmora@gmail.com", pass: "32568263y" }];
 
@@ -1119,7 +1116,6 @@
         return listaRiesgosAmbientales.includes(tipoId);
     }
 
-    /* === NOMBRES COHERENTES Y FORMALES DE CADA RIESGO AMBIENTAL === */
     function obtenerNombreRiesgo(tipoId) {
         const nombres = {
             'pozo_derrumbado': 'Pozo Séptico Colapsado',
@@ -1144,21 +1140,55 @@
         return nombres[tipoId] || 'Riesgo Ambiental';
     }
 
-    /* === CONSTRUCTOR DEL HTML DEL ÍCONO (CON DISTINTIVO DE REPORTADO) === */
     function construirHtmlIconoMarcador(contenido, fueReportado) {
         let clase = fueReportado ? 'map-icon-container reportado-activo' : 'map-icon-container';
         let badge = fueReportado ? '<span class="badge-marcador-reportado" title="Reportado">📢</span>' : '';
         return `<div class="${clase}">${contenido}${badge}</div>`;
     }
 
-    /* === HISTORIAL DE REPORTES EN LA LEYENDA === */
+    /* === SINCRONIZAR MARCADORES DEL MAPA CON EL HISTORIAL === */
+    function sincronizarHistorialConMarcadores() {
+        stackElementos.forEach(capa => {
+            if (capa.fueReportado && esRiesgoAmbiental(capa.tipoId)) {
+                const stamp = L.stamp(capa);
+                const yaEsta = dbHistorialReportes.some(r => r.layerStamp === stamp);
+                if (!yaEsta) {
+                    let coords = "";
+                    if (typeof capa.getLatLng === 'function') {
+                        const ll = capa.getLatLng();
+                        coords = `${ll.lat.toFixed(6)}, ${ll.lng.toFixed(6)}`;
+                    }
+                    dbHistorialReportes.push({
+                        layerStamp: stamp,
+                        tipoId: capa.tipoId,
+                        nombreRiesgo: obtenerNombreRiesgo(capa.tipoId),
+                        comuna: document.getElementById('selectComuna').value || "",
+                        sector: capa.sectorReportado || document.getElementById('infoSector').value || "",
+                        coords: coords,
+                        urgencia: "MEDIO 🟡",
+                        observacion: capa.especificacionDiscapacidad || "",
+                        fecha: new Date().toLocaleDateString()
+                    });
+                }
+            }
+        });
+    }
+
+    /* === RENDERIZAR HISTORIAL EN LA BARRA LATERAL === */
     function renderizarHistorialReportes() {
         const contenedor = document.getElementById('lista-historial-reportes');
+        const badgeContador = document.getElementById('badge-total-reportes');
         if (!contenedor) return;
         contenedor.innerHTML = "";
 
+        if (badgeContador) badgeContador.innerText = dbHistorialReportes.length;
+
         if (!dbHistorialReportes || dbHistorialReportes.length === 0) {
-            contenedor.innerHTML = `<div style="font-size: 9.5px; color: #777; font-style: italic; padding: 4px 0;">No hay reportes ambientales activos registrados.</div>`;
+            contenedor.innerHTML = `
+                <div style="font-size: 10px; color: #888; background: #161817; padding: 10px; border-radius: 6px; text-align: center; border: 1px dashed #444;">
+                    No hay reportes ambientales registrados aún.<br>
+                    <small style="color: #666;">Haz clic en un riesgo ambiental en el mapa y presiona <b>REPORTAR</b> para registrarlo.</small>
+                </div>`;
             return;
         }
 
@@ -1168,10 +1198,10 @@
             card.innerHTML = `
                 <div class="card-hist-header">
                     <span class="card-hist-titulo">${rep.nombreRiesgo}</span>
-                    <span style="font-size: 8.5px; font-weight: bold; color: ${rep.urgencia.includes('ALTO') ? '#ff4d4d' : rep.urgencia.includes('MEDIO') ? '#ffa500' : '#2fe772'}">${rep.urgencia}</span>
+                    <span style="font-size: 8.5px; font-weight: bold; color: ${rep.urgencia && rep.urgencia.includes('ALTO') ? '#ff4d4d' : rep.urgencia && rep.urgencia.includes('MEDIO') ? '#ffa500' : '#2fe772'}">${rep.urgencia || 'REPORTADO'}</span>
                 </div>
                 <div class="card-hist-sub">📍 <b>Sector:</b> ${rep.sector || "No especificado"}</div>
-                <div class="card-hist-sub">📅 <b>Fecha:</b> ${rep.fecha}</div>
+                <div class="card-hist-sub">📅 <b>Fecha:</b> ${rep.fecha || "Reciente"}</div>
                 <div class="card-hist-acciones">
                     <button class="btn-hist-ver" onclick="verDetalleReporteHistorial(${index})">👁️ Ver Detalles</button>
                     <button class="btn-hist-atendido" onclick="marcarReporteComoAtendido(${index})">✅ Atendido</button>
@@ -1184,7 +1214,6 @@
     function verDetalleReporteHistorial(index) {
         const rep = dbHistorialReportes[index];
         if (!rep) return;
-        // Buscar el marcador asociado si existe
         const marcador = stackElementos.find(el => L.stamp(el) === rep.layerStamp);
         if (marcador) {
             map.setView(marcador.getLatLng(), 19);
@@ -1201,13 +1230,11 @@
         }
     }
 
-    /* === ACCIÓN ATENDIDO: ELIMINA DEL MAPA, RESTA A LA LEYENDA Y ACTUALIZA HISTORIAL === */
     function marcarReporteComoAtendido(index) {
         const rep = dbHistorialReportes[index];
         if (!rep) return;
 
         if (confirm(`¿Marcar como ATENDIDO el reporte de "${rep.nombreRiesgo}" en sector "${rep.sector || 'comunitario'}"?\n\nEsta acción eliminará el riesgo del mapa y restará el contador en la leyenda.`)) {
-            // Buscar el marcador por stamp o proximidad
             let marcador = stackElementos.find(el => L.stamp(el) === rep.layerStamp);
             if (!marcador && rep.coords) {
                 const [latS, lngS] = rep.coords.split(',').map(s => parseFloat(s.trim()));
@@ -1227,15 +1254,14 @@
                 actualizarBadges();
             }
 
-            // Quitar de la lista de reportes
             dbHistorialReportes.splice(index, 1);
+            localStorage.setItem('historial_reportes_sig', JSON.stringify(dbHistorialReportes));
             renderizarHistorialReportes();
             guardarProgresoMapa();
             alert("✅ Problema ambiental marcado como ATENDIDO con éxito.");
         }
     }
 
-    /* === MODAL VISUAL DE REPORTE === */
     function abrirModalReporteRiesgo(obj) {
         const elemento = obj || objetoSeleccionado;
         if (!elemento) { alert("Seleccione un elemento de riesgo en el mapa primero."); return; }
@@ -1245,7 +1271,6 @@
         document.getElementById('rep-tipo-riesgo').innerText = nombreRiesgo;
 
         const comuna = document.getElementById('selectComuna').value || "No seleccionada";
-        // SECTOR TOTALMENTE EDITABLE, SIN TEXTOS POR DEFECTO
         const sectorActual = elemento.sectorReportado || document.getElementById('infoSector').value.trim() || "";
         document.getElementById('rep-comuna').value = comuna;
         document.getElementById('rep-sector').value = sectorActual;
@@ -1319,7 +1344,7 @@
         const urgencia = document.getElementById('rep-nivel-urgencia').value;
         const obs = document.getElementById('rep-observacion').value.trim();
 
-        // 1. Marcar el icono en el mapa como REPORTADO con su distintivo visual
+        // 1. Marcar el icono en el mapa con su distintivo visual
         objetoReporteActivo.fueReportado = true;
         objetoReporteActivo.sectorReportado = sector;
         const stampActual = L.stamp(objetoReporteActivo);
@@ -1332,7 +1357,7 @@
             iconAnchor: [12, 12]
         }));
 
-        // 2. Agregar o actualizar en el historial de reportes
+        // 2. Guardar en el historial de reportes
         const existeIdx = dbHistorialReportes.findIndex(r => r.layerStamp === stampActual);
         const itemHistorial = {
             layerStamp: stampActual,
@@ -1353,6 +1378,7 @@
             dbHistorialReportes.unshift(itemHistorial);
         }
 
+        localStorage.setItem('historial_reportes_sig', JSON.stringify(dbHistorialReportes));
         renderizarHistorialReportes();
         guardarProgresoMapa();
 
@@ -1374,6 +1400,9 @@
     async function reiniciarMiMapa() {
         if (!confirm("⚠️ Esto borrará TODOS los elementos de tu mapa actual (polígonos, íconos, líneas, antecedentes). No se puede deshacer. ¿Deseas continuar?")) return;
         limpiarMapaCompletamente();
+        dbHistorialReportes = [];
+        localStorage.removeItem('historial_reportes_sig');
+        renderizarHistorialReportes();
         const correoUsuario = emailPropietarioMapaActual || localStorage.getItem('user_email_active');
         if (!correoUsuario) return;
         try {
@@ -1530,6 +1559,8 @@
                 document.getElementById('infoNoAsf').value = totalNoAsf;
 
                 enfocarMapaEnElementos();
+                sincronizarHistorialConMarcadores();
+                renderizarHistorialReportes();
                 alert(`Cargando Mapa Generalizado de la comuna: ${comuna}\nSe consolidaron ${data.length} mapa(s) de usuario.`);
             } else {
                 alert("No se encontraron mapas para consolidar en esta comuna.");
@@ -1562,8 +1593,6 @@
         for (let k in vulnerabilidadesManual) { vulnerabilidadesManual[k] = 0; }
         actualizarInputsVulnerabilidadManual();
         alternarLeyendaNormal();
-        dbHistorialReportes = [];
-        renderizarHistorialReportes();
     }
 
     function generarPopupHTML(layer) {
@@ -1651,6 +1680,11 @@
             }
             actualizarInputsVulnerabilidadManual();
         }
+
+        if (geoJSONData.historialReportes && Array.isArray(geoJSONData.historialReportes)) {
+            dbHistorialReportes = geoJSONData.historialReportes;
+        }
+
         L.geoJSON(geoJSONData, {
             pointToLayer: function (feature, latlng) {
                 const tipoId = feature.properties.tipoId;
@@ -1833,6 +1867,9 @@
             if(inputs[0].value || inputs[1].value) antecedentes.push({ anio: inputs[0].value, suceso: inputs[1].value });
         });
         if (objetoSeleccionado && objetoSeleccionado.tipoId === 'recicladores') objetoSeleccionado.datosReciclador = capturarCamposReciclador();
+        
+        localStorage.setItem('historial_reportes_sig', JSON.stringify(dbHistorialReportes));
+
         const datosCompletos = {
             infoTerritorial: {
                 parroquia: document.getElementById('infoParroquia').value, comuna: document.getElementById('selectComuna').value,
@@ -1879,23 +1916,33 @@
     function limpiarCamposReciclador() { restaurarCamposReciclador({ estado:"", municipio:"", parroquia:"", comuna:"", cc:"", sector:"", direccion:"", coordenadas:"", geo:"", encargado:"", nomApe:"", cedula:"", sexo:"", correo:"", telephone:"", razonSocial:"", tipoPropiedad:"", rif:"", sabat:"", racda:"", cantMensual:"", lugarDescarte:"", dispFinal:"" }); }
 
     function restaurarProgresoMapa() {
-        const datosGuardados = localStorage.getItem('mapa_progreso_sig'); if (!datosGuardados) return;
-        const data = JSON.parse(datosGuardados);
-        if(data.infoTerritorial) {
-            document.getElementById('infoParroquia').value = data.infoTerritorial.parroquia || ""; document.getElementById('selectComuna').value = data.infoTerritorial.comuna || "";
-            document.getElementById('infoCC').value = data.infoTerritorial.consejosC || 0; document.getElementById('infoCalles').value = data.infoTerritorial.calles || 0;
-            document.getElementById('infoAsf').value = data.infoTerritorial.asfaltadas || 0; document.getElementById('infoNoAsf').value = data.infoTerritorial.noAsfaltadas || 0; document.getElementById('infoSector').value = data.infoTerritorial.sector || "";
-        }
-        if(data.antecedentes) { document.getElementById('lista-antecedentes').innerHTML = ""; data.antecedentes.forEach(ant => agregarFilaHistoria(ant.anio, ant.suceso)); }
-        if(data.vulnerabilidadesManual) {
-            for (let k in vulnerabilidadesManual) {
-                if (data.vulnerabilidadesManual[k] !== undefined) vulnerabilidadesManual[k] = parseInt(data.vulnerabilidadesManual[k]) || 0;
+        const datosGuardados = localStorage.getItem('mapa_progreso_sig'); 
+        if (datosGuardados) {
+            const data = JSON.parse(datosGuardados);
+            if(data.infoTerritorial) {
+                document.getElementById('infoParroquia').value = data.infoTerritorial.parroquia || ""; document.getElementById('selectComuna').value = data.infoTerritorial.comuna || "";
+                document.getElementById('infoCC').value = data.infoTerritorial.consejosC || 0; document.getElementById('infoCalles').value = data.infoTerritorial.calles || 0;
+                document.getElementById('infoAsf').value = data.infoTerritorial.asfaltadas || 0; document.getElementById('infoNoAsf').value = data.infoTerritorial.noAsfaltadas || 0; document.getElementById('infoSector').value = data.infoTerritorial.sector || "";
             }
-            actualizarInputsVulnerabilidadManual();
+            if(data.antecedentes) { document.getElementById('lista-antecedentes').innerHTML = ""; data.antecedentes.forEach(ant => agregarFilaHistoria(ant.anio, ant.suceso)); }
+            if(data.vulnerabilidadesManual) {
+                for (let k in vulnerabilidadesManual) {
+                    if (data.vulnerabilidadesManual[k] !== undefined) vulnerabilidadesManual[k] = parseInt(data.vulnerabilidadesManual[k]) || 0;
+                }
+                actualizarInputsVulnerabilidadManual();
+            }
+            if(data.arbolPredominante) document.getElementById('inputArbolPredominante').value = data.arbolPredominante;
+            if(data.historialReportes) { dbHistorialReportes = data.historialReportes; }
+            if(data.elementos && data.elementos.length > 0) restaurarDatosDesdeNube({ type: "FeatureCollection", features: data.elementos });
         }
-        if(data.arbolPredominante) document.getElementById('inputArbolPredominante').value = data.arbolPredominante;
-        if(data.historialReportes) { dbHistorialReportes = data.historialReportes; renderizarHistorialReportes(); }
-        if(data.elementos && data.elementos.length > 0) restaurarDatosDesdeNube({ type: "FeatureCollection", features: data.elementos });
+
+        const repLocal = localStorage.getItem('historial_reportes_sig');
+        if (repLocal) {
+            try { dbHistorialReportes = JSON.parse(repLocal); } catch(e){}
+        }
+
+        sincronizarHistorialConMarcadores();
+        renderizarHistorialReportes();
     }
 
     function aplicarDatosMapaCargado(data) {
@@ -1917,6 +1964,13 @@
             restaurarDatosDesdeNube(data.geometria_mapa);
         }
 
+        const repLocal = localStorage.getItem('historial_reportes_sig');
+        if (repLocal && (!dbHistorialReportes || dbHistorialReportes.length === 0)) {
+            try { dbHistorialReportes = JSON.parse(repLocal); } catch(e){}
+        }
+
+        sincronizarHistorialConMarcadores();
+        renderizarHistorialReportes();
         guardarProgresoMapa();
         enfocarMapaEnElementos();
     }
@@ -1954,7 +2008,7 @@
         const payloadUnificado = {
             id_comuna: comunaFinal,
             nombre_sector: sectoresVistos.join(", "),
-            geometria_mapa: { type: "FeatureCollection", features: elementosUnificados },
+            geometria_mapa: { type: "FeatureCollection", features: elementosUnificados, historialReportes: dbHistorialReportes },
             usuario_email: correo,
             estado: estadoFinal,
             municipio: municipioFinal,
@@ -1990,6 +2044,7 @@
                 alert(`Se detectaron ${data.length} mapas de sectores anteriores para tu correo. Se unificaron automáticamente en un solo mapa comunal.`);
             } else {
                 limpiarMapaCompletamente();
+                renderizarHistorialReportes();
             }
         } catch (e) { console.error(e); }
     }
@@ -2083,7 +2138,12 @@
         if (objetoSeleccionado && objetoSeleccionado.tipoId === 'recicladores') objetoSeleccionado.datosReciclador = capturarCamposReciclador();
 
         const elementos = construirElementosParaGuardar();
-        const geojsonActual = { type: "FeatureCollection", features: elementos, vulnerabilidadesManual: vulnerabilidadesManual };
+        const geojsonActual = { 
+            type: "FeatureCollection", 
+            features: elementos, 
+            vulnerabilidadesManual: vulnerabilidadesManual,
+            historialReportes: dbHistorialReportes 
+        };
 
         const antecedentes = [];
         document.querySelectorAll('.fila-historia').forEach(fila => {
@@ -2204,6 +2264,8 @@
 
     window.addEventListener('load', async function() {
         const datos = localStorage.getItem('dbVoceros_SIG'); if (datos) { dbVoceros = JSON.parse(datos); actualizarTablaVoceros(); }
+        renderizarHistorialReportes();
+
         if (localStorage.getItem('sesion_activa') === 'true') {
             document.getElementById('pantalla-registro').style.display = 'none'; document.getElementById('sistema-principal').style.display = 'flex';
             rolActual = localStorage.getItem('rol_usuario'); 
@@ -2268,6 +2330,7 @@
         map.on('editable:drawing:click', e => { if (tipoDeTrazadoActivo === 'evac' && trazandoAhora) { trazandoAhora.colorEvac = document.getElementById('colorEvac').value; trazandoAhora.grosorEvac = parseInt(document.getElementById('grosorEvac').value); trazandoAhora.setStyle({ color: trazandoAhora.colorEvac, weight: 0, fill: false }); recrearFlechasRuta(trazandoAhora); } });
         map.on('editable:drawing:end', e => { registrarObjeto(e.layer); activarMano(); document.getElementById('btnFinalizar').style.display = 'none'; trazandoAhora = null; tipoDeTrazadoActivo = ""; document.getElementById('desplegable-riesgos-trazado').style.display = 'none'; guardarProgresoMapa(); });
         map.on('click', e => { if (emojiActual && !modoNavegar) crearIcono(e.latlng); else deseleccionarTodo(); });
+        renderizarHistorialReportes();
     }
 
     function toggleSidebar() { document.getElementById('sidebar').style.display = document.getElementById('sidebar').style.display === 'none' ? 'block' : 'none'; map.invalidateSize(); }
@@ -2454,9 +2517,9 @@
         if (obj.tipoId === 'recicladores') alternarLeyendaNormal(); 
         if (obj._decoradorFlechas) map.removeLayer(obj._decoradorFlechas);
         
-        // Si este objeto estaba en el historial de reportes, retirarlo también
         const stampObj = L.stamp(obj);
         dbHistorialReportes = dbHistorialReportes.filter(r => r.layerStamp !== stampObj);
+        localStorage.setItem('historial_reportes_sig', JSON.stringify(dbHistorialReportes));
         renderizarHistorialReportes();
 
         map.removeLayer(obj); 

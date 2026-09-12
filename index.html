@@ -145,11 +145,41 @@
         .count-badge { background: #333; color: var(--v-lim); padding: 2px 6px; border-radius: 10px; font-weight: bold; font-size: 10px; }
         .btn-mapa.activo { background: var(--v-osc) !important; border-color: var(--v-lim); }
 
-        .map-icon-container { background: white !important; border-radius: 50% !important; display: flex !important; align-items: center !important; justify-content: center !important; border: none !important; box-shadow: 0 2px 4px rgba(0,0,0,0.4); width: 24px; height: 24px; font-size: 14px; position: relative; color: black; }
+        .map-icon-container { background: white !important; border-radius: 50% !important; display: flex !important; align-items: center !important; justify-content: center !important; border: none !important; box-shadow: 0 2px 4px rgba(0,0,0,0.4); width: 24px; height: 24px; font-size: 14px; position: relative; color: black; transition: 0.3s; }
         .cruz-roja { width: 16px; height: 16px; position: relative; }
         .cruz-roja::before, .cruz-roja::after { content: ''; position: absolute; background: #ff0000; border-radius: 2px; }
         .cruz-roja::before { width: 100%; height: 4px; top: 6px; left: 0; }
         .cruz-roja::after { width: 4px; height: 100%; top: 0; left: 6px; }
+
+        /* DISTINTIVO VISUAL PARA MARCADORES REPORTADOS EN EL MAPA */
+        .map-icon-container.reportado-activo {
+            border: 2px solid #ff3333 !important;
+            box-shadow: 0 0 12px rgba(255, 51, 51, 0.9), 0 2px 5px rgba(0,0,0,0.6) !important;
+            animation: pulsoReportado 1.8s infinite;
+        }
+        @keyframes pulsoReportado {
+            0% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0.8); }
+            70% { box-shadow: 0 0 0 9px rgba(255, 51, 51, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0); }
+        }
+        .badge-marcador-reportado {
+            position: absolute;
+            top: -7px;
+            right: -7px;
+            background: #e74c3c;
+            color: white;
+            font-size: 10px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1.5px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            line-height: 1;
+            z-index: 10;
+        }
 
         .btn-delete-popup { background: #ff4444; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 10px; margin-top: 5px; width: 100%; }
         .btn-rename-popup { background: var(--v-osc); color: var(--v-lim); border: 1px solid var(--v-lim); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 10px; margin-top: 5px; width: 100%; }
@@ -246,6 +276,65 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.4);
         }
 
+        /* ===================== HISTORIAL DE REPORTES EN LA BARRA ===================== */
+        .card-hist-reporte {
+            background: #1c201e;
+            border: 1px solid #334237;
+            border-left: 3px solid #25D366;
+            border-radius: 6px;
+            padding: 8px 10px;
+            margin-bottom: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .card-hist-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card-hist-titulo {
+            font-size: 10px;
+            font-weight: 800;
+            color: #fff;
+            text-transform: uppercase;
+        }
+        .card-hist-sub {
+            font-size: 8.5px;
+            color: #aaa;
+        }
+        .card-hist-acciones {
+            display: flex;
+            gap: 6px;
+            margin-top: 3px;
+        }
+        .btn-hist-ver {
+            flex: 1;
+            background: #252827;
+            color: #B4D445;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 4px;
+            font-size: 9px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+        }
+        .btn-hist-ver:hover { background: #333; }
+        .btn-hist-atendido {
+            flex: 1;
+            background: #1a3c2c;
+            color: #2fe772;
+            border: 1px solid #2fe772;
+            border-radius: 4px;
+            padding: 4px;
+            font-size: 9px;
+            font-weight: 900;
+            cursor: pointer;
+            text-align: center;
+        }
+        .btn-hist-atendido:hover { background: #2fe772; color: #111; }
+
         /* ===================== MODAL REPORTE VISUAL WHATSAPP ===================== */
         .card-reporte-whatsapp {
             background: #181b19;
@@ -317,7 +406,7 @@
             padding: 8px 10px;
             border-radius: 6px;
             font-weight: 800;
-            font-size: 13px;
+            font-size: 12.5px;
         }
 
         .preview-whatsapp-box {
@@ -682,23 +771,23 @@
                 <button class="btn-mapa" onclick="cambiarEmoji('✊',this,'mov_amb')"><div>✊ Movimientos Ambientales</div> <span class="count-badge" id="count-mov_amb">0</span></button>
 
                 <h4>⚠️ Riesgos y Problemas Ambientales</h4>
-                <button class="btn-mapa" onclick="cambiarEmoji('🕳️',this,'pozo_derrumbado')"><div>🕳️ Pozo Séptico Derrumbado</div> <span class="count-badge" id="count-pozo_derrumbado">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('⚡',this,'poste_riesgo')"><div>⚡ Poste en Riesgo</div> <span class="count-badge" id="count-poste_riesgo">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('\u{1F697}',this,'riesgo_carro')"><div>🚗 Cauchera</div> <span class="count-badge" id="count-riesgo_carro">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('🌳',this,'arbol_v')"><div>🌳 Árbol Riesgo Vivienda</div> <span class="count-badge" id="count-arbol_v">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('🔌',this,'cables')"><div>🔌 Árbol/Tendido Eléctrico</div> <span class="count-badge" id="count-cables">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('🏚️',this,'casa_r')"><div>🏚️ Vivienda en Riesgo</div> <span class="count-badge" id="count-casa_r">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('🌊',this,'inund')"><div>🌊 Zona Inundable</div> <span class="count-badge" id="count-inund">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('⛰️',this,'terreno_i')"><div>⛰️ Terreno Inestable</div> <span class="count-badge" id="count-terreno_i">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('🚧',this,'derrumbe')"><div>🚧 Zona de Derrumbe</div> <span class="count-badge" id="count-derrumbe">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('💧',this,'blancas')"><div>💧 Bote Agua Blanca</div> <span class="count-badge" id="count-blancas">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('☣️',this,'servidas')"><div>☣️ Bote Agua Servida</div> <span class="count-badge" id="count-servidas">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('🚯',this,'colector')"><div>🚯 Colector Caído / Cloaca</div> <span class="count-badge" id="count-colector">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('🗑️',this,'basura')"><div>🗑️ Foco Crítico (Basura)</div> <span class="count-badge" id="count-basura">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('🚘',this,'autolavado')"><div>🚘 Autolavado (Fuga/Suelo)</div> <span class="count-badge" id="count-autolavado">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('🔧',this,'taller')"><div>🔧 Taller Mecánico</div> <span class="count-badge" id="count-taller">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('🚪',this,'carpinteria_porton')"><div>🚪 Carpintería / Portón</div> <span class="count-badge" id="count-carpinteria_porton">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('☢️',this,'desechos_peligrosos')"><div>☢️ Desechos Peligrosos</div> <span class="count-badge" id="count-desechos_peligrosos">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🕳️',this,'pozo_derrumbado')"><div>🕳️ Pozo Séptico Colapsado</div> <span class="count-badge" id="count-pozo_derrumbado">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('⚡',this,'poste_riesgo')"><div>⚡ Poste Eléctrico en Riesgo</div> <span class="count-badge" id="count-poste_riesgo">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('\u{1F697}',this,'riesgo_carro')"><div>🚗 Cauchera (Neumáticos Acumulados)</div> <span class="count-badge" id="count-riesgo_carro">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🌳',this,'arbol_v')"><div>🌳 Árbol con Riesgo sobre Vivienda</div> <span class="count-badge" id="count-arbol_v">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🔌',this,'cables')"><div>🔌 Árbol sobre Tendido Eléctrico</div> <span class="count-badge" id="count-cables">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🏚️',this,'casa_r')"><div>🏚️ Vivienda en Riesgo Estructural</div> <span class="count-badge" id="count-casa_r">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🌊',this,'inund')"><div>🌊 Zona Inundable / Desbordamiento</div> <span class="count-badge" id="count-inund">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('⛰️',this,'terreno_i')"><div>⛰️ Terreno Inestable / Socavamiento</div> <span class="count-badge" id="count-terreno_i">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🚧',this,'derrumbe')"><div>🚧 Zona con Riesgo de Derrumbe</div> <span class="count-badge" id="count-derrumbe">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('💧',this,'blancas')"><div>💧 Bote / Fuga de Agua Potable</div> <span class="count-badge" id="count-blancas">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('☣️',this,'servidas')"><div>☣️ Bote / Desborde de Aguas Servidas</div> <span class="count-badge" id="count-servidas">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🚯',this,'colector')"><div>🚯 Colector Caído / Colapso de Cloaca</div> <span class="count-badge" id="count-colector">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🗑️',this,'basura')"><div>🗑️ Foco Crítico de Basura (Vertedero)</div> <span class="count-badge" id="count-basura">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🚘',this,'autolavado')"><div>🚘 Autolavado (Fuga / Contaminación)</div> <span class="count-badge" id="count-autolavado">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🔧',this,'taller')"><div>🔧 Taller Mecánico (Derrame Aceites)</div> <span class="count-badge" id="count-taller">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🚪',this,'carpinteria_porton')"><div>🚪 Carpintería / Emisión Aserrín</div> <span class="count-badge" id="count-carpinteria_porton">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('☢️',this,'desechos_peligrosos')"><div>☢️ Desechos Peligrosos / Biológicos</div> <span class="count-badge" id="count-desechos_peligrosos">0</span></button>
 
                 <h4>🌳 Gestión Forestal</h4>
                 <div class="sidebar-form-group" style="margin-bottom: 12px; padding: 5px; background: #111; border-radius: 6px;">
@@ -769,6 +858,10 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- HISTORIAL DE REPORTES REALIZADOS EN LA LEYENDA -->
+                <h4>📋 Historial de Reportes Realizados</h4>
+                <div id="lista-historial-reportes" style="margin-top: 5px;"></div>
             </div>
 
             <div id="leyenda-recicladores" style="display: none;">
@@ -927,7 +1020,7 @@
             <div class="reporte-item-grid">
                 <div class="reporte-campo">
                     <label>Problema / Riesgo</label>
-                    <div id="rep-tipo-riesgo" class="reporte-valor-destacado">Bote Agua Servida</div>
+                    <div id="rep-tipo-riesgo" class="reporte-valor-destacado">Bote / Desborde de Aguas Servidas</div>
                 </div>
                 <div class="reporte-campo">
                     <label>Nivel de Gravedad</label>
@@ -945,8 +1038,9 @@
                     <input type="text" id="rep-comuna" class="sidebar-input" readonly>
                 </div>
                 <div class="reporte-campo">
-                    <label>Sector</label>
-                    <input type="text" id="rep-sector" class="sidebar-input" readonly>
+                    <label>Sector de la Comuna</label>
+                    <!-- CAMPO TOTALMENTE EDITABLE SIN VALOR POR DEFECTO -->
+                    <input type="text" id="rep-sector" class="sidebar-input" placeholder="Escriba el nombre del sector..." oninput="actualizarVistaPreviaReporte()" style="border: 1px solid var(--v-lime);">
                 </div>
             </div>
 
@@ -993,6 +1087,7 @@
     let mapaSoloLectura = false; 
     let emailPropietarioMapaActual = null; 
     let objetoReporteActivo = null;
+    let dbHistorialReportes = []; // Historial de reportes activos
 
     const adminPermitidos = [{ user: "yetzonmora@gmail.com", pass: "32568263y" }];
 
@@ -1024,31 +1119,123 @@
         return listaRiesgosAmbientales.includes(tipoId);
     }
 
+    /* === NOMBRES COHERENTES Y FORMALES DE CADA RIESGO AMBIENTAL === */
     function obtenerNombreRiesgo(tipoId) {
         const nombres = {
-            'pozo_derrumbado': 'Pozo Séptico Derrumbado',
-            'poste_riesgo': 'Poste en Riesgo',
-            'riesgo_carro': 'Cauchera',
-            'cauchera': 'Cauchera',
-            'arbol_v': 'Árbol Riesgo Vivienda',
-            'cables': 'Árbol / Tendido Eléctrico',
-            'casa_r': 'Vivienda en Riesgo',
-            'inund': 'Zona Inundable',
-            'terreno_i': 'Terreno Inestable',
-            'derrumbe': 'Zona de Derrumbe',
-            'blancas': 'Bote Agua Blanca',
-            'servidas': 'Bote Agua Servida',
-            'colector': 'Colector Caído / Cloaca',
-            'basura': 'Foco Crítico (Basura)',
-            'autolavado': 'Autolavado (Fuga / Suelo)',
-            'taller': 'Taller Mecánico',
-            'carpinteria_porton': 'Carpintería / Portón',
-            'desechos_peligrosos': 'Desechos Peligrosos'
+            'pozo_derrumbado': 'Pozo Séptico Colapsado',
+            'poste_riesgo': 'Poste Eléctrico en Riesgo',
+            'riesgo_carro': 'Cauchera (Neumáticos Acumulados)',
+            'cauchera': 'Cauchera (Neumáticos Acumulados)',
+            'arbol_v': 'Árbol con Riesgo sobre Vivienda',
+            'cables': 'Árbol sobre Tendido Eléctrico',
+            'casa_r': 'Vivienda en Riesgo Estructural',
+            'inund': 'Zona Inundable / Desbordamiento',
+            'terreno_i': 'Terreno Inestable / Socavamiento',
+            'derrumbe': 'Zona con Riesgo de Derrumbe',
+            'blancas': 'Bote / Fuga de Agua Potable',
+            'servidas': 'Bote / Desborde de Aguas Servidas',
+            'colector': 'Colector Caído / Colapso de Cloaca',
+            'basura': 'Foco Crítico de Basura (Vertedero)',
+            'autolavado': 'Autolavado (Fuga / Contaminación)',
+            'taller': 'Taller Mecánico (Derrame Aceites)',
+            'carpinteria_porton': 'Carpintería / Emisión Aserrín',
+            'desechos_peligrosos': 'Desechos Peligrosos / Biológicos'
         };
         return nombres[tipoId] || 'Riesgo Ambiental';
     }
 
-    /* === FUNCIONES DE REPORTE VISUAL (WHATSAPP) === */
+    /* === CONSTRUCTOR DEL HTML DEL ÍCONO (CON DISTINTIVO DE REPORTADO) === */
+    function construirHtmlIconoMarcador(contenido, fueReportado) {
+        let clase = fueReportado ? 'map-icon-container reportado-activo' : 'map-icon-container';
+        let badge = fueReportado ? '<span class="badge-marcador-reportado" title="Reportado">📢</span>' : '';
+        return `<div class="${clase}">${contenido}${badge}</div>`;
+    }
+
+    /* === HISTORIAL DE REPORTES EN LA LEYENDA === */
+    function renderizarHistorialReportes() {
+        const contenedor = document.getElementById('lista-historial-reportes');
+        if (!contenedor) return;
+        contenedor.innerHTML = "";
+
+        if (!dbHistorialReportes || dbHistorialReportes.length === 0) {
+            contenedor.innerHTML = `<div style="font-size: 9.5px; color: #777; font-style: italic; padding: 4px 0;">No hay reportes ambientales activos registrados.</div>`;
+            return;
+        }
+
+        dbHistorialReportes.forEach((rep, index) => {
+            const card = document.createElement('div');
+            card.className = 'card-hist-reporte';
+            card.innerHTML = `
+                <div class="card-hist-header">
+                    <span class="card-hist-titulo">${rep.nombreRiesgo}</span>
+                    <span style="font-size: 8.5px; font-weight: bold; color: ${rep.urgencia.includes('ALTO') ? '#ff4d4d' : rep.urgencia.includes('MEDIO') ? '#ffa500' : '#2fe772'}">${rep.urgencia}</span>
+                </div>
+                <div class="card-hist-sub">📍 <b>Sector:</b> ${rep.sector || "No especificado"}</div>
+                <div class="card-hist-sub">📅 <b>Fecha:</b> ${rep.fecha}</div>
+                <div class="card-hist-acciones">
+                    <button class="btn-hist-ver" onclick="verDetalleReporteHistorial(${index})">👁️ Ver Detalles</button>
+                    <button class="btn-hist-atendido" onclick="marcarReporteComoAtendido(${index})">✅ Atendido</button>
+                </div>
+            `;
+            contenedor.appendChild(card);
+        });
+    }
+
+    function verDetalleReporteHistorial(index) {
+        const rep = dbHistorialReportes[index];
+        if (!rep) return;
+        // Buscar el marcador asociado si existe
+        const marcador = stackElementos.find(el => L.stamp(el) === rep.layerStamp);
+        if (marcador) {
+            map.setView(marcador.getLatLng(), 19);
+            abrirModalReporteRiesgo(marcador);
+        } else {
+            document.getElementById('rep-tipo-riesgo').innerText = rep.nombreRiesgo;
+            document.getElementById('rep-comuna').value = rep.comuna || "";
+            document.getElementById('rep-sector').value = rep.sector || "";
+            document.getElementById('rep-coordenadas').value = rep.coords || "";
+            document.getElementById('rep-nivel-urgencia').value = rep.urgencia || "MEDIO 🟡";
+            document.getElementById('rep-observacion').value = rep.observacion || "";
+            document.getElementById('rep-preview-texto').innerText = rep.textoCompleto || "";
+            document.getElementById('modal-reporte-riesgo').style.display = 'flex';
+        }
+    }
+
+    /* === ACCIÓN ATENDIDO: ELIMINA DEL MAPA, RESTA A LA LEYENDA Y ACTUALIZA HISTORIAL === */
+    function marcarReporteComoAtendido(index) {
+        const rep = dbHistorialReportes[index];
+        if (!rep) return;
+
+        if (confirm(`¿Marcar como ATENDIDO el reporte de "${rep.nombreRiesgo}" en sector "${rep.sector || 'comunitario'}"?\n\nEsta acción eliminará el riesgo del mapa y restará el contador en la leyenda.`)) {
+            // Buscar el marcador por stamp o proximidad
+            let marcador = stackElementos.find(el => L.stamp(el) === rep.layerStamp);
+            if (!marcador && rep.coords) {
+                const [latS, lngS] = rep.coords.split(',').map(s => parseFloat(s.trim()));
+                marcador = stackElementos.find(el => {
+                    if (el.tipoId === rep.tipoId && typeof el.getLatLng === 'function') {
+                        const ll = el.getLatLng();
+                        return Math.abs(ll.lat - latS) < 0.0001 && Math.abs(ll.lng - lngS) < 0.0001;
+                    }
+                    return false;
+                });
+            }
+
+            if (marcador) {
+                eliminarObjeto(marcador);
+            } else if (rep.tipoId && contadores[rep.tipoId] !== undefined && contadores[rep.tipoId] > 0) {
+                contadores[rep.tipoId]--;
+                actualizarBadges();
+            }
+
+            // Quitar de la lista de reportes
+            dbHistorialReportes.splice(index, 1);
+            renderizarHistorialReportes();
+            guardarProgresoMapa();
+            alert("✅ Problema ambiental marcado como ATENDIDO con éxito.");
+        }
+    }
+
+    /* === MODAL VISUAL DE REPORTE === */
     function abrirModalReporteRiesgo(obj) {
         const elemento = obj || objetoSeleccionado;
         if (!elemento) { alert("Seleccione un elemento de riesgo en el mapa primero."); return; }
@@ -1058,9 +1245,10 @@
         document.getElementById('rep-tipo-riesgo').innerText = nombreRiesgo;
 
         const comuna = document.getElementById('selectComuna').value || "No seleccionada";
-        const sector = document.getElementById('infoSector').value || "Sector general";
+        // SECTOR TOTALMENTE EDITABLE, SIN TEXTOS POR DEFECTO
+        const sectorActual = elemento.sectorReportado || document.getElementById('infoSector').value.trim() || "";
         document.getElementById('rep-comuna').value = comuna;
-        document.getElementById('rep-sector').value = sector;
+        document.getElementById('rep-sector').value = sectorActual;
 
         let latlng = null;
         if (typeof elemento.getLatLng === 'function') {
@@ -1086,7 +1274,7 @@
         if (!objetoReporteActivo) return;
         const nombreRiesgo = document.getElementById('rep-tipo-riesgo').innerText;
         const comuna = document.getElementById('rep-comuna').value;
-        const sector = document.getElementById('rep-sector').value;
+        const sector = document.getElementById('rep-sector').value.trim();
         const coords = document.getElementById('rep-coordenadas').value;
         const urgencia = document.getElementById('rep-nivel-urgencia').value;
         const obs = document.getElementById('rep-observacion').value.trim();
@@ -1109,7 +1297,7 @@
         textoReporte += `⚠️ *Problema:* ${nombreRiesgo}\n`;
         textoReporte += `📊 *Nivel de Urgencia:* ${urgencia}\n`;
         textoReporte += `🏛 *Comuna:* ${comuna}\n`;
-        textoReporte += `🏘 *Sector:* ${sector}\n`;
+        textoReporte += `🏘 *Sector:* ${sector ? sector : '(Sin especificar)'}\n`;
         textoReporte += `📍 *Coordenadas:* ${coords}\n`;
         if (linkMaps) textoReporte += `🗺 *Mapa GPS:* ${linkMaps}\n`;
         if (obs) textoReporte += `📝 *Detalle/Ref:* ${obs}\n`;
@@ -1122,9 +1310,54 @@
     }
 
     function simularEnvioWhatsApp() {
+        if (!objetoReporteActivo) return;
         const texto = document.getElementById('rep-preview-texto').innerText;
+        const nombreRiesgo = document.getElementById('rep-tipo-riesgo').innerText;
+        const comuna = document.getElementById('rep-comuna').value;
+        const sector = document.getElementById('rep-sector').value.trim();
+        const coords = document.getElementById('rep-coordenadas').value;
+        const urgencia = document.getElementById('rep-nivel-urgencia').value;
+        const obs = document.getElementById('rep-observacion').value.trim();
+
+        // 1. Marcar el icono en el mapa como REPORTADO con su distintivo visual
+        objetoReporteActivo.fueReportado = true;
+        objetoReporteActivo.sectorReportado = sector;
+        const stampActual = L.stamp(objetoReporteActivo);
+
+        let contenidoIcono = (objetoReporteActivo.tipoId === 'medico') ? `<div class="cruz-roja"></div>` : obtenerEmojiPorId(objetoReporteActivo.tipoId);
+        objetoReporteActivo.setIcon(L.divIcon({
+            className: '',
+            html: construirHtmlIconoMarcador(contenidoIcono, true),
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
+        }));
+
+        // 2. Agregar o actualizar en el historial de reportes
+        const existeIdx = dbHistorialReportes.findIndex(r => r.layerStamp === stampActual);
+        const itemHistorial = {
+            layerStamp: stampActual,
+            tipoId: objetoReporteActivo.tipoId,
+            nombreRiesgo: nombreRiesgo,
+            comuna: comuna,
+            sector: sector,
+            coords: coords,
+            urgencia: urgencia,
+            observacion: obs,
+            fecha: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+            textoCompleto: texto
+        };
+
+        if (existeIdx >= 0) {
+            dbHistorialReportes[existeIdx] = itemHistorial;
+        } else {
+            dbHistorialReportes.unshift(itemHistorial);
+        }
+
+        renderizarHistorialReportes();
+        guardarProgresoMapa();
+
         const enlaceWA = "https://api.whatsapp.com/send?text=" + encodeURIComponent(texto);
-        if (confirm("📢 VISTA PREVIA GENERADA CON ÉXITO\n\n¿Deseas abrir WhatsApp para compartir este reporte con el formato visual listo?\n\n(Pulsa Aceptar para abrir WhatsApp o Cancelar si solo quieres ver la prueba visual)")) {
+        if (confirm("📢 REPORTE GENERADO CON ÉXITO\n\nEl punto quedó marcado con el distintivo rojo en el mapa y guardado en tu historial.\n\n¿Deseas abrir WhatsApp para compartir este reporte?")) {
             window.open(enlaceWA, '_blank');
         }
         cerrarModalReporte();
@@ -1329,6 +1562,8 @@
         for (let k in vulnerabilidadesManual) { vulnerabilidadesManual[k] = 0; }
         actualizarInputsVulnerabilidadManual();
         alternarLeyendaNormal();
+        dbHistorialReportes = [];
+        renderizarHistorialReportes();
     }
 
     function generarPopupHTML(layer) {
@@ -1419,17 +1654,20 @@
         L.geoJSON(geoJSONData, {
             pointToLayer: function (feature, latlng) {
                 const tipoId = feature.properties.tipoId;
+                const fueReportado = feature.properties.fueReportado || false;
                 let contenidoIcono = (tipoId === 'medico') ? `<div class="cruz-roja"></div>` : obtenerEmojiPorId(tipoId);
                 const marker = L.marker(latlng, {
                     icon: L.divIcon({
                         className: '',
-                        html: `<div class="map-icon-container">${contenidoIcono}</div>`,
+                        html: construirHtmlIconoMarcador(contenidoIcono, fueReportado),
                         iconSize: [24, 24],
                         iconAnchor: [12, 12]
                     }),
                     draggable: true
                 });
                 marker.tipoId = tipoId;
+                marker.fueReportado = fueReportado;
+                marker.sectorReportado = feature.properties.sectorReportado || "";
                 if (feature.properties.especificacion) marker.especificacionDiscapacidad = feature.properties.especificacion;
                 if (feature.properties.datosReciclador) marker.datosReciclador = feature.properties.datosReciclador;
                 if (contadores[tipoId] !== undefined) contadores[tipoId]++;
@@ -1440,18 +1678,20 @@
                 popupContenido.style.display = 'flex'; popupContenido.style.flexDirection = 'column'; popupContenido.style.gap = '4px';
                 layer.tipoId = feature.properties.tipoId || "";
                 layer.nombrePersonalizado = feature.properties.popupContent || "";
+                layer.fueReportado = feature.properties.fueReportado || false;
+                layer.sectorReportado = feature.properties.sectorReportado || "";
 
                 if (layer.tipoId === 'poste_riesgo') {
                     const esteValue = feature.properties.especificacion || "";
                     popupContenido.innerHTML = `
-                        <span class="popup-desc">⚠️ POSTE EN RIESGO</span>
+                        <span class="popup-desc">⚠️ POSTE ELÉCTRICO EN RIESGO</span>
                         <label style="font-size:9px; color:#333; font-weight:bold; text-transform:uppercase;">ESPECIFICAR RIESGO POSTE:</label>
                         <input type="text" id="input-spec-${L.stamp(layer)}" value="${esteValue}" style="width:100%; font-size:11px; color:black; background:white; padding:3px; border:1px solid #ccc; border-radius:3px;" onchange="guardarEspecificacion(${L.stamp(layer)}, this.value)">
                         <button class="btn-reportar-popup" onclick="abrirModalReporteRiesgo(objetoSeleccionado)">REPORTAR</button>
                         <button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button>
                     `;
                 } else if (esRiesgoAmbiental(layer.tipoId)) {
-                    const nombreRiesgo = obtenerNombreRiesgo(layer.tipoId) || layer.nombrePersonalizado || "Riesgo Ambiental";
+                    const nombreRiesgo = obtenerNombreRiesgo(layer.tipoId);
                     popupContenido.innerHTML = `
                         <span class="popup-desc">⚠️ ${nombreRiesgo}</span>
                         <button class="btn-reportar-popup" onclick="abrirModalReporteRiesgo(objetoSeleccionado)">REPORTAR</button>
@@ -1553,7 +1793,9 @@
                 fillOpacity: capa.options.fillOpacity !== undefined ? capa.options.fillOpacity : 0.4,
                 popupContent: capa.nombrePersonalizado || "",
                 especificacion: capa.especificacionDiscapacidad || "",
-                datosReciclador: capa.datosReciclador || null
+                datosReciclador: capa.datosReciclador || null,
+                fueReportado: capa.fueReportado || false,
+                sectorReportado: capa.sectorReportado || ""
             };
             if (capa.tipoId === 'linea_tecnica') {
                 props.weight = capa.options.weight || 4;
@@ -1597,7 +1839,8 @@
                 consejosC: document.getElementById('infoCC').value, calles: document.getElementById('infoCalles').value,
                 asfaltadas: document.getElementById('infoAsf').value, noAsfaltadas: document.getElementById('infoNoAsf').value, sector: document.getElementById('infoSector').value
             },
-            antecedentes: antecedentes, contadores: contadores, vulnerabilidadesManual: vulnerabilidadesManual, arbolPredominante: document.getElementById('inputArbolPredominante').value, elementos: construirElementosParaGuardar()
+            antecedentes: antecedentes, contadores: contadores, vulnerabilidadesManual: vulnerabilidadesManual, arbolPredominante: document.getElementById('inputArbolPredominante').value, elementos: construirElementosParaGuardar(),
+            historialReportes: dbHistorialReportes
         };
         localStorage.setItem('mapa_progreso_sig', JSON.stringify(datosCompletos));
     }
@@ -1651,6 +1894,7 @@
             actualizarInputsVulnerabilidadManual();
         }
         if(data.arbolPredominante) document.getElementById('inputArbolPredominante').value = data.arbolPredominante;
+        if(data.historialReportes) { dbHistorialReportes = data.historialReportes; renderizarHistorialReportes(); }
         if(data.elementos && data.elementos.length > 0) restaurarDatosDesdeNube({ type: "FeatureCollection", features: data.elementos });
     }
 
@@ -2083,8 +2327,19 @@
 
     function crearIcono(latlng) {
         let contenidoIcono = (emojiActual === 'CRUZ_ROJA') ? `<div class="cruz-roja"></div>` : emojiActual;
-        let m = L.marker(latlng, { icon: L.divIcon({ className:'', html: `<div class="map-icon-container">${contenidoIcono}</div>`, iconSize:[24,24] }), draggable: true }).addTo(map);
+        let m = L.marker(latlng, { 
+            icon: L.divIcon({ 
+                className:'', 
+                html: construirHtmlIconoMarcador(contenidoIcono, false), 
+                iconSize:[24,24],
+                iconAnchor:[12,12]
+            }), 
+            draggable: true 
+        }).addTo(map);
+        
         m.tipoId = modoEspecial; contadores[modoEspecial]++; actualizarBadges();
+        m.fueReportado = false;
+        m.sectorReportado = "";
         
         let popupContenido = document.createElement('div');
         popupContenido.style.display = 'flex';
@@ -2093,7 +2348,7 @@
 
         if (m.tipoId === 'poste_riesgo') {
             popupContenido.innerHTML = `
-                <span class="popup-desc">⚠️ POSTE EN RIESGO</span>
+                <span class="popup-desc">⚠️ POSTE ELÉCTRICO EN RIESGO</span>
                 <label style="font-size:9px; color:#333; font-weight:bold; text-transform:uppercase;">ESPECIFICAR RIESGO POSTE:</label>
                 <input type="text" id="input-spec-${L.stamp(m)}" style="color:black; background:white; width:100%; font-size:11px; padding:3px; border:1px solid #ccc; border-radius:3px;" onchange="guardarEspecificacion(${L.stamp(m)}, this.value)">
                 <button class="btn-reportar-popup" onclick="abrirModalReporteRiesgo(objetoSeleccionado)">REPORTAR</button>
@@ -2193,9 +2448,21 @@
     }
 
     function eliminarObjeto(obj) {
-        if (!obj) return; if (obj.tipoId && contadores[obj.tipoId] !== undefined) contadores[obj.tipoId]--; actualizarBadges();
-        if (obj.tipoId === 'recicladores') alternarLeyendaNormal(); if (obj._decoradorFlechas) map.removeLayer(obj._decoradorFlechas);
-        map.removeLayer(obj); stackElementos = stackElementos.filter(i => i !== obj); objetoSeleccionado = null; guardarProgresoMapa();
+        if (!obj) return; 
+        if (obj.tipoId && contadores[obj.tipoId] !== undefined && contadores[obj.tipoId] > 0) contadores[obj.tipoId]--; 
+        actualizarBadges();
+        if (obj.tipoId === 'recicladores') alternarLeyendaNormal(); 
+        if (obj._decoradorFlechas) map.removeLayer(obj._decoradorFlechas);
+        
+        // Si este objeto estaba en el historial de reportes, retirarlo también
+        const stampObj = L.stamp(obj);
+        dbHistorialReportes = dbHistorialReportes.filter(r => r.layerStamp !== stampObj);
+        renderizarHistorialReportes();
+
+        map.removeLayer(obj); 
+        stackElementos = stackElementos.filter(i => i !== obj); 
+        objetoSeleccionado = null; 
+        guardarProgresoMapa();
     }
 
     function deseleccionarTodo() { if (objetoSeleccionado && objetoSeleccionado.disableEdit) objetoSeleccionado.disableEdit(); objetoSeleccionado = null; }

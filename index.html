@@ -468,38 +468,72 @@
             color: #000;
             border-color: #25D366;
         }
-        .btn-cambiar-foto {
-            position: absolute;
-            bottom: 4px;
-            left: 50%;
-            transform: translateX(-50%);
+        .badge-numero-reporte {
+            background: #111827;
+            border: 1px solid #374151;
+            border-left: 3px solid #25D366;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 11px;
+            color: #9CA3AF;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .badge-numero-reporte strong {
+            color: #25D366;
+            font-family: monospace;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+        .modal-otro-riesgo-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.85);
-            color: #ff4d4d;
-            border: 1px solid #ff4d4d;
-            border-radius: 4px;
-            font-size: 8px;
-            font-weight: bold;
-            padding: 2px 6px;
-            cursor: pointer;
-            z-index: 5;
+            z-index: 10050;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
         }
-        .btn-cambiar-foto:hover {
-            background: #ff4d4d;
-            color: #fff;
+        .modal-otro-riesgo-card {
+            background: #1a1e1b;
+            border: 1px solid #2e3830;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 440px;
+            padding: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.7);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
         }
-        .btn-emoji-quick {
-            background: #1e2220;
-            border: 1px solid #444;
+        .grid-emojis-picker {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 6px;
+            max-height: 140px;
+            overflow-y: auto;
+            background: #131614;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #252e27;
+        }
+        .btn-emoji-pick {
+            background: #1f2521;
+            border: 1px solid #333f36;
             border-radius: 6px;
             font-size: 16px;
-            padding: 4px 6px;
+            padding: 6px 2px;
             cursor: pointer;
-            transition: all 0.15s;
+            text-align: center;
+            transition: transform 0.1s, background 0.2s;
         }
-        .btn-emoji-quick:hover {
-            background: #333;
+        .btn-emoji-pick:hover, .btn-emoji-pick.selected {
+            background: #25D366;
             transform: scale(1.15);
-            border-color: #e67e22;
+            border-color: #25D366;
         }
         .preview-foto-img {
             position: absolute;
@@ -886,7 +920,7 @@
                 <button class="btn-mapa" onclick="cambiarEmoji('🔧',this,'taller')"><div>🔧 Taller Mecánico (Derrame Aceites)</div> <span class="count-badge" id="count-taller">0</span></button>
                 <button class="btn-mapa" onclick="cambiarEmoji('🚪',this,'carpinteria_porton')"><div>🚪 Carpintería / Emisión Aserrín</div> <span class="count-badge" id="count-carpinteria_porton">0</span></button>
                 <button class="btn-mapa" onclick="cambiarEmoji('☢️',this,'desechos_peligrosos')"><div>☢️ Desechos Peligrosos / Biológicos</div> <span class="count-badge" id="count-desechos_peligrosos">0</span></button>
-                <button class="btn-mapa" id="btn-riesgo-personalizado" onclick="abrirModalRiesgoPersonalizado(this)" style="border-left: 3px solid #e67e22; background: rgba(230, 126, 34, 0.12);"><div>&#x26A0;&#xFE0F;&#x2795; Otro Riesgo (Personalizado)</div> <span class="count-badge" id="count-riesgo_personalizado">0</span></button>
+                    <button class="btn-grid" style="border-left: 3px solid #f59e0b;" onclick="abrirModalOtroRiesgo()"><span class="emoji-btn" id="btn-emoji-otro">&#x26A0;&#xFE0F;&#x2795;</span> <span class="badge" id="count-riesgo_personalizado">0</span>Otro Riesgo</button>
 
                 <h4>🌳 Gestión Forestal</h4>
                 <div class="sidebar-form-group" style="margin-bottom: 12px; padding: 5px; background: #111; border-radius: 6px;">
@@ -1116,10 +1150,9 @@
         </div>
 
         <div class="body-modal-reporte">
-            <!-- N&#176; DE REPORTE AUTOMATICO UNICO -->
-            <div style="display:flex; justify-content:space-between; align-items:center; background:#122417; border:1px solid #25D366; border-radius:8px; padding:6px 12px; margin-bottom:10px;">
-                <span style="font-size:11px; font-weight:bold; color:#25D366;">&#x1F4CB; N&deg; DE REPORTE:</span>
-                <span id="rep-numero-reporte" style="font-size:12px; font-weight:900; color:#fff; font-family:monospace; background:#1a1c1b; padding:2px 8px; border-radius:6px; border:1px solid #444;">#REP-2026-0001</span>
+            <div class="badge-numero-reporte">
+                <span>&#x1F4CB; C&oacute;digo de Reporte &Uacute;nico:</span>
+                <strong id="rep-numero-reporte">#REP-2026-0001</strong>
             </div>
             <div class="reporte-item-grid">
                 <div class="reporte-campo">
@@ -1163,57 +1196,46 @@
                     <label style="margin:0;">📸 Evidencia Fotográfica (3 Fotos Obligatorias)</label>
                     <span id="contador-fotos-reporte" style="font-size:9.5px; font-weight:bold; color:#ff4d4d; background:#2a1a1a; padding:2px 8px; border-radius:10px; border:1px solid #ff4d4d;">0 / 3 Fotos</span>
                 </div>
-                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px; margin-top:5px;">
-                    <!-- Foto 1 -->
-                    <div class="slot-foto" id="slot-foto-1">
-                        <input type="file" id="input-foto-1-cam" accept="image/*" capture="environment" style="display:none;" onchange="procesarFotoReporte(0, this)">
-                        <input type="file" id="input-foto-1-gal" accept="image/*" style="display:none;" onchange="procesarFotoReporte(0, this)">
-                        <div id="vacio-slot-1" style="display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100%; padding:2px;">
-                            <div class="slot-foto-icono">&#x1F4F8;</div>
-                            <div class="slot-foto-texto">Foto 1 *</div>
-                            <div class="slot-botones-origen">
-                                <button type="button" class="btn-origen-foto" onclick="event.stopPropagation(); document.getElementById('input-foto-1-cam').click();">&#x1F4F7; C&aacute;mara</button>
-                                <button type="button" class="btn-origen-foto" onclick="event.stopPropagation(); document.getElementById('input-foto-1-gal').click();">&#x1F5BC;&#xFE0F; Galer&iacute;a</button>
-                            </div>
-                        </div>
-                        <div id="wrap-preview-1" style="display:none; width:100%; height:100%; position:relative;">
-                            <img id="preview-foto-1" class="preview-foto-img" style="width:100%; height:100%; object-fit:cover; border-radius:8px;">
-                            <button type="button" class="btn-cambiar-foto" onclick="event.stopPropagation(); limpiarFotoIndividual(0);">&#x274C; Cambiar</button>
-                        </div>
+                <!-- Foto 1 -->
+                <div class="slot-foto" id="slot-foto-1">
+                    <input type="file" id="foto-input-cam-1" accept="image/*" capture="environment" style="display:none;" onchange="procesarFotoArchivo(1, this.files[0])">
+                    <input type="file" id="foto-input-gal-1" accept="image/*" style="display:none;" onchange="procesarFotoArchivo(1, this.files[0])">
+                    <span class="slot-foto-num">1</span>
+                    <span class="slot-foto-icon" id="slot-icon-1">&#x1F4F7;</span>
+                    <span class="slot-foto-txt" id="slot-txt-1">Evidencia 1</span>
+                    <img id="preview-foto-1" class="preview-foto-img" style="display:none;">
+                    <button class="btn-del-foto" id="btn-del-1" onclick="event.stopPropagation(); eliminarFoto(1);">&#x2715;</button>
+                    <div class="slot-botones-origen">
+                        <button type="button" class="btn-origen-foto" onclick="event.stopPropagation(); document.getElementById('foto-input-cam-1').click();">&#x1F4F7; C&aacute;mara</button>
+                        <button type="button" class="btn-origen-foto" onclick="event.stopPropagation(); document.getElementById('foto-input-gal-1').click();">&#x1F5BC;&#xFE0F; Galer&iacute;a</button>
                     </div>
-                    <!-- Foto 2 -->
-                    <div class="slot-foto" id="slot-foto-2">
-                        <input type="file" id="input-foto-2-cam" accept="image/*" capture="environment" style="display:none;" onchange="procesarFotoReporte(1, this)">
-                        <input type="file" id="input-foto-2-gal" accept="image/*" style="display:none;" onchange="procesarFotoReporte(1, this)">
-                        <div id="vacio-slot-2" style="display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100%; padding:2px;">
-                            <div class="slot-foto-icono">&#x1F4F8;</div>
-                            <div class="slot-foto-texto">Foto 2 *</div>
-                            <div class="slot-botones-origen">
-                                <button type="button" class="btn-origen-foto" onclick="event.stopPropagation(); document.getElementById('input-foto-2-cam').click();">&#x1F4F7; C&aacute;mara</button>
-                                <button type="button" class="btn-origen-foto" onclick="event.stopPropagation(); document.getElementById('input-foto-2-gal').click();">&#x1F5BC;&#xFE0F; Galer&iacute;a</button>
-                            </div>
-                        </div>
-                        <div id="wrap-preview-2" style="display:none; width:100%; height:100%; position:relative;">
-                            <img id="preview-foto-2" class="preview-foto-img" style="width:100%; height:100%; object-fit:cover; border-radius:8px;">
-                            <button type="button" class="btn-cambiar-foto" onclick="event.stopPropagation(); limpiarFotoIndividual(1);">&#x274C; Cambiar</button>
-                        </div>
+                </div>
+                <!-- Foto 2 -->
+                <div class="slot-foto" id="slot-foto-2">
+                    <input type="file" id="foto-input-cam-2" accept="image/*" capture="environment" style="display:none;" onchange="procesarFotoArchivo(2, this.files[0])">
+                    <input type="file" id="foto-input-gal-2" accept="image/*" style="display:none;" onchange="procesarFotoArchivo(2, this.files[0])">
+                    <span class="slot-foto-num">2</span>
+                    <span class="slot-foto-icon" id="slot-icon-2">&#x1F4F7;</span>
+                    <span class="slot-foto-txt" id="slot-txt-2">Evidencia 2</span>
+                    <img id="preview-foto-2" class="preview-foto-img" style="display:none;">
+                    <button class="btn-del-foto" id="btn-del-2" onclick="event.stopPropagation(); eliminarFoto(2);">&#x2715;</button>
+                    <div class="slot-botones-origen">
+                        <button type="button" class="btn-origen-foto" onclick="event.stopPropagation(); document.getElementById('foto-input-cam-2').click();">&#x1F4F7; C&aacute;mara</button>
+                        <button type="button" class="btn-origen-foto" onclick="event.stopPropagation(); document.getElementById('foto-input-gal-2').click();">&#x1F5BC;&#xFE0F; Galer&iacute;a</button>
                     </div>
-                    <!-- Foto 3 -->
-                    <div class="slot-foto" id="slot-foto-3">
-                        <input type="file" id="input-foto-3-cam" accept="image/*" capture="environment" style="display:none;" onchange="procesarFotoReporte(2, this)">
-                        <input type="file" id="input-foto-3-gal" accept="image/*" style="display:none;" onchange="procesarFotoReporte(2, this)">
-                        <div id="vacio-slot-3" style="display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100%; padding:2px;">
-                            <div class="slot-foto-icono">&#x1F4F8;</div>
-                            <div class="slot-foto-texto">Foto 3 *</div>
-                            <div class="slot-botones-origen">
-                                <button type="button" class="btn-origen-foto" onclick="event.stopPropagation(); document.getElementById('input-foto-3-cam').click();">&#x1F4F7; C&aacute;mara</button>
-                                <button type="button" class="btn-origen-foto" onclick="event.stopPropagation(); document.getElementById('input-foto-3-gal').click();">&#x1F5BC;&#xFE0F; Galer&iacute;a</button>
-                            </div>
-                        </div>
-                        <div id="wrap-preview-3" style="display:none; width:100%; height:100%; position:relative;">
-                            <img id="preview-foto-3" class="preview-foto-img" style="width:100%; height:100%; object-fit:cover; border-radius:8px;">
-                            <button type="button" class="btn-cambiar-foto" onclick="event.stopPropagation(); limpiarFotoIndividual(2);">&#x274C; Cambiar</button>
-                        </div>
+                </div>
+                <!-- Foto 3 -->
+                <div class="slot-foto" id="slot-foto-3">
+                    <input type="file" id="foto-input-cam-3" accept="image/*" capture="environment" style="display:none;" onchange="procesarFotoArchivo(3, this.files[0])">
+                    <input type="file" id="foto-input-gal-3" accept="image/*" style="display:none;" onchange="procesarFotoArchivo(3, this.files[0])">
+                    <span class="slot-foto-num">3</span>
+                    <span class="slot-foto-icon" id="slot-icon-3">&#x1F4F7;</span>
+                    <span class="slot-foto-txt" id="slot-txt-3">Evidencia 3</span>
+                    <img id="preview-foto-3" class="preview-foto-img" style="display:none;">
+                    <button class="btn-del-foto" id="btn-del-3" onclick="event.stopPropagation(); eliminarFoto(3);">&#x2715;</button>
+                    <div class="slot-botones-origen">
+                        <button type="button" class="btn-origen-foto" onclick="event.stopPropagation(); document.getElementById('foto-input-cam-3').click();">&#x1F4F7; C&aacute;mara</button>
+                        <button type="button" class="btn-origen-foto" onclick="event.stopPropagation(); document.getElementById('foto-input-gal-3').click();">&#x1F5BC;&#xFE0F; Galer&iacute;a</button>
                     </div>
                 </div>
                 </div>
@@ -1238,42 +1260,31 @@
     </div>
 </div>
 
-<!-- MODAL PARA REGISTRAR OTRO RIESGO PERSONALIZADO -->
-<div id="modal-riesgo-personalizado" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); z-index:100001; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
-    <div style="background:#141615; border:2px solid #e67e22; border-radius:18px; padding:25px; width:92%; max-width:440px; box-shadow:0 12px 45px rgba(0,0,0,0.8); color:#fff; text-align:left;">
-        <h3 style="color:#e67e22; margin:0 0 8px 0; font-size:16px; display:flex; align-items:center; gap:8px;">
-            <span>&#x26A0;&#xFE0F;&#x2795;</span> Registrar Riesgo Personalizado
-        </h3>
-        <p style="font-size:11px; color:#aaa; margin-bottom:15px; line-height:1.4;">
-            Selecciona o escribe un emoji y el nombre del problema ambiental para ubicarlo en el mapa y poder reportarlo al grupo de WhatsApp.
-        </p>
-        <div style="margin-bottom:14px;">
-            <label style="font-size:11px; font-weight:bold; color:#B4D445; display:block; margin-bottom:6px;">1. Selecciona o escribe un Emoji:</label>
-            <div style="display:flex; gap:8px; align-items:center;">
-                <input type="text" id="custom-emoji-input" value="&#x26A0;&#xFE0F;" style="font-size:24px; width:55px; height:48px; text-align:center; background:#222; color:#fff; border:2px solid #e67e22; border-radius:10px;">
-                <div style="display:flex; flex-wrap:wrap; gap:4px; flex:1;">
-                    <button type="button" class="btn-emoji-quick" onclick="seleccionarEmojiRapido('\u26A0\uFE0F')">&#x26A0;&#xFE0F;</button>
-                    <button type="button" class="btn-emoji-quick" onclick="seleccionarEmojiRapido('\u{1F525}')">&#x1F525;</button>
-                    <button type="button" class="btn-emoji-quick" onclick="seleccionarEmojiRapido('\u{1F4A8}')">&#x1F4A8;</button>
-                    <button type="button" class="btn-emoji-quick" onclick="seleccionarEmojiRapido('\u{1FAA8}')">&#x1FAA8;</button>
-                    <button type="button" class="btn-emoji-quick" onclick="seleccionarEmojiRapido('\u2623\uFE0F')">&#x2623;&#xFE0F;</button>
-                    <button type="button" class="btn-emoji-quick" onclick="seleccionarEmojiRapido('\u{1F99F}')">&#x1F99F;</button>
-                    <button type="button" class="btn-emoji-quick" onclick="seleccionarEmojiRapido('\u2622\uFE0F')">&#x2622;&#xFE0F;</button>
-                    <button type="button" class="btn-emoji-quick" onclick="seleccionarEmojiRapido('\u{1F30A}')">&#x1F30A;</button>
-                    <button type="button" class="btn-emoji-quick" onclick="seleccionarEmojiRapido('\u{1F6E2}\uFE0F')">&#x1F6E2;&#xFE0F;</button>
-                    <button type="button" class="btn-emoji-quick" onclick="seleccionarEmojiRapido('\u{1F3ED}')">&#x1F3ED;</button>
-                    <button type="button" class="btn-emoji-quick" onclick="seleccionarEmojiRapido('\u{1F3DA}\uFE0F')">&#x1F3DA;&#xFE0F;</button>
-                    <button type="button" class="btn-emoji-quick" onclick="seleccionarEmojiRapido('\u{1F50C}')">&#x1F50C;</button>
-                </div>
+<!-- MODAL PERSONALIZADO PARA OTRO RIESGO AMBIENTAL -->
+<div id="modal-otro-riesgo" class="modal-otro-riesgo-overlay">
+    <div class="modal-otro-riesgo-card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:22px;">&#x26A0;&#xFE0F;</span>
+                <h3 style="margin:0; font-size:15px; color:#fff;">Reportar Otro Riesgo Personalizado</h3>
+            </div>
+            <button type="button" onclick="cerrarModalOtroRiesgo()" style="background:transparent; border:none; color:#888; font-size:18px; cursor:pointer;">&#x2715;</button>
+        </div>
+        <div style="font-size:11px; color:#9ca3af;">Selecciona un &iacute;cono representativo y escribe el nombre espec&iacute;fico del problema o riesgo:</div>
+        <div>
+            <label style="font-size:11px; color:#ddd; font-weight:bold; margin-bottom:4px; display:block;">1. Selecciona un &Iacute;cono / Emoji:</label>
+            <div class="grid-emojis-picker" id="grid-emojis-riesgo"></div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+            <div id="preview-emoji-seleccionado" style="font-size:28px; background:#111; padding:4px 10px; border-radius:8px; border:1px solid #333;">&#x26A0;&#xFE0F;</div>
+            <div style="flex:1;">
+                <label style="font-size:11px; color:#ddd; font-weight:bold; margin-bottom:4px; display:block;">2. Nombre del Riesgo / Problema:</label>
+                <input type="text" id="input-nombre-otro-riesgo" placeholder="Ej: Fuga de amon&iacute;aco, Enjambre de abejas..." style="width:100%; background:#131614; border:1px solid #333f36; color:#fff; padding:8px 10px; border-radius:6px; font-size:12px; outline:none;">
             </div>
         </div>
-        <div style="margin-bottom:18px;">
-            <label style="font-size:11px; font-weight:bold; color:#B4D445; display:block; margin-bottom:6px;">2. Nombre o Especificaci&oacute;n del Riesgo:</label>
-            <input type="text" id="custom-nombre-input" placeholder="Ej: Fuga de gas dom&eacute;stico, Quema de basura..." class="sidebar-input" style="width:100%; border:1px solid #e67e22; font-size:12px; padding:9px; border-radius:8px;">
-        </div>
-        <div style="display:flex; justify-content:flex-end; gap:8px;">
-            <button type="button" class="btn-cancelar-modal" onclick="cerrarModalRiesgoPersonalizado()">Cancelar</button>
-            <button type="button" class="btn-whatsapp-enviar" onclick="confirmarRiesgoPersonalizado()" style="background:#e67e22; color:#fff;">COLOCAR EN MAPA</button>
+        <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:6px;">
+            <button type="button" onclick="cerrarModalOtroRiesgo()" style="background:#2a302c; color:#ccc; border:none; padding:8px 14px; border-radius:6px; font-size:12px; cursor:pointer;">Cancelar</button>
+            <button type="button" onclick="confirmarOtroRiesgo()" style="background:#25D366; color:#000; font-weight:bold; border:none; padding:8px 16px; border-radius:6px; font-size:12px; cursor:pointer;">&#x2714; Activar y Marcar en Mapa</button>
         </div>
     </div>
 </div>
@@ -1315,316 +1326,253 @@
     ];
 
     listaComunas.forEach(c => dbMapasCount[c] = 0);
-    /* === GESTION DE RIESGOS AMBIENTALES Y REPORTES A WHATSAPP === */
-    const listaRiesgosAmbientales = [
-        'pozo_derrumbado', 'poste_riesgo', 'riesgo_carro', 'cauchera', 'arbol_v', 'cables',
-        'casa_r', 'inund', 'terreno_i', 'derrumbe', 'blancas', 'servidas', 'colector',
-        'basura', 'autolavado', 'taller', 'carpinteria_porton', 'desechos_peligrosos',
-        'riesgo_personalizado'
+    // ========================================== //
+    //   SISTEMA DE GESTION DE REPORTES Y ENLACE  //
+    // ========================================== //
+    let objetoReporteActivo = null;
+    let fotosReporteActual = [null, null, null];
+    let emojiRiesgoPersonalizadoActivo = "\u26A0\uFE0F";
+    let nombreRiesgoPersonalizadoActivo = "Riesgo Ambiental Personalizado";
+
+    function generarNumeroReporteUnico() {
+        const anio = new Date().getFullYear();
+        const correlativoLocal = (dbHistorialReportes.length + 1).toString().padStart(4, '0');
+        const aleatorioHex = Math.floor(1000 + Math.random() * 9000);
+        return `#REP-${anio}-${correlativoLocal}-${aleatorioHex}`;
+    }
+
+    const listaEmojisDisponibles = [
+        "\u26A0\uFE0F", "\u{1F525}", "\u{1F4A5}", "\u{1F6A8}", "\u2622\uFE0F", "\u2623\uFE0F", "\u267E\uFE0F", "\u26A1",
+        "\u{1F41D}", "\u{1F40D}", "\u{1F997}", "\u{1F400}", "\u{1F987}", "\u{1F988}", "\u{1F991}", "\u{1F43E}",
+        "\u{1F32A}\uFE0F", "\u{1F327}\uFE0F", "\u{1F30A}", "\u{1F30B}", "\u{1FA88}", "\u{1F32B}\uFE0F", "\u{1F52E}", "\u2604\uFE0F",
+        "\u{1FA93}", "\u{1F3DA}\uFE0F", "\u{1F3E2}", "\u{1F6A7}", "\u{1F6E2}\uFE0F", "\u{1F6D1}", "\u26D4", "\u{1F6AB}"
     ];
 
-    let nombreRiesgoPersonalizadoActivo = "";
-    let emojiRiesgoPersonalizadoActivo = "\u26A0\uFE0F";
-
-    function esRiesgoAmbiental(tipoId) {
-        return listaRiesgosAmbientales.includes(tipoId);
-    }
-
-    function obtenerNombreRiesgo(tipoId, elemento) {
-        if (elemento && elemento.nombrePersonalizado) {
-            return elemento.nombrePersonalizado;
+    function abrirModalOtroRiesgo() {
+        const contenedor = document.getElementById('grid-emojis-riesgo');
+        if (contenedor && contenedor.innerHTML === '') {
+            contenedor.innerHTML = listaEmojisDisponibles.map((em, idx) => 
+                `<button type="button" class="btn-emoji-pick ${idx === 0 ? 'selected' : '}" onclick="seleccionarEmojiPersonalizado('${em}', this)">${em}</button>`
+            ).join('');
         }
-        const nombres = {
-            'pozo_derrumbado': 'Pozo S\u00E9ptico Colapsado',
-            'poste_riesgo': 'Poste El\u00E9ctrico en Riesgo',
-            'riesgo_carro': 'Cauchera (Neum\u00E1ticos Acumulados)',
-            'cauchera': 'Cauchera (Neum\u00E1ticos Acumulados)',
-            'arbol_v': '\u00C1rbol con Riesgo sobre Vivienda',
-            'cables': '\u00C1rbol sobre Tendido El\u00E9ctrico',
-            'casa_r': 'Vivienda en Riesgo Estructural',
-            'inund': 'Zona Inundable / Desbordamiento',
-            'terreno_i': 'Terreno Inestable / Socavamiento',
-            'derrumbe': 'Zona con Riesgo de Derrumbe',
-            'blancas': 'Bote / Fuga de Agua Potable',
-            'servidas': 'Bote / Desborde de Aguas Servidas',
-            'colector': 'Colector Ca\u00EDdo / Colapso de Cloaca',
-            'basura': 'Foco Cr\u00EDtico de Basura (Vertedero)',
-            'autolavado': 'Autolavado (Fuga / Contaminaci\u00F3n)',
-            'taller': 'Taller Mec\u00E1nico (Derrame Aceites)',
-            'carpinteria_porton': 'Carpinter\u00EDa / Emisi\u00F3n Aserr\u00EDn',
-            'desechos_peligrosos': 'Desechos Peligrosos / Biol\u00F3gicos',
-            'riesgo_personalizado': 'Riesgo Ambiental Personalizado'
-        };
-        return nombres[tipoId] || 'Riesgo Ambiental';
+        document.getElementById('input-nombre-otro-riesgo').value = '';
+        emojiRiesgoPersonalizadoActivo = "\u26A0\uFE0F";
+        document.getElementById('preview-emoji-seleccionado').innerText = "\u26A0\uFE0F";
+        document.getElementById('modal-otro-riesgo').style.display = 'flex';
     }
 
-    function construirHtmlIconoMarcador(contenido, fueReportado) {
-        let clase = fueReportado ? 'map-icon-container reportado-activo' : 'map-icon-container';
-        let badge = fueReportado ? '<span class="badge-marcador-reportado" title="Reportado">\u{1F4E2}</span>' : '';
-        return `<div class="${clase}">${contenido}${badge}</div>`;
+    function cerrarModalOtroRiesgo() {
+        document.getElementById('modal-otro-riesgo').style.display = 'none';
     }
 
-    /* === GESTION DE NUMERO DE REPORTE UNICO Y RIESGO PERSONALIZADO === */
-    function generarNumeroReporteUnico() {
-        let correlativo = parseInt(localStorage.getItem('sig_correlativo_reportes') || '100');
-        correlativo++;
-        localStorage.setItem('sig_correlativo_reportes', correlativo.toString());
-        const anio = new Date().getFullYear();
-        return `#REP-${anio}-${correlativo.toString().padStart(4, '0')}`;
+    function seleccionarEmojiPersonalizado(emoji, btn) {
+        emojiRiesgoPersonalizadoActivo = emoji;
+        document.getElementById('preview-emoji-seleccionado').innerText = emoji;
+        document.querySelectorAll('.btn-emoji-pick').forEach(b => b.classList.remove('selected'));
+        if (btn) btn.classList.add('selected');
     }
 
-    function abrirModalRiesgoPersonalizado(btn) {
-        deseleccionarTodo();
-        document.querySelectorAll('.btn-mapa').forEach(b => b.classList.remove('active'));
-        if (btn) btn.classList.add('active');
-        document.getElementById('custom-nombre-input').value = "";
-        document.getElementById('custom-emoji-input').value = "\u26A0\uFE0F";
-        document.getElementById('modal-riesgo-personalizado').style.display = 'flex';
-    }
-
-    function cerrarModalRiesgoPersonalizado() {
-        document.getElementById('modal-riesgo-personalizado').style.display = 'none';
-        const btn = document.getElementById('btn-riesgo-personalizado');
-        if (btn && modoEspecial !== 'riesgo_personalizado') btn.classList.remove('active');
-    }
-
-    function seleccionarEmojiRapido(emoji) {
-        document.getElementById('custom-emoji-input').value = emoji;
-    }
-
-    function confirmarRiesgoPersonalizado() {
-        const nombre = document.getElementById('custom-nombre-input').value.trim();
-        const emoji = document.getElementById('custom-emoji-input').value.trim() || "\u26A0\uFE0F";
+    function confirmarOtroRiesgo() {
+        const nombre = document.getElementById('input-nombre-otro-riesgo').value.trim();
         if (!nombre) {
-            alert("Por favor escribe el nombre o descripci\u00F3n del problema ambiental.");
+            alert("Por favor escribe el nombre o descripci\u00F3n del riesgo antes de continuar.");
             return;
         }
         nombreRiesgoPersonalizadoActivo = nombre;
-        emojiRiesgoPersonalizadoActivo = emoji;
-        emojiActual = emoji;
-        modoEspecial = 'riesgo_personalizado';
-        modoNavegar = false;
-        document.getElementById('modal-riesgo-personalizado').style.display = 'none';
-        const btn = document.getElementById('btn-riesgo-personalizado');
-        if (btn) {
-            btn.classList.add('active');
-            btn.querySelector('div').innerText = `${emoji} ${nombre.substring(0, 18)}`;
-        }
-        document.getElementById('floatMano').classList.remove('adjustable-float');
-        document.getElementById('floatMano').classList.remove('activo-float');
-        alert(`\u2705 Modo activado: Ahora toca en el mapa para ubicar el riesgo "${nombre}".`);
+        cerrarModalOtroRiesgo();
+        activarModoEspecialConEmoji('riesgo_personalizado', emojiRiesgoPersonalizadoActivo);
     }
 
-    /* === GESTION DE LAS 3 FOTOS (CAMARA Y GALERIA) === */
-    function procesarFotoReporte(indice, input) {
-        if (input.files && input.files[0]) {
-            const archivo = input.files[0];
-            fotosReporteActual[indice] = archivo;
-            const num = indice + 1;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const preview = document.getElementById(`preview-foto-${num}`);
-                const wrap = document.getElementById(`wrap-preview-${num}`);
-                const vacio = document.getElementById(`vacio-slot-${num}`);
-                const slot = document.getElementById(`slot-foto-${num}`);
-                if (preview) preview.src = e.target.result;
-                if (wrap) wrap.style.display = 'block';
-                if (vacio) vacio.style.display = 'none';
-                if (slot) slot.classList.add('foto-cargada');
-                actualizarContadorFotosReporte();
+    function activarModoEspecialConEmoji(modo, emoji) {
+        modoEspecial = modo;
+        emojiActual = emoji;
+        modoNavegar = false;
+        document.querySelectorAll('.btn-grid').forEach(b => b.classList.remove('btn-active'));
+        const btn = document.querySelector(`button[onclick*="${modo}"]`);
+        if (btn) btn.classList.add('btn-active');
+        if (modo === 'riesgo_personalizado') {
+            const badge = document.getElementById('btn-emoji-otro');
+            if (badge) badge.innerText = emoji;
+        }
+    }
+
+    function obtenerNombreRiesgo(tipoId, elemento) {
+        if (tipoId === 'riesgo_personalizado') {
+            if (elemento && elemento.nombrePersonalizado) return elemento.nombrePersonalizado;
+            if (nombreRiesgoPersonalizadoActivo) return nombreRiesgoPersonalizadoActivo;
+            return "Riesgo Ambiental Personalizado";
+        }
+        const nombres = {
+            'riesgo_carro': 'Veh\u00EDculo en Riesgo',
+            'arbol_v': '\u00C1rbol Ca\u00EDdo / Peligroso',
+            'cables': 'Cables El\u00E9ctricos Ca\u00EDdos',
+            'casa_r': 'Vivienda en Riesgo',
+            'inund': 'Punto de Inundaci\u00F3n',
+            'terreno_i': 'Terreno Inestable / Grieta',
+            'derrumbe': 'Derrumbe o Deslizamiento',
+            'blancas': 'Bote de Agua Blanca',
+            'servidas': 'Bote de Aguas Servidas',
+            'colector': 'Colector Ca\u00EDdo / Colapsado',
+            'basura': 'Acumulaci\u00F3n de Desechos S\u00F3lidos',
+            'poste_riesgo': 'Poste en Peligro de Ca\u00EDda',
+            'pozo_derrumbado': 'Pozo o Alcantarilla Sin Tapa',
+            'desechos_peligrosos': 'Desechos Peligrosos / T\u00F3xicos',
+            'autolavado': 'Autolavado Informal',
+            'taller': 'Taller Mec\u00E1nico',
+            'carpinteria_porton': 'Carpinter\u00EDa / Port\u00F3n',
+            'cauchera': 'Cauchera',
+            'verde': 'Espacio / \u00C1rea Verde',
+            'huerto': 'Huerto Comunitario',
+            'araguaney': '\u00C1rbol Araguaney',
+            'apamate': '\u00C1rbol Apamate',
+            'cereipo': '\u00C1rbol Cereipo',
+            'manglar': 'Manglar / Zona Protegida',
+            'pollos': 'Cr\u00EDa de Pollos',
+            'cerdo_c': 'Cr\u00EDa de Cerdos',
+            'cerdo_s': 'Cr\u00EDa de Cerdos',
+            'ovejos': 'Cr\u00EDa de Ovejos',
+            'cautivo': 'Fauna en Cautiverio',
+            'invasora': 'Especie Invasora',
+            'recicladores': 'Recicladores Urbanos',
+            'refugio_idlesia': 'Refugio Iglesia',
+            'refugio_escuela': 'Refugio Escuela',
+            'refugio_comedor': 'Refugio Comedor',
+            'refugio_misiones': 'Refugio Base de Misiones',
+            'vuln_emb': 'Vulnerabilidad: Embarazada',
+            'vuln_disc': 'Vulnerabilidad: Discapacidad',
+            'vuln_nino': 'Vulnerabilidad: Ni\u00F1o/a',
+            'vuln_adult': 'Vulnerabilidad: Adulto Mayor',
+            'vuln_cron': 'Vulnerabilidad: Enfermo Cr\u00F3nico',
+            'centro_med': 'Centro M\u00E9dico',
+            'cpt1': 'CPT Tipo 1',
+            'cpt2': 'CPT Tipo 2',
+            'cpt3': 'CPT Tipo 3',
+            'enfermero': 'Personal Enfermero',
+            'paramedico': 'Personal Param\u00E9dico',
+            'pol_inst': 'Polic\u00EDa',
+            'bom_inst': 'Bomberos',
+            'pc_inst': 'Protecci\u00F3n Civil',
+            'cuadrante': 'Cuadrante de Paz',
+            'medico': 'M\u00E9dico',
+            'pol_amb': 'Polic\u00EDa Ambiental',
+            'inparques': 'Inparques',
+            'mov_amb': 'Movimiento Ambientalista',
+            'ruta_evacuacion': 'V\u00EDa de Evacuaci\u00F3n',
+            'poligono_riesgo': 'Pol\u00EDgono de Sector / Riesgo',
+            'serv_gas': 'Servicio de Gas Comunal',
+            'serv_agua': 'Servicio de Agua Potable',
+            'serv_drenaje': 'Sistema de Drenaje'
+        };
+        return nombres[tipoId] || tipoId || "Punto de Inspec\u00F3n";
+    }
+
+    function procesarFotoArchivo(slotIndex, archivo) {
+        if (!archivo) return;
+        if (!archivo.type.startsWith('image/')) {
+            alert("Por favor selecciona exclusivamente un archivo de imagen.");
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 900;
+                const MAX_HEIGHT = 900;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > MAX_WIDTH) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
+                    }
+                } else {
+                    if (height > MAX_HEIGHT) {
+                        width *= MAX_HEIGHT / height;
+                        height = MAX_HEIGHT;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                const dataUrlOptimizada = canvas.toDataURL('image/jpeg', 0.65);
+
+                fotosReporteActual[slotIndex - 1] = dataUrlOptimizada;
+                const previewImg = document.getElementById('preview-foto-' + slotIndex);
+                if (previewImg) {
+                    previewImg.src = dataUrlOptimizada;
+                    previewImg.style.display = 'block';
+                }
+                const btnDel = document.getElementById('btn-del-' + slotIndex);
+                if (btnDel) btnDel.style.display = 'block';
+                const icon = document.getElementById('slot-icon-' + slotIndex);
+                if (icon) icon.style.display = 'none';
+                const txt = document.getElementById('slot-txt-' + slotIndex);
+                if (txt) txt.style.display = 'none';
+                const slot = document.getElementById('slot-foto-' + slotIndex);
+                if (slot) slot.classList.add('cargada');
+
                 actualizarVistaPreviaReporte();
             };
-            reader.readAsDataURL(archivo);
-        }
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(archivo);
     }
 
-    function limpiarFotoIndividual(indice) {
-        fotosReporteActual[indice] = null;
-        const num = indice + 1;
-        const inputCam = document.getElementById(`input-foto-${num}-cam`);
-        const inputGal = document.getElementById(`input-foto-${num}-gal`);
-        const preview = document.getElementById(`preview-foto-${num}`);
-        const wrap = document.getElementById(`wrap-preview-${num}`);
-        const vacio = document.getElementById(`vacio-slot-${num}`);
-        const slot = document.getElementById(`slot-foto-${num}`);
-        if (inputCam) inputCam.value = "";
-        if (inputGal) inputGal.value = "";
-        if (preview) preview.src = "";
-        if (wrap) wrap.style.display = 'none';
-        if (vacio) vacio.style.display = 'flex';
-        if (slot) slot.classList.remove('foto-cargada');
-        actualizarContadorFotosReporte();
+    function eliminarFoto(slotIndex) {
+        fotosReporteActual[slotIndex - 1] = null;
+        const previewImg = document.getElementById('preview-foto-' + slotIndex);
+        if (previewImg) {
+            previewImg.src = '';
+            previewImg.style.display = 'none';
+        }
+        const btnDel = document.getElementById('btn-del-' + slotIndex);
+        if (btnDel) btnDel.style.display = 'none';
+        const icon = document.getElementById('slot-icon-' + slotIndex);
+        if (icon) icon.style.display = 'block';
+        const txt = document.getElementById('slot-txt-' + slotIndex);
+        if (txt) txt.style.display = 'block';
+        const slot = document.getElementById('slot-foto-' + slotIndex);
+        if (slot) slot.classList.remove('cargada');
+
+        const inputCam = document.getElementById('foto-input-cam-' + slotIndex);
+        if (inputCam) inputCam.value = '';
+        const inputGal = document.getElementById('foto-input-gal-' + slotIndex);
+        if (inputGal) inputGal.value = '';
+
         actualizarVistaPreviaReporte();
     }
 
     function limpiarFotosReporte() {
-        for (let i = 0; i < 3; i++) {
-            limpiarFotoIndividual(i);
+        for (let i = 1; i <= 3; i++) {
+            eliminarFoto(i);
         }
     }
 
-    function actualizarContadorFotosReporte() {
-        const cant = fotosReporteActual.filter(f => f !== null).length;
-        const badge = document.getElementById('contador-fotos-reporte');
-        if (badge) {
-            badge.innerText = `${cant} / 3 Fotos`;
-            if (cant === 3) {
-                badge.style.color = '#25D366';
-                badge.style.borderColor = '#25D366';
-                badge.style.background = '#122417';
-            } else {
-                badge.style.color = '#ff4d4d';
-                badge.style.borderColor = '#ff4d4d';
-                badge.style.background = '#2a1a1a';
-            }
-        }
-    }
-
-    /* === SINCRONIZAR MARCADORES DEL MAPA CON EL HISTORIAL === */
-    function sincronizarHistorialConMarcadores() {
-        stackElementos.forEach(capa => {
-            if (capa.fueReportado && esRiesgoAmbiental(capa.tipoId)) {
-                const stamp = L.stamp(capa);
-                const yaEsta = dbHistorialReportes.some(r => r.layerStamp === stamp);
-                if (!yaEsta) {
-                    let coords = "";
-                    if (typeof capa.getLatLng === 'function') {
-                        const ll = capa.getLatLng();
-                        coords = `${ll.lat.toFixed(6)}, ${ll.lng.toFixed(6)}`;
-                    }
-                    if (!capa.numeroReporte) {
-                        capa.numeroReporte = generarNumeroReporteUnico();
-                    }
-                    dbHistorialReportes.push({
-                        layerStamp: stamp,
-                        numeroReporte: capa.numeroReporte,
-                        tipoId: capa.tipoId,
-                        nombreRiesgo: obtenerNombreRiesgo(capa.tipoId, capa),
-                        comuna: document.getElementById('selectComuna').value || "",
-                        sector: capa.sectorReportado || document.getElementById('infoSector').value || "",
-                        coords: coords,
-                        urgencia: "MEDIO \u{1F7E1}",
-                        observacion: capa.especificacionDiscapacidad || "",
-                        fotosAdjuntadas: 3,
-                        fecha: new Date().toLocaleDateString()
-                    });
-                }
-            }
-        });
-    }
-
-    /* === RENDERIZAR HISTORIAL EN LA BARRA LATERAL === */
-    function renderizarHistorialReportes() {
-        const contenedor = document.getElementById('lista-historial-reportes');
-        const badgeContador = document.getElementById('badge-total-reportes');
-        if (!contenedor) return;
-        contenedor.innerHTML = "";
-
-        if (badgeContador) badgeContador.innerText = dbHistorialReportes.length;
-
-        if (!dbHistorialReportes || dbHistorialReportes.length === 0) {
-            contenedor.innerHTML = `
-                <div style="font-size: 10px; color: #888; background: #161817; padding: 10px; border-radius: 6px; text-align: center; border: 1px dashed #444;">
-                    No hay reportes ambientales registrados a\u00FAn.<br>
-                    <small style="color: #666;">Haz clic en un riesgo ambiental en el mapa y presiona <b>REPORTAR</b> para registrarlo.</small>
-                </div>`;
-            return;
-        }
-
-        dbHistorialReportes.forEach((rep, index) => {
-            const card = document.createElement('div');
-            card.className = 'card-hist-reporte';
-            const urgenciaColor = rep.urgencia && rep.urgencia.includes('ALTO') ? '#ff4d4d' : rep.urgencia && rep.urgencia.includes('MEDIO') ? '#ffa500' : '#2fe772';
-            card.innerHTML = `
-                <div class="card-hist-header">
-                    <span class="card-hist-titulo">${rep.nombreRiesgo}</span>
-                    <span style="font-size: 9px; font-weight: 900; color: #fff; font-family: monospace; background: #1a1c1b; padding: 2px 6px; border-radius: 4px; border: 1px solid #25D366;">${rep.numeroReporte || '#REP'}</span>
-                </div>
-                <div class="card-hist-sub">\u{1F4CA} <b>Urgencia:</b> <span style="color: ${urgenciaColor}">${rep.urgencia || 'REPORTADO'}</span></div>
-                <div class="card-hist-sub">\u{1F4CD} <b>Sector:</b> ${rep.sector || "No especificado"}</div>
-                <div class="card-hist-sub">\u{1F4F8} <b>Evidencia:</b> 3 Fotos adjuntas</div>
-                <div class="card-hist-sub">\u{1F4C5} <b>Fecha:</b> ${rep.fecha || "Reciente"}</div>
-                <div class="card-hist-acciones">
-                    <button class="btn-hist-ver" onclick="verDetalleReporteHistorial(${index})">&#x1F441;&#xFE0F; Ver Detalles</button>
-                    <button class="btn-hist-atendido" onclick="marcarReporteComoAtendido(${index})">&#x2705; Atendido</button>
-                </div>
-            `;
-            contenedor.appendChild(card);
-        });
-    }
-
-    function verDetalleReporteHistorial(index) {
-        const rep = dbHistorialReportes[index];
-        if (!rep) return;
-        const marcador = stackElementos.find(el => L.stamp(el) === rep.layerStamp);
-        if (marcador) {
-            map.setView(marcador.getLatLng(), 19);
-            abrirModalReporteRiesgo(marcador);
-        } else {
-            document.getElementById('rep-tipo-riesgo').innerText = rep.nombreRiesgo;
-            document.getElementById('rep-comuna').value = rep.comuna || "";
-            document.getElementById('rep-sector').value = rep.sector || "";
-            document.getElementById('rep-coordenadas').value = rep.coords || "";
-            document.getElementById('rep-nivel-urgencia').value = rep.urgencia || "MEDIO \u{1F7E1}";
-            document.getElementById('rep-observacion').value = rep.observacion || "";
-            const numBadge = document.getElementById('rep-numero-reporte');
-            if (numBadge) numBadge.innerText = rep.numeroReporte || '#REP-0000';
-            document.getElementById('rep-preview-texto').innerText = rep.textoCompleto || "";
-            document.getElementById('modal-reporte-riesgo').style.display = 'flex';
-        }
-    }
-
-    function marcarReporteComoAtendido(index) {
-        const rep = dbHistorialReportes[index];
-        if (!rep) return;
-
-        if (confirm(`\u00BFMarcar como ATENDIDO el reporte [${rep.numeroReporte || ''}] de "${rep.nombreRiesgo}" en sector "${rep.sector || 'comunitario'}"?\\n\\nEsta acci\u00F3n eliminar\u00E1 el riesgo del mapa y restar\u00E1 el contador en la leyenda.`)) {
-            let marcador = stackElementos.find(el => L.stamp(el) === rep.layerStamp);
-            if (!marcador && rep.coords) {
-                const [latS, lngS] = rep.coords.split(',').map(s => parseFloat(s.trim()));
-                marcador = stackElementos.find(el => {
-                    if (el.tipoId === rep.tipoId && typeof el.getLatLng === 'function') {
-                        const ll = el.getLatLng();
-                        return Math.abs(ll.lat - latS) < 0.0001 && Math.abs(ll.lng - lngS) < 0.0001;
-                    }
-                    return false;
-                });
-            }
-
-            if (marcador) {
-                eliminarObjeto(marcador);
-            } else if (rep.tipoId && contadores[rep.tipoId] !== undefined && contadores[rep.tipoId] > 0) {
-                contadores[rep.tipoId]--;
-                actualizarBadges();
-            }
-
-            dbHistorialReportes.splice(index, 1);
-            localStorage.setItem('historial_reportes_sig', JSON.stringify(dbHistorialReportes));
-            renderizarHistorialReportes();
-            guardarProgresoMapa();
-            alert("\u2705 Problema ambiental marcado como ATENDIDO con \u00E9xito.");
-        }
-    }
-
-    function abrirModalReporteRiesgo(obj) {
-        const elemento = obj || objetoSeleccionado;
-        if (!elemento) { alert("Seleccione un elemento de riesgo en el mapa primero."); return; }
+    function abrirModalReporte(elemento) {
         objetoReporteActivo = elemento;
-
         limpiarFotosReporte();
 
         if (!elemento.numeroReporte) {
             elemento.numeroReporte = generarNumeroReporteUnico();
         }
         const badgeNum = document.getElementById('rep-numero-reporte');
-        if (badgeNum) badgeNum.innerText = elemento.numeroReporte;
+        if (badgeNum) {
+            badgeNum.innerText = elemento.numeroReporte;
+        }
 
-        const nombreRiesgo = obtenerNombreRiesgo(elemento.tipoId, elemento);
-        document.getElementById('rep-tipo-riesgo').innerText = nombreRiesgo;
+        const tipoId = elemento.tipoId || (elemento.feature && elemento.feature.properties ? elemento.feature.properties.tipoId : "riesgo");
+        const nombre = obtenerNombreRiesgo(tipoId, elemento);
+        document.getElementById('rep-tipo-riesgo').innerText = nombre;
 
-        const comuna = document.getElementById('selectComuna').value || "No seleccionada";
-        const sectorActual = elemento.sectorReportado || document.getElementById('infoSector').value.trim() || "";
-        document.getElementById('rep-comuna').value = comuna;
+        const comunaGlobal = document.getElementById('selectComuna') ? document.getElementById('selectComuna').value : "";
+        document.getElementById('rep-comuna').value = comunaGlobal || "Comuna No Definida";
+
+        const sectorActual = elemento.sectorReportado || (document.getElementById('infoSector') ? document.getElementById('infoSector').value : "");
         document.getElementById('rep-sector').value = sectorActual;
 
         let latlng = null;
@@ -1696,7 +1644,6 @@
     async function simularEnvioWhatsApp() {
         if (!objetoReporteActivo) return;
 
-        // VALIDACION ESTRICTA DE 3 FOTOS OBLIGATORIAS
         const cantFotos = fotosReporteActual.filter(f => f !== null).length;
         if (cantFotos < 3) {
             alert("\u26A0\uFE0F ATENCI\u00D3N: Es OBLIGATORIO adjuntar las 3 fotograf\u00EDas de evidencia del riesgo ambiental antes de enviar.\\n\\nActualmente has cargado " + cantFotos + " de 3 fotos.");
@@ -1723,7 +1670,6 @@
             ? objetoReporteActivo.numeroReporte 
             : (document.getElementById('rep-numero-reporte') ? document.getElementById('rep-numero-reporte').innerText : '#REP-0000');
 
-        // 1. Marcar el icono en el mapa con su distintivo visual
         objetoReporteActivo.fueReportado = true;
         objetoReporteActivo.sectorReportado = sector;
         objetoReporteActivo.numeroReporte = numReporte;
@@ -1740,7 +1686,7 @@
             iconAnchor: [12, 12]
         }));
 
-        // 2. Guardar en el historial (SOLO METADATOS: NO guarda las fotos para no colapsar la memoria de Supabase)
+        // Guardar metadatos (SIN fotos en Supabase)
         const existeIdx = dbHistorialReportes.findIndex(r => r.layerStamp === stampActual);
         const itemHistorial = {
             layerStamp: stampActual,
@@ -1767,7 +1713,7 @@
         renderizarHistorialReportes();
         guardarProgresoMapa();
 
-        // 3. Obtener las 3 fotos en formato Base64 para el Bot
+        // 3 fotos en Base64 para el Bot
         const fotosBase64 = [];
         for (let i = 1; i <= 3; i++) {
             const previewImg = document.getElementById('preview-foto-' + i);
@@ -1776,7 +1722,6 @@
             }
         }
 
-        // 4. Enviar directamente al Bot de WhatsApp en Render (100% Automatico)
         const BOT_URL = 'https://bot-reportes-vi97.onrender.com/enviar-reporte';
 
         try {
@@ -2005,6 +1950,7 @@
     }
 
     function limpiarMapaCompletamente() {
+        if (!map) return;
         stackElementos.forEach(capa => { map.removeLayer(capa); if(capa._decoradorFlechas) map.removeLayer(capa._decoradorFlechas); });
         stackElementos = []; for (let k in contadores) contadores[k] = 0;
         mapaSoloLectura = false;
@@ -2465,6 +2411,7 @@
 
     async function cargarMapaUsuario(correo) {
         emailPropietarioMapaActual = correo;
+        if (!map) { console.log("Mapa no inicializado aun; se cargara al ingresar."); return; }
         try {
             const { data, error } = await _supabase.from('mapas_comunales').select('*').eq('usuario_email', correo);
             if (error) throw error;
@@ -2483,6 +2430,7 @@
     }
 
     function enfocarMapaEnElementos() {
+        if (!map) return;
         if (stackElementos.length > 0) {
             const poligonoSector = stackElementos.find(el => {
                 const id = el.tipoId || (el.feature && el.feature.properties ? el.feature.properties.tipoId : null);
@@ -2522,18 +2470,69 @@
         return mapeo[id] || '📍';
     }
 
+    let esVoceroYaRegistrado = false;
+
     async function registrarVocero() {
-        const correo = document.getElementById('regCor').value.trim().toLowerCase();
-        const voceriaSelect = document.getElementById('selectVoceria').value;
-        const especificacion = (voceriaSelect === 'Otro') ? document.getElementById('inputOtro').value : '—';
+        const correo = document.getElementById("regCor").value.trim().toLowerCase();
+        if (!correo) {
+            alert("Por favor ingresa tu correo electr\u00F3nico.");
+            return;
+        }
+        localStorage.setItem("user_email_active", correo);
+
+        if (esVoceroYaRegistrado) {
+            reproducirAnimacion("usuario");
+            return;
+        }
+
+        const voceriaSelect = document.getElementById("selectVoceria") ? document.getElementById("selectVoceria").value : "Vocero de Ecosocialismo";
+        const especificacion = (voceriaSelect === "Otro" && document.getElementById("inputOtro")) ? document.getElementById("inputOtro").value : "\u2014";
         const vocero = {
-            nom: document.getElementById('regNom').value, ape: document.getElementById('regApe').value, ced: document.getElementById('regCed').value, tel: document.getElementById('regTel').value, cor: correo, com: document.getElementById('regCom').value, sec: document.getElementById('regSec').value, voc: voceriaSelect, esp: especificacion
+            nom: document.getElementById("regNom") ? document.getElementById("regNom").value.trim() : "",
+            ape: document.getElementById("regApe") ? document.getElementById("regApe").value.trim() : "",
+            ced: document.getElementById("regCed") ? document.getElementById("regCed").value.trim() : "",
+            tel: document.getElementById("regTel") ? document.getElementById("regTel").value.trim() : "",
+            cor: correo,
+            com: document.getElementById("regCom") ? document.getElementById("regCom").value.trim() : "",
+            sec: document.getElementById("regSec") ? document.getElementById("regSec").value.trim() : "",
+            voc: voceriaSelect || "Vocero de Ecosocialismo",
+            esp: especificacion
         };
+
         try {
-            const { error } = await _supabase.from('registross_voceros').insert([{ 'nombres': vocero.nom, 'apellidos': vocero.ape, 'cédula de identidad': vocero.ced, 'telefono': vocero.tel, 'correo': vocero.cor, 'comuna': vocero.com, 'sector': vocero.sec, 'voceria': vocero.voc, 'especificacion': vocero.esp }]);
-            if (error) throw error; alert("Registro exitoso");
-            dbVoceros.push(vocero); guardarDB(); actualizarTablaVoceros(); reproducirAnimacion('usuario');
-        } catch (err) { alert("Error: " + err.message); }
+            const { error } = await _supabase.from("registross_voceros").insert([{
+                "nombres": vocero.nom,
+                "apellidos": vocero.ape,
+                "c\u00E9dula de identidad": vocero.ced,
+                "telefono": vocero.tel,
+                "correo": vocero.cor,
+                "comuna": vocero.com,
+                "sector": vocero.sec,
+                "voceria": vocero.voc,
+                "especificacion": vocero.esp
+            }]);
+
+            if (error) {
+                if (error.code === "23505" || (error.message && error.message.toLowerCase().includes("duplicate"))) {
+                    console.log("El vocero ya est\u00E1 en Supabase, permitiendo acceso directo...");
+                } else {
+                    console.warn("Aviso en registro Supabase:", error);
+                }
+            } else {
+                alert("\u00A1Registro exitoso!");
+            }
+        } catch (err) {
+            console.warn("Excepci\u00F3n en registro:", err);
+        }
+
+        const existeLocal = dbVoceros.find(x => x.cor && x.cor.toLowerCase() === correo);
+        if (!existeLocal) {
+            dbVoceros.push(vocero);
+            guardarDB();
+            actualizarTablaVoceros();
+        }
+
+        reproducirAnimacion("usuario");
     }
 
     function volverAlPanelControl() {
@@ -2681,16 +2680,78 @@
 
     function togglePanelVoceros() { const p = document.getElementById('panel-voceros-lista'); p.style.display = p.style.display === 'flex' ? 'none' : 'flex'; }
 
-    function verificarCorreo() {
-        const correo = document.getElementById('regCor').value.trim().toLowerCase(); if(!correo) return; 
-        const contenedorCampos = document.getElementById('campos-dinamicos-registro');
-        const v = dbVoceros.find(voc => voc.cor.toLowerCase() === correo);
-        localStorage.setItem('user_email_active', correo);
-        if(v) {
-            contenedorCampos.style.display = 'flex';
-            document.getElementById('regNom').value = v.nom; document.getElementById('regApe').value = v.ape; document.getElementById('regCed').value = v.ced; document.getElementById('regTel').value = v.tel; document.getElementById('regCom').value = v.com; document.getElementById('regSec').value = v.sec; document.getElementById('selectVoceria').value = v.voc; controlarOtro(v.voc); if(v.voc === 'Otro') document.getElementById('inputOtro').value = v.esp;
-            cargarMapaUsuario(correo);
-        } else { contenedorCampos.style.display = 'flex'; }
+    async function verificarCorreo() {
+        const correoInput = document.getElementById("regCor");
+        if (!correoInput) return;
+        const correo = correoInput.value.trim().toLowerCase();
+        if (!correo) return;
+
+        const contenedorCampos = document.getElementById("campos-dinamicos-registro");
+        const btnReg = document.getElementById("btnRegistrar");
+        localStorage.setItem("user_email_active", correo);
+
+        let v = dbVoceros.find(voc => voc.cor && voc.cor.toLowerCase() === correo);
+
+        if (!v) {
+            try {
+                if (btnReg) btnReg.innerText = "\u23F3 Verificando...";
+                const { data, error } = await _supabase.from("registross_voceros").select("*").eq("correo", correo).limit(1);
+                if (!error && data && data.length > 0) {
+                    const row = data[0];
+                    v = {
+                        nom: row.nombres || "",
+                        ape: row.apellidos || "",
+                        ced: row["c\u00E9dula de identidad"] || row.cedula || "",
+                        tel: row.telefono || "",
+                        cor: row.correo || correo,
+                        com: row.comuna || "",
+                        sec: row.sector || "",
+                        voc: row.voceria || "Vocero de Ecosocialismo",
+                        esp: row.especificacion || "\u2014"
+                    };
+                    dbVoceros.push(v);
+                    guardarDB();
+                    actualizarTablaVoceros();
+                }
+            } catch (errSup) {
+                console.warn("Error al verificar en Supabase:", errSup);
+            }
+        }
+
+        if (v) {
+            esVoceroYaRegistrado = true;
+            contenedorCampos.style.display = "flex";
+            if (document.getElementById("regNom")) document.getElementById("regNom").value = v.nom;
+            if (document.getElementById("regApe")) document.getElementById("regApe").value = v.ape;
+            if (document.getElementById("regCed")) document.getElementById("regCed").value = v.ced;
+            if (document.getElementById("regTel")) document.getElementById("regTel").value = v.tel;
+            if (document.getElementById("regCom")) document.getElementById("regCom").value = v.com;
+            if (document.getElementById("regSec")) document.getElementById("regSec").value = v.sec;
+            if (document.getElementById("selectVoceria")) {
+                document.getElementById("selectVoceria").value = v.voc;
+                controlarOtro(v.voc);
+            }
+            if (v.voc === "Otro" && document.getElementById("inputOtro")) {
+                document.getElementById("inputOtro").value = v.esp;
+            }
+
+            if (btnReg) {
+                btnReg.innerText = "\u2705 INGRESAR AL MAPA (VOCERO IDENTIFICADO)";
+                btnReg.style.backgroundColor = "#16a34a";
+            }
+
+            const entrarDirecto = confirm("\u00A1Bienvenido de nuevo, " + (v.nom || "Vocero") + "!\n\nTu registro ha sido verificado con \u00E9xito.\n\n\u00BFDeseas ingresar directamente al mapa ahora?");
+            if (entrarDirecto) {
+                reproducirAnimacion("usuario");
+            }
+        } else {
+            esVoceroYaRegistrado = false;
+            contenedorCampos.style.display = "flex";
+            if (btnReg) {
+                btnReg.innerText = "INGRESAR Y GUARDAR REGISTRO";
+                btnReg.style.backgroundColor = "";
+            }
+        }
     }
 
     function limpiarSiVacio(val) { if(val === "") document.getElementById('campos-dinamicos-registro').style.display = 'none'; }
@@ -2731,28 +2792,59 @@
     }
 
     function reproducirAnimacion(rol) {
-        const videoContenedor = document.getElementById('video-contenedor'); const video = document.getElementById('animacion-video');
-        videoContenedor.style.display = 'flex'; video.play();
-        video.onended = async function() {
-            videoContenedor.style.display = 'none'; document.getElementById('pantalla-registro').style.display = 'none'; document.getElementById('sistema-principal').style.display = 'flex';
-            localStorage.setItem('sesion_activa', 'true'); localStorage.setItem('rol_usuario', rol);
+        const videoContenedor = document.getElementById("video-contenedor");
+        const video = document.getElementById("animacion-video");
 
-            inicializarMapa(); 
-            cargarContadoresReales(); 
+        let transicionRealizada = false;
+        async function transicionarAlSistema() {
+            if (transicionRealizada) return;
+            transicionRealizada = true;
 
-            if(rol === 'admin') {
+            if (videoContenedor) videoContenedor.style.display = "none";
+            document.getElementById("pantalla-registro").style.display = "none";
+            document.getElementById("sistema-principal").style.display = "flex";
+            localStorage.setItem("sesion_activa", "true");
+            localStorage.setItem("rol_usuario", rol);
+
+            inicializarMapa();
+            cargarContadoresReales();
+
+            if (rol === "admin") {
                 mostrarLeyendaAdmin();
                 restaurarProgresoMapa();
                 enfocarMapaEnElementos();
             } else {
-                const correoActivo = localStorage.getItem('user_email_active');
-                if(correoActivo) {
+                const correoActivo = localStorage.getItem("user_email_active");
+                if (correoActivo) {
                     await cargarMapaUsuario(correoActivo);
+                } else {
+                    restaurarProgresoMapa();
+                    enfocarMapaEnElementos();
                 }
             }
-            map.invalidateSize();
+            if (map) {
+                map.invalidateSize();
+                setTimeout(() => { if (map) map.invalidateSize(); }, 300);
+            }
             iniciarAutoguardado();
-        };
+        }
+
+        if (videoContenedor && video) {
+            videoContenedor.style.display = "flex";
+            videoContenedor.onclick = transicionarAlSistema;
+
+            const playPromise = video.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(err => {
+                    console.log("Autoplay bloqueado o no disponible:", err);
+                    transicionarAlSistema();
+                });
+            }
+            video.onended = transicionarAlSistema;
+            setTimeout(transicionarAlSistema, 3500);
+        } else {
+            transicionarAlSistema();
+        }
     }
 
     function inicializarMapa() {

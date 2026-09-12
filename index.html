@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -159,6 +159,17 @@
         .popup-style-row input[type=color] { width: 36px; height: 22px; padding:0; border:1px solid #ccc; cursor:pointer; }
         .popup-style-row input[type=range] { width: 100px; }
 
+        /* BOTÓN REPORTAR EN EL POPUP */
+        .btn-reportar-popup {
+            background: #25D366; color: #0b141a; border: none;
+            padding: 6px 10px; border-radius: 4px; cursor: pointer;
+            font-weight: 900; font-size: 11px; margin-top: 5px; width: 100%;
+            text-transform: uppercase; box-shadow: 0 2px 6px rgba(37, 211, 102, 0.35);
+            display: flex; align-items: center; justify-content: center; gap: 5px;
+            transition: 0.2s;
+        }
+        .btn-reportar-popup:hover { background: #20ba59; color: #fff; }
+
         #map-container { flex-grow: 1; position: relative; background: #1a1a1a; }
         #map { width: 100%; height: 100%; }
 
@@ -235,197 +246,136 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.4);
         }
 
-        /* ===================== MODO OBSERVATORIO CLIMÁTICO - ESTILO METEORED ===================== */
-        :root {
-            --obs-bg: rgba(12,17,22,0.97);
-            --obs-bg-glass: rgba(18,26,34,0.92);
-            --obs-border: rgba(255,255,255,0.08);
-            --obs-accent: #00b4d8;
-            --obs-accent2: #0077b6;
-            --obs-warm: #f77f00;
-            --obs-danger: #e63946;
-            --obs-success: #06d6a0;
-            --obs-text: #e0e0e0;
-            --obs-text-dim: rgba(255,255,255,0.5);
-            --obs-radius: 12px;
-            --obs-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        /* ===================== MODAL REPORTE VISUAL WHATSAPP ===================== */
+        .card-reporte-whatsapp {
+            background: #181b19;
+            border: 2px solid #25D366;
+            border-radius: 18px;
+            width: 92%;
+            max-width: 520px;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.8), 0 0 20px rgba(37,211,102,0.25);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: fadeInModal 0.25s ease-out;
         }
 
-        .btn-observatorio-activo { background: var(--obs-accent) !important; border: 2px solid #fff !important; box-shadow: 0 0 15px rgba(0,180,216,0.8) !important; }
-
-        /* Panel lateral izquierdo */
-        #panel-observatorio-climatico {
-            display: none;
-            position: absolute; top: 10px; left: 10px; z-index: 2500;
-            background: var(--obs-bg-glass); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--obs-border); border-radius: var(--obs-radius);
-            padding: 0; width: 220px; color: var(--obs-text);
-            box-shadow: var(--obs-shadow); max-height: calc(100vh - 30px); overflow-y: auto;
-            font-family: 'Segoe UI', system-ui, sans-serif;
-        }
-        #panel-observatorio-climatico::-webkit-scrollbar { width: 4px; }
-        #panel-observatorio-climatico::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
-
-        .obs-header-bar {
-            background: linear-gradient(135deg, var(--obs-accent2), var(--obs-accent));
-            padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;
-            border-radius: var(--obs-radius) var(--obs-radius) 0 0;
-        }
-        .obs-header-bar h3 { margin: 0; font-size: 11px; color: #fff; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; }
-        .obs-btn-volver-mini {
-            background: rgba(255,255,255,0.2); border: none; color: #fff; border-radius: 6px;
-            padding: 4px 8px; cursor: pointer; font-size: 9px; font-weight: 600; transition: 0.2s;
-        }
-        .obs-btn-volver-mini:hover { background: rgba(255,255,255,0.35); }
-
-        .obs-section { padding: 10px 14px; border-bottom: 1px solid var(--obs-border); }
-        .obs-section:last-child { border-bottom: none; }
-        .obs-section-title { font-size: 9px; color: var(--obs-text-dim); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; margin-bottom: 8px; }
-
-        /* Selector de mapa */
-        .obs-map-selector { display: flex; gap: 4px; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 3px; }
-        .obs-map-opt {
-            flex: 1; text-align: center; padding: 5px 0; border: none; background: transparent;
-            color: var(--obs-text-dim); font-size: 9px; font-weight: 600; border-radius: 6px;
-            cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.5px;
-        }
-        .obs-map-opt.active { background: var(--obs-accent); color: #fff; box-shadow: 0 2px 8px rgba(0,180,216,0.4); }
-        .obs-map-opt:hover:not(.active) { color: #fff; }
-
-        /* Grid de capas tipo Meteored */
-        .obs-layers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-        .obs-layer-card {
-            background: rgba(255,255,255,0.04); border: 1px solid var(--obs-border);
-            border-radius: 8px; padding: 8px 6px; text-align: center; cursor: pointer;
-            transition: all 0.2s ease; position: relative; overflow: hidden;
-        }
-        .obs-layer-card:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); transform: translateY(-1px); }
-        .obs-layer-card.active {
-            background: linear-gradient(135deg, rgba(0,180,216,0.2), rgba(0,119,182,0.15));
-            border-color: var(--obs-accent); box-shadow: 0 0 12px rgba(0,180,216,0.3);
-        }
-        .obs-layer-card.active::after {
-            content: ''; position: absolute; top: 3px; right: 3px; width: 6px; height: 6px;
-            background: var(--obs-accent); border-radius: 50%;
-            box-shadow: 0 0 6px var(--obs-accent);
-        }
-        .obs-layer-icon { font-size: 18px; display: block; margin-bottom: 3px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
-        .obs-layer-name { font-size: 8.5px; color: var(--obs-text); font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; line-height: 1.2; }
-
-        /* Selector de unidades */
-        .obs-units { display: flex; gap: 4px; }
-        .obs-unit-btn {
-            flex: 1; text-align: center; padding: 4px; border: 1px solid var(--obs-border);
-            background: rgba(0,0,0,0.2); color: var(--obs-text-dim); font-size: 9px; font-weight: 600;
-            border-radius: 6px; cursor: pointer; transition: 0.2s;
-        }
-        .obs-unit-btn.active { background: rgba(0,180,216,0.15); border-color: var(--obs-accent); color: var(--obs-accent); }
-
-        /* Cards de datos actuales */
-        .obs-data-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-        .obs-data-card {
-            background: rgba(0,0,0,0.25); border: 1px solid var(--obs-border);
-            border-radius: 8px; padding: 8px; text-align: center;
-        }
-        .obs-data-card .obs-data-value { font-size: 16px; font-weight: 800; color: #fff; line-height: 1; }
-        .obs-data-card .obs-data-label { font-size: 8px; color: var(--obs-text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
-
-        .obs-commune-badge {
-            font-size: 9px; font-weight: 700; color: var(--obs-accent); text-transform: uppercase;
-            letter-spacing: 0.5px; padding: 4px 8px; background: rgba(0,180,216,0.1);
-            border-radius: 6px; border: 1px solid rgba(0,180,216,0.2);
+        @keyframes fadeInModal {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
         }
 
-        .obs-nota-bottom { font-size: 8px; color: var(--obs-text-dim); line-height: 1.4; padding: 6px 0; }
+        .header-modal-reporte {
+            background: #121c15;
+            padding: 14px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #233d2a;
+        }
 
-        /* Barra de tiempo inferior estilo Meteored */
-        #control-radar-tiempo {
-            display: none; align-items: center; gap: 0;
-            background: var(--obs-bg-glass); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--obs-border); border-radius: 12px;
-            padding: 6px 12px; position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
-            z-index: 2500; color: #fff; font-size: 10px; min-width: 380px;
-            box-shadow: var(--obs-shadow);
+        .btn-cerrar-modal {
+            background: transparent;
+            border: none;
+            color: #888;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            line-height: 1;
         }
-        #control-radar-tiempo button {
-            background: transparent; border: 1px solid var(--obs-border); color: var(--obs-text);
-            border-radius: 8px; width: 30px; height: 30px; cursor: pointer; font-size: 11px;
-            transition: 0.2s; display: flex; align-items: center; justify-content: center;
-        }
-        #control-radar-tiempo button:hover { background: rgba(0,180,216,0.2); border-color: var(--obs-accent); color: var(--obs-accent); }
-        #control-radar-tiempo button.btn-play-obs { background: var(--obs-accent); border-color: var(--obs-accent); color: #fff; border-radius: 50%; }
-        #control-radar-tiempo button.btn-play-obs:hover { background: #0096c7; }
-        #control-radar-tiempo input[type=range] {
-            flex: 1; height: 4px; -webkit-appearance: none; appearance: none;
-            background: linear-gradient(to right, var(--obs-accent) 0%, rgba(255,255,255,0.1) 0%);
-            border-radius: 4px; outline: none; margin: 0 8px;
-        }
-        #control-radar-tiempo input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%;
-            background: var(--obs-accent); border: 2px solid #fff; cursor: pointer;
-            box-shadow: 0 0 8px rgba(0,180,216,0.5);
-        }
-        #radar-tiempo-label { font-size: 10px; font-weight: 600; color: var(--obs-accent); min-width: 55px; text-align: right; }
+        .btn-cerrar-modal:hover { color: #fff; background: #333; }
 
-        /* Leyenda estilo Meteored */
-        #leyenda-climatica {
-            display: none; position: absolute; bottom: 65px; right: 15px; z-index: 2500;
-            background: var(--obs-bg-glass); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--obs-border); border-radius: var(--obs-radius);
-            padding: 10px 12px; color: #fff; min-width: 190px;
-            box-shadow: var(--obs-shadow);
+        .body-modal-reporte {
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            max-height: 75vh;
+            overflow-y: auto;
         }
-        #leyenda-climatica h5 { margin: 0 0 8px 0; font-size: 10px; color: var(--obs-accent); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
-        .leyenda-fila { display: flex; align-items: center; gap: 8px; margin: 3px 0; font-size: 10px; }
-        .leyenda-color { width: 20px; height: 10px; border-radius: 3px; flex-shrink: 0; }
-        .leyenda-nota { font-size: 8px; color: var(--obs-text-dim); margin-top: 6px; font-style: italic; }
 
-        /* Panel de gráfica/pronóstico estilo Meteored */
-        #grafica-flotante-clima {
-            display: none; position: absolute; top: 10px; right: 10px; z-index: 2600;
-            background: var(--obs-bg-glass); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--obs-border); border-radius: var(--obs-radius);
-            width: 340px; color: #fff; box-shadow: var(--obs-shadow); flex-direction: column; overflow: hidden;
+        .reporte-item-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
         }
-        .grafica-header {
-            background: linear-gradient(135deg, var(--obs-accent2), var(--obs-accent));
-            padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;
-            font-size: 11px; font-weight: 700;
+
+        .reporte-campo label {
+            font-size: 10px;
+            color: var(--v-lime);
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 4px;
+            display: block;
         }
-        .grafica-cerrar {
-            background: rgba(255,255,255,0.2); border: none; color: #fff; border-radius: 50%;
-            width: 24px; height: 24px; cursor: pointer; font-weight: bold; font-size: 12px;
+
+        .reporte-valor-destacado {
+            background: #0d140f;
+            border: 1px solid #25D366;
+            color: #fff;
+            padding: 8px 10px;
+            border-radius: 6px;
+            font-weight: 800;
+            font-size: 13px;
+        }
+
+        .preview-whatsapp-box {
+            background: #0b141a;
+            border: 1px solid #233d2a;
+            border-left: 3px solid #25D366;
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: #e9edef;
+            font-family: monospace, sans-serif;
+            font-size: 11px;
+            line-height: 1.45;
+            white-space: pre-wrap;
+            max-height: 140px;
+            overflow-y: auto;
+        }
+
+        .footer-modal-reporte {
+            background: #121c15;
+            padding: 12px 18px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            border-top: 1px solid #233d2a;
+        }
+
+        .btn-cancelar-modal {
+            background: #2a2a2a;
+            color: #ccc;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .btn-cancelar-modal:hover { background: #3a3a3a; color: #fff; }
+
+        .btn-whatsapp-enviar {
+            background: #25D366;
+            color: #111;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 11.5px;
+            font-weight: 900;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
             transition: 0.2s;
         }
-        .grafica-cerrar:hover { background: rgba(255,255,255,0.35); }
-        .grafica-body { padding: 12px; }
-        .grafica-loading { text-align: center; padding: 20px; font-size: 11px; color: var(--obs-accent); }
-
-        /* Tabla de pronóstico 24h estilo Meteored */
-        #tabla-24h-container {
-            max-height: 220px; overflow-x: auto; overflow-y: auto; margin-top: 8px;
-            border: 1px solid var(--obs-border); border-radius: 8px;
-            background: rgba(0,0,0,0.2);
-        }
-        #tabla-24h-container table { min-width: 600px; border-collapse: collapse; }
-        #tabla-24h-container th {
-            background: rgba(0,180,216,0.1); color: var(--obs-accent); font-size: 9px;
-            padding: 6px 8px; position: sticky; top: 0; z-index: 1;
-            border-bottom: 2px solid var(--obs-accent); text-transform: uppercase; letter-spacing: 0.5px;
-            font-weight: 700;
-        }
-        #tabla-24h-container td {
-            font-size: 9px; padding: 5px 8px; border-bottom: 1px solid var(--obs-border);
-            text-align: center; transition: background 0.15s;
-        }
-        #tabla-24h-container tr:hover td { background: rgba(0,180,216,0.08); }
-        #tabla-24h-container td:first-child { font-weight: 700; color: var(--obs-accent); }
-        .tabla-scroll-hint { font-size: 8px; color: var(--obs-text-dim); text-align: center; padding: 4px; }
-
-        @media print {
-            #panel-observatorio-climatico, #control-radar-tiempo, #leyenda-climatica, #grafica-flotante-clima, #btnObservatorio {
-                display: none !important;
-            }
+        .btn-whatsapp-enviar:hover {
+            background: #2fe772;
+            transform: translateY(-1px);
         }
 
         /* ===================== MODO IMPRESIÓN ===================== */
@@ -445,7 +395,7 @@
             }
 
             /* Ocultar todo lo que no debe salir en el papel */
-            #pantalla-registro, #video-contenedor,
+            #pantalla-registro, #video-contenedor, #modal-reporte-riesgo,
             .controles-mapa-horiz, .zoom-preciso-panel, #indicador-autoguardado,
             #btnVolverAdmin, #panel-admin-comunas, #panel-voceros-lista,
             #contenedor-mapas-realizados, #desplegable-riesgos-trazado,
@@ -523,7 +473,7 @@
             <div class="logo-wrapper"><img src="logo2.png.png" alt="Logo 2"></div>
         </div>
 
-        <h2>SISTEMA DE INFORMACIÓN GEOGRÁFICA PREVENTIVA</h2>
+        <h2>SISTEMA DE GESTIÓN</h2>
         <p class="subtitle">Municipio Simón Bolívar</p>
 
         <div class="tabs-acceso">
@@ -581,23 +531,22 @@
     <div id="header">
         <div class="logo-box logo-left"><img src="logo1.png.png"></div>
         <div id="titulo-principal">MAPA DE RIESGOS COMUNITARIOS</div>
-        <div id="subtitulo-principal" style="color: #B4D445; font-size: 13px; font-weight: bold;">Municipio Simón Bolívar - Estado Anzoátegui</div>
+        <div style="color: #B4D445; font-size: 13px; font-weight: bold;">Municipio Simón Bolívar - Estado Anzoátegui</div>
         <div class="logo-box logo-right"><img src="logo2.png.png"></div>
     </div>
-            <button id="btnVolverAdmin" class="btn-volver-admin" style="display:none" onclick="volverAlPanelControl()">⬅️ VOLVER AL PANEL ADMINISTRATIVO</button>
+    <button id="btnVolverAdmin" class="btn-volver-admin" style="display:none" onclick="volverAlPanelControl()">🔙 VOLVER AL PANEL ADMINISTRATIVO</button>
     <div id="contenedor">
         <div id="panel-admin-comunas">
-            <h4 style="color:var(--v-lim)">🛡️ PANEL DE CONTROL ADMINISTRATIVO</h4>
+            <h4 style="color:var(--v-lim)">⚙️ PANEL DE CONTROL ADMINISTRATIVO</h4>
             <button class="btn-acceder" style="margin-bottom: 15px; padding: 10px; font-size: 11px;" onclick="togglePanelVoceros()">📋 VER LISTADO DE VOCEROS REGISTRADOS</button>
             <div style="font-size: 9px; color: #aaa; margin-bottom: 10px; text-transform: uppercase; font-weight: bold;">Historial de Mapas por Comuna y Sector</div>
             <div id="lista-comunas-admin"></div>
             <button class="btn-acceder" style="background: #e74c3c; color: white; margin-top: 20px;" onclick="cerrarSesionTotal()">
-                🚪 CERRAR SESIÓN ADMINISTRATIVA
+                🔒 CERRAR SESIÓN ADMINISTRATIVA
             </button>
         </div>
 
         <div id="sidebar">
-
 
             <div id="leyenda-normal">
                 <h4>📍 Información Territorial</h4>
@@ -622,7 +571,7 @@
                             <option value="GOLPE DE TIMON">GOLPE DE TIMON</option>
                             <option value="GRUTA SAN FELIPE NERI">GRUTA SAN FELIPE NERI</option>
                             <option value="GUERREROS DE BOYACA">GUERREROS DE BOYACA</option>
-                            <option value="HUGO CHAVEZ FRIAS 2013">HUGO CHAVEZ FRIas 2013</option>
+                            <option value="HUGO CHAVEZ FRIAS 2013">HUGO CHAVEZ FRIAS 2013</option>
                             <option value="INDIGENA CUMANAGOTO SAN BERNARDINO">INDIGENA CUMANAGOTO SAN BERNARDINO</option>
                             <option value="INDIGENA GRAN CACIQUE CAYAURIMA">INDIGENA GRAN CACIQUE CAYAURIMA</option>
                             <option value="INDIOS CUMANAGOTOS">INDIOS CUMANAGOTOS</option>
@@ -662,27 +611,27 @@
                         <input type="text" id="infoSector" class="sidebar-input" placeholder="Ej: Sector 1, Sector 2, Sector 3...">
                     </div>
                 </div>
-                    <h4>📂 Mi Mapa Comunal</h4>
-<div id="contenedor-mapas-realizados">
-    <button class="btn-mapa" style="background:#1a2e28; border-color:var(--v-lim); color:var(--v-lim); font-weight:bold;" onclick="verMiMapaGeneralizado()">
-        <div>🌐 Ver Mapa Generalizado de mi Comuna</div>
-    </button>
-    <button class="btn-mapa" style="background:#3a1f1f; border-color:#e74c3c; color:#ff8a80;" onclick="reiniciarMiMapa()">
-        <div>🗑️ Reiniciar Mi Mapa (borra todo y empieza de cero)</div>
-    </button>
-</div>
+                <h4>🗺️ Mi Mapa Comunal</h4>
+                <div id="contenedor-mapas-realizados">
+                    <button class="btn-mapa" style="background:#1a2e28; border-color:var(--v-lim); color:var(--v-lim); font-weight:bold;" onclick="verMiMapaGeneralizado()">
+                        <div>👁️ Ver Mapa Generalizado de mi Comuna</div>
+                    </button>
+                    <button class="btn-mapa" style="background:#3a1f1f; border-color:#e74c3c; color:#ff8a80;" onclick="reiniciarMiMapa()">
+                        <div>🗑️ Reiniciar Mi Mapa (borra todo y empieza de cero)</div>
+                    </button>
+                </div>
 
-                <h4>⏳ Antecedentes Históricos</h4>
+                <h4>📜 Antecedentes Históricos</h4>
                 <div id="lista-antecedentes"></div>
                 <button class="btn-add-hist" onclick="agregarFilaHistoria()">+ AGREGAR ANTECEDENTE</button>
 
-                <h4>⛺ Centros y Lugares de Refugio</h4>
+                <h4>🏠 Centros y Lugares de Refugio</h4>
                 <button class="btn-mapa" onclick="cambiarEmoji('⛪',this,'refugio_idlesia')"><div>⛪ Iglesia / Centro Religioso</div> <span class="count-badge" id="count-refugio_idlesia">0</span></button>
                 <button class="btn-mapa" onclick="cambiarEmoji('🏫',this,'refugio_escuela')"><div>🏫 Escuela / Unidad Educativa</div> <span class="count-badge" id="count-refugio_escuela">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('🍽️',this,'refugio_comedor')"><div>🍽️ Comedor / Casa Alimentaria</div> <span class="count-badge" id="count-refugio_comedor">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('🎪',this,'refugio_misiones')"><div>🎪 Base de Misiones</div> <span class="count-badge" id="count-refugio_misiones">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🍲',this,'refugio_comedor')"><div>🍲 Comedor / Casa Alimentaria</div> <span class="count-badge" id="count-refugio_comedor">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🏛️',this,'refugio_misiones')"><div>🏛️ Base de Misiones</div> <span class="count-badge" id="count-refugio_misiones">0</span></button>
 
-                <h4>🚩 Factores de Vulnerabilidad</h4>
+                <h4>👥 Factores de Vulnerabilidad</h4>
                 <button class="btn-mapa" onclick="cambiarEmoji('🤰',this,'vuln_emb')"><div>🤰 Mujer Embarazada</div> <span class="count-badge" id="count-vuln_emb">0</span></button>
                 <div class="sidebar-form-group" style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin:-2px 0 8px 0; padding:0 4px;">
                     <label class="sidebar-label" style="margin:0;">Cantidad manual reportada:</label>
@@ -693,7 +642,7 @@
                     <label class="sidebar-label" style="margin:0;">Cantidad manual reportada:</label>
                     <input type="number" min="0" class="sidebar-input" style="width:70px; text-align:center;" id="manual-vuln_disc" value="0" onchange="actualizarVulnerabilidadManual('vuln_disc', this.value)">
                 </div>
-                <button class="btn-mapa" onclick="cambiarEmoji('👶',this,'vuln_nino')"><div>👶 Niños y Niñas</div> <span class="count-badge" id="count-vuln_nino">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🧒',this,'vuln_nino')"><div>🧒 Niños y Niñas</div> <span class="count-badge" id="count-vuln_nino">0</span></button>
                 <div class="sidebar-form-group" style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin:-2px 0 8px 0; padding:0 4px;">
                     <label class="sidebar-label" style="margin:0;">Cantidad manual reportada:</label>
                     <input type="number" min="0" class="sidebar-input" style="width:70px; text-align:center;" id="manual-vuln_nino" value="0" onchange="actualizarVulnerabilidadManual('vuln_nino', this.value)">
@@ -709,76 +658,76 @@
                     <input type="number" min="0" class="sidebar-input" style="width:70px; text-align:center;" id="manual-vuln_cron" value="0" onchange="actualizarVulnerabilidadManual('vuln_cron', this.value)">
                 </div>
 
-                <h4>💡 Salud y Servicios</h4>
+                <h4>🏥 Salud y Servicios</h4>
                 <button class="btn-mapa" onclick="cambiarEmoji('🏥',this,'centro_med')"><div>🏥 Centro Médico</div> <span class="count-badge" id="count-centro_med">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('🏥₁',this,'cpt1')"><div>🏥 CPT Tipo I</div> <span class="count-badge" id="count-cpt1">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('🏥₂',this,'cpt2')"><div>🏥 CPT Tipo II</div> <span class="count-badge" id="count-cpt2">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('🏥₃',this,'cpt3')"><div>🏥 CPT Tipo III</div> <span class="count-badge" id="count-cpt3">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🏥1',this,'cpt1')"><div>🏥 CPT Tipo I</div> <span class="count-badge" id="count-cpt1">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🏥2',this,'cpt2')"><div>🏥 CPT Tipo II</div> <span class="count-badge" id="count-cpt2">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🏥3',this,'cpt3')"><div>🏥 CPT Tipo III</div> <span class="count-badge" id="count-cpt3">0</span></button>
                 <button class="btn-mapa" onclick="cambiarEmoji('CRUZ_ROJA',this,'medico')"><div><div class="cruz-roja"></div> Personal Médico</div> <span class="count-badge" id="count-medico">0</span></button>
                 <button class="btn-mapa" onclick="cambiarEmoji('👨‍⚕️',this,'enfermero')"><div>👨‍⚕️ Personal de Enfermería</div> <span class="count-badge" id="count-enfermero">0</span></button>
                 <button class="btn-mapa" onclick="cambiarEmoji('🚑',this,'paramedico')"><div>🚑 Personal Paramédico</div> <span class="count-badge" id="count-paramedico">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('👮',this,'pol_inst')"><div>👮 Módulo Policial</div> <span class="count-badge" id="count-pol_inst">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🚓',this,'pol_inst')"><div>🚓 Módulo Policial</div> <span class="count-badge" id="count-pol_inst">0</span></button>
 
-                <h4>🔧 Servicios Públicos</h4>
+                <h4>💧 Servicios Públicos</h4>
                 <button class="btn-mapa" onclick="cambiarEmoji('⛽',this,'serv_gas')"><div>⛽ Tanquilla de Gas</div> <span class="count-badge" id="count-serv_gas">0</span></button>
                 <button class="btn-mapa" onclick="cambiarEmoji('🚰',this,'serv_agua')"><div>🚰 Tubería de Agua</div> <span class="count-badge" id="count-serv_agua">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('🟤',this,'serv_drenaje')"><div>🟤 Boca de Drenaje / Alcantarillado</div> <span class="count-badge" id="count-serv_drenaje">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🕳️',this,'serv_drenaje')"><div>🕳️ Boca de Drenaje / Alcantarillado</div> <span class="count-badge" id="count-serv_drenaje">0</span></button>
 
-                <h4>👥 Fuerza de Tarea (Especializada)</h4>
-                <button class="btn-mapa" onclick="cambiarEmoji('🛡️',this,'cuadrante')"><div>🛡️ Cuadrante de Paz</div> <span class="count-badge" id="count-cuadrante">0</span></button>
+                <h4>🛡️ Fuerza de Tarea (Especializada)</h4>
+                <button class="btn-mapa" onclick="cambiarEmoji('👮',this,'cuadrante')"><div>👮 Cuadrante de Paz</div> <span class="count-badge" id="count-cuadrante">0</span></button>
                 <button class="btn-mapa" onclick="cambiarEmoji('🚒',this,'bom_inst')"><div>🚒 Cuerpo de Bomberos</div> <span class="count-badge" id="count-bom_inst">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('🚨',this,'pc_inst')"><div>🚨 Protección Civil</div> <span class="count-badge" id="count-pc_inst">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('👮🌿',this,'pol_amb')"><div>👮🌿 Policía Ambiental</div> <span class="count-badge" id="count-pol_amb">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('💂',this,'inparques')"><div>💂 Personal Inparques</div> <span class="count-badge" id="count-inparques">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🦺',this,'pc_inst')"><div>🦺 Protección Civil</div> <span class="count-badge" id="count-pc_inst">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🌿👮',this,'pol_amb')"><div>🌿👮 Policía Ambiental</div> <span class="count-badge" id="count-pol_amb">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🌲',this,'inparques')"><div>🌲 Personal Inparques</div> <span class="count-badge" id="count-inparques">0</span></button>
                 <button class="btn-mapa" onclick="cambiarEmoji('✊',this,'mov_amb')"><div>✊ Movimientos Ambientales</div> <span class="count-badge" id="count-mov_amb">0</span></button>
 
                 <h4>⚠️ Riesgos y Problemas Ambientales</h4>
-                <button class="btn-mapa" onclick="cambiarEmoji('⚫',this,'pozo_derrumbado')"><div>⚫ Pozo Séptico Derrumbado</div> <span class="count-badge" id="count-pozo_derrumbado">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🕳️',this,'pozo_derrumbado')"><div>🕳️ Pozo Séptico Derrumbado</div> <span class="count-badge" id="count-pozo_derrumbado">0</span></button>
                 <button class="btn-mapa" onclick="cambiarEmoji('⚡',this,'poste_riesgo')"><div>⚡ Poste en Riesgo</div> <span class="count-badge" id="count-poste_riesgo">0</span></button>
                 <button class="btn-mapa" onclick="cambiarEmoji('\u{1F697}',this,'riesgo_carro')"><div>🚗 Cauchera</div> <span class="count-badge" id="count-riesgo_carro">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('🏡',this,'arbol_v')"><div>🏡 Árbol Riesgo Vivienda</div> <span class="count-badge" id="count-arbol_v">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🌳',this,'arbol_v')"><div>🌳 Árbol Riesgo Vivienda</div> <span class="count-badge" id="count-arbol_v">0</span></button>
                 <button class="btn-mapa" onclick="cambiarEmoji('🔌',this,'cables')"><div>🔌 Árbol/Tendido Eléctrico</div> <span class="count-badge" id="count-cables">0</span></button>
                 <button class="btn-mapa" onclick="cambiarEmoji('🏚️',this,'casa_r')"><div>🏚️ Vivienda en Riesgo</div> <span class="count-badge" id="count-casa_r">0</span></button>
                 <button class="btn-mapa" onclick="cambiarEmoji('🌊',this,'inund')"><div>🌊 Zona Inundable</div> <span class="count-badge" id="count-inund">0</span></button>
                 <button class="btn-mapa" onclick="cambiarEmoji('⛰️',this,'terreno_i')"><div>⛰️ Terreno Inestable</div> <span class="count-badge" id="count-terreno_i">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('⚠️',this,'derrumbe')"><div>⚠️ Zona de Derrumbe</div> <span class="count-badge" id="count-derrumbe">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🚧',this,'derrumbe')"><div>🚧 Zona de Derrumbe</div> <span class="count-badge" id="count-derrumbe">0</span></button>
                 <button class="btn-mapa" onclick="cambiarEmoji('💧',this,'blancas')"><div>💧 Bote Agua Blanca</div> <span class="count-badge" id="count-blancas">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('🤢',this,'servidas')"><div>🤢 Bote Agua Servida</div> <span class="count-badge" id="count-servidas">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('🕳️',this,'colector')"><div>🕳️ Colector Caído / Cloaca</div> <span class="count-badge" id="count-colector">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('☣️',this,'servidas')"><div>☣️ Bote Agua Servida</div> <span class="count-badge" id="count-servidas">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🚯',this,'colector')"><div>🚯 Colector Caído / Cloaca</div> <span class="count-badge" id="count-colector">0</span></button>
                 <button class="btn-mapa" onclick="cambiarEmoji('🗑️',this,'basura')"><div>🗑️ Foco Crítico (Basura)</div> <span class="count-badge" id="count-basura">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('🧼',this,'autolavado')"><div>🧼 Autolavado (Fuga/Suelo)</div> <span class="count-badge" id="count-autolavado">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('🛠️',this,'taller')"><div>🛠️ Taller Mecánico</div> <span class="count-badge" id="count-taller">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🚘',this,'autolavado')"><div>🚘 Autolavado (Fuga/Suelo)</div> <span class="count-badge" id="count-autolavado">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🔧',this,'taller')"><div>🔧 Taller Mecánico</div> <span class="count-badge" id="count-taller">0</span></button>
                 <button class="btn-mapa" onclick="cambiarEmoji('🚪',this,'carpinteria_porton')"><div>🚪 Carpintería / Portón</div> <span class="count-badge" id="count-carpinteria_porton">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('☣️',this,'desechos_peligrosos')"><div>☣️ Desechos Peligrosos</div> <span class="count-badge" id="count-desechos_peligrosos">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('☢️',this,'desechos_peligrosos')"><div>☢️ Desechos Peligrosos</div> <span class="count-badge" id="count-desechos_peligrosos">0</span></button>
 
                 <h4>🌳 Gestión Forestal</h4>
                 <div class="sidebar-form-group" style="margin-bottom: 12px; padding: 5px; background: #111; border-radius: 6px;">
                     <label class="sidebar-label" style="color: var(--v-lim); font-weight: bold;">Especie Predominante:</label>
                     <input type="text" id="inputArbolPredominante" class="sidebar-input" placeholder="Ej: Mango, Cují, Samán..." style="border: 1px solid #444;">
                 </div>
-                <button class="btn-mapa" onclick="cambiarEmoji('🌳',this,'verde')"><div>🌳 Área Verde / Plaza</div> <span class="count-badge" id="count-verde">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('👨🏼‍🌾',this,'huerto')"><div>👨🏼‍🌾 Espacio Productivo</div> <span class="count-badge" id="count-huerto">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('🟡',this,'araguaney')"><div>🟡 Araguaney</div> <span class="count-badge" id="count-araguaney">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🌿',this,'verde')"><div>🌿 Área Verde / Plaza</div> <span class="count-badge" id="count-verde">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🌱',this,'huerto')"><div>🌱 Espacio Productivo</div> <span class="count-badge" id="count-huerto">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🌼',this,'araguaney')"><div>🌼 Araguaney</div> <span class="count-badge" id="count-araguaney">0</span></button>
                 <button class="btn-mapa" onclick="cambiarEmoji('🌸',this,'apamate')"><div>🌸 Apamate</div> <span class="count-badge" id="count-apamate">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('🌿',this,'cereipo')"><div>🌿 Cereipo</div> <span class="count-badge" id="count-cereipo">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('🌴',this,'manglar')"><div>🌴 Manglar</div> <span class="count-badge" id="count-manglar">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🍃',this,'cereipo')"><div>🍃 Cereipo</div> <span class="count-badge" id="count-cereipo">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🌾',this,'manglar')"><div>🌾 Manglar</div> <span class="count-badge" id="count-manglar">0</span></button>
 
                 <h4>🐾 Control Animal</h4>
-                <button class="btn-mapa" onclick="cambiarEmoji('🐣',this,'pollos')"><div>🐣 Cría de Pollos</div> <span class="count-badge" id="count-pollos">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('🐷',this,'cerdo_c')"><div>🐷 Cerdo (Cama Profunda)</div> <span class="count-badge" id="count-cerdo_c">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('🐗',this,'cerdo_s')"><div>🐗 Cerdo (Sin Cama)</div> <span class="count-badge" id="count-cerdo_s">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🐔',this,'pollos')"><div>🐔 Cría de Pollos</div> <span class="count-badge" id="count-pollos">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🐖',this,'cerdo_c')"><div>🐖 Cerdo (Cama Profunda)</div> <span class="count-badge" id="count-cerdo_c">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🐷',this,'cerdo_s')"><div>🐷 Cerdo (Sin Cama)</div> <span class="count-badge" id="count-cerdo_s">0</span></button>
                 <button class="btn-mapa" onclick="cambiarEmoji('🐑',this,'ovejos')"><div>🐑 Cría de Ovejos</div> <span class="count-badge" id="count-ovejos">0</span></button>
-                <button class="btn-mapa" onclick="cambiarEmoji('🦁',this,'cautivo')"><div>🦁 Animal en Cautiverio</div> <span class="count-badge" id="count-cautivo">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('🦜',this,'cautivo')"><div>🦜 Animal en Cautiverio</div> <span class="count-badge" id="count-cautivo">0</span></button>
                 <button class="btn-mapa" onclick="cambiarEmoji('🦎',this,'invasora')"><div>🦎 Especie Invasora</div> <span class="count-badge" id="count-invasora">0</span></button>
 
                 <h4>♻️ Gestión de Reciclaje</h4>
-                <button class="btn-mapa" onclick="cambiarEmoji('♻️',this,'recicladores')"><div>♻️ Puntos de Recicladores</div> <span class="count-badge" id="count-recicladores">0</span></button>
+                <button class="btn-mapa" onclick="cambiarEmoji('📦',this,'recicladores')"><div>📦 Puntos de Recicladores</div> <span class="count-badge" id="count-recicladores">0</span></button>
 
                 <h4>📐 Delimitación Técnico</h4>
                 <div style="border-radius: 8px; background: #111; padding: 10px;">
-                    <button id="btnDibujo" class="btn-mapa" onclick="iniciarTrazado('pol')">✍️ TRAZAR POLÍGONO / RIESGO</button>
+                    <button id="btnDibujo" class="btn-mapa" onclick="iniciarTrazado('pol')">📐 TRAZAR POLÍGONO / RIESGO</button>
                     <button id="btnLinea" class="btn-mapa" onclick="iniciarTrazado('line')">〰️ LÍNEA / ARROYO / CANAL</button>
-                    <button id="btnEvacuacion" class="btn-mapa" onclick="iniciarTrazado('evac')">🟢➡️ VÍA DE EVACUACIÓN</button>
+                    <button id="btnEvacuacion" class="btn-mapa" onclick="iniciarTrazado('evac')">🟩 VÍA DE EVACUACIÓN</button>
 
                     <div id="desplegable-riesgos-trazado">
                         <div id="opciones-poligono" style="display:none; flex-direction:column; gap:8px;">
@@ -788,7 +737,7 @@
                                     <option value="#ff0000">🔴 Alto Riesgo</option>
                                     <option value="#ffa500">🟠 Mediano Riesgo</option>
                                     <option value="#ffff00">🟡 Bajo Riesgo</option>
-                                    <option value="#000000">⚫ Trazar Sector</option>
+                                    <option value="#000000">⚪ Trazar Sector</option>
                                 </select>
                             </div>
                             <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -825,9 +774,9 @@
             <div id="leyenda-recicladores" style="display: none;">
                 <button class="btn-volver-admin" style="border: 1px solid var(--v-lim); background: var(--v-osc); color: var(--v-lim); display:block;" onclick="alternarLeyendaNormal()">⬅️ VOLVER AL INVENTARIO NORMAL</button>
 
-                <h4 style="border-radius: 4px; background: #252827; padding: 6px; text-align: center; color: #fff;">📋 REGISTRO DE RECICLADORES INFORMALES</h4>
+                <h4 style="border-radius: 4px; background: #252827; padding: 6px; text-align: center; color: #fff;">📦 REGISTRO DE RECICLADORES INFORMALES</h4>
 
-                <h4>✅ Datos Geográficos</h4>
+                <h4>📍 Datos Geográficos</h4>
                 <div class="grid-datos">
                     <div class="sidebar-form-group"><label class="sidebar-label">Estado</label><input type="text" id="recEstado" class="sidebar-input"></div>
                     <div class="sidebar-form-group"><label class="sidebar-label">Municipio</label><input type="text" id="recMunicipio" class="sidebar-input"></div>
@@ -840,7 +789,7 @@
                     <div class="sidebar-form-group"><label class="sidebar-label">Geolocalización</label><input type="text" id="recGeo" class="sidebar-input"></div>
                 </div>
 
-                <h4>✅ Datos de Usuario</h4>
+                <h4>👤 Datos de Usuario</h4>
                 <div class="grid-datos">
                     <div class="sidebar-form-group" style="grid-column: span 2;"><label class="sidebar-label">Encargado o Propietario</label><input type="text" id="recEncargado" class="sidebar-input"></div>
                     <div class="sidebar-form-group" style="grid-column: span 2;"><label class="sidebar-label">Nombre y Apellido</label><input type="text" id="recNomApe" class="sidebar-input"></div>
@@ -856,7 +805,7 @@
                     <div class="sidebar-form-group"><label class="sidebar-label">Teléfono</label><input type="tel" id="recTelefono" class="sidebar-input"></div>
                 </div>
 
-                <h4>✅ Datos de Empresa o Emprendimiento</h4>
+                <h4>🏢 Datos de Empresa o Emprendimiento</h4>
                 <div class="sidebar-form-group"><label class="sidebar-label">Razón Social</label>
                     <select id="recRazonSocial" class="sidebar-select">
                         <option value="">Seleccione...</option>
@@ -919,143 +868,15 @@
             </div>
 
             <div class="controles-mapa-horiz">
-                <div id="grupo-controles-sigp" style="display:flex; flex-direction:row; gap:8px;">
-                    <button class="btn-float" onclick="toggleSidebar()" title="Ocultar/Mostrar Inventario">☰</button>
-                    <button id="floatMano" class="btn-float activo-float" onclick="activarMano()">🖐️</button>
-                    <button class="btn-float" onclick="irAMiUbicacion()" title="Mi Ubicación GPS">🎯</button>
-                    <button id="btnFinalizar" class="btn-float" onclick="finalizarTrazado()">✅</button>
-                    <button class="btn-float" onclick="deshacer()">↩️</button>
-                    <button class="btn-float" onclick="rehacer()">↪️</button>
-                    <button id="btnObservatorio" class="btn-float" onclick="toggleObservatorioClimatico()" title="Modo Observatorio Climático">🌦️</button>
-                </div>
-                <div id="grupo-controles-observatorio" style="display:none; flex-direction:row; gap:8px;">
-                    <button class="btn-float" onclick="irAMiUbicacion()" title="Mi Ubicación GPS">🎯</button>
-                    <button class="btn-float" onclick="toggleObservatorioClimatico()" title="Volver a Modo SIGP">⬅️</button>
-                </div>
+                <button class="btn-float" onclick="toggleSidebar()" title="Ocultar/Mostrar Inventario">☰</button>
+                <button id="floatMano" class="btn-float activo-float" onclick="activarMano()">🖐️</button>
+                <button class="btn-float" onclick="irAMiUbicacion()" title="Mi Ubicación GPS">📍</button>
+                <button id="btnFinalizar" class="btn-float" onclick="finalizarTrazado()">✔️</button>
+                <button class="btn-float" onclick="deshacer()">↩️</button>
+                <button class="btn-float" onclick="rehacer()">↪️</button>
             </div>
             <div id="map"></div>
             <div id="indicador-autoguardado">💾 Autoguardado...</div>
-
-            <!-- ===================== PANELES DEL MODO OBSERVATORIO CLIMÁTICO ===================== -->
-            <div id="panel-observatorio-climatico">
-                <div class="obs-header-bar">
-                    <h3>Observatorio Climático</h3>
-                    <button class="obs-btn-volver-mini" onclick="toggleObservatorioClimatico()">MAPA DE RIESGOS</button>
-                </div>
-
-                <div class="obs-section">
-                    <div id="obs-commune-display" class="obs-commune-badge" style="display:none;"></div>
-                </div>
-
-                <div class="obs-section">
-                    <div class="obs-section-title">Tipo de Mapa</div>
-                    <div class="obs-map-selector">
-                        <button class="obs-map-opt active" onclick="cambiarTipoMapaObs('estandar', this)">🗺️ Estándar</button>
-                        <button class="obs-map-opt" onclick="cambiarTipoMapaObs('satelital', this)">🛰️ Satelital</button>
-                    </div>
-                </div>
-
-                <div class="obs-section">
-                    <div class="obs-section-title">Capas Climáticas</div>
-                    <div class="obs-layers-grid">
-                        <div class="obs-layer-card" onclick="activarCapaClimatica('radar')">
-                            <span class="obs-layer-icon">🌧️</span>
-                            <span class="obs-layer-name">Radar en Vivo</span>
-                        </div>
-                        <div class="obs-layer-card" onclick="activarCapaClimatica('temp')">
-                            <span class="obs-layer-icon">🌡️</span>
-                            <span class="obs-layer-name">Temperatura</span>
-                        </div>
-                        <div class="obs-layer-card" onclick="activarCapaClimatica('precipitacion')">
-                            <span class="obs-layer-icon">☔</span>
-                            <span class="obs-layer-name">Precipitación</span>
-                        </div>
-                        <div class="obs-layer-card" onclick="activarCapaClimatica('nubosidad')">
-                            <span class="obs-layer-icon">☁️</span>
-                            <span class="obs-layer-name">Nubosidad</span>
-                        </div>
-                        <div class="obs-layer-card" onclick="activarCapaClimatica('viento')">
-                            <span class="obs-layer-icon">💨</span>
-                            <span class="obs-layer-name">Viento</span>
-                        </div>
-                        <div class="obs-layer-card" onclick="activarCapaClimatica('presion')">
-                            <span class="obs-layer-icon">🧭</span>
-                            <span class="obs-layer-name">Presión</span>
-                        </div>
-                        <div class="obs-layer-card" onclick="activarCapaClimatica(null)" style="grid-column: span 2;">
-                            <span class="obs-layer-icon">🛰️</span>
-                            <span class="obs-layer-name">Sin Capa Climática</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="obs-section">
-                    <div class="obs-section-title">Unidades</div>
-                    <div class="obs-units" id="obs-unit-temp">
-                        <button class="obs-unit-btn active" onclick="cambiarUnidad('temp','°C',this)">°C</button>
-                        <button class="obs-unit-btn" onclick="cambiarUnidad('temp','°F',this)">°F</button>
-                    </div>
-                    <div class="obs-units" id="obs-unit-viento" style="margin-top:4px;">
-                        <button class="obs-unit-btn active" onclick="cambiarUnidad('viento','km/h',this)">km/h</button>
-                        <button class="obs-unit-btn" onclick="cambiarUnidad('viento','mph',this)">mph</button>
-                    </div>
-                </div>
-
-                <div class="obs-section">
-                    <div class="obs-section-title">Datos en Tiempo Real</div>
-                    <div class="obs-data-cards">
-                        <div class="obs-data-card">
-                            <div class="obs-data-value" id="obs-card-temp">--</div>
-                            <div class="obs-data-label">Temperatura</div>
-                        </div>
-                        <div class="obs-data-card">
-                            <div class="obs-data-value" id="obs-card-sensa">--</div>
-                            <div class="obs-data-label">Sensación</div>
-                        </div>
-                        <div class="obs-data-card">
-                            <div class="obs-data-value" id="obs-card-humedad">--</div>
-                            <div class="obs-data-label">Humedad</div>
-                        </div>
-                        <div class="obs-data-card">
-                            <div class="obs-data-value" id="obs-card-viento">--</div>
-                            <div class="obs-data-label">Viento</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="obs-section">
-                    <div class="obs-nota-bottom">📍 Clic en el mapa para ver pronóstico detallado de las próximas 24h. Solo se muestran los polígonos de sector del mapa de riesgos.</div>
-                </div>
-            </div>
-
-            <div id="control-radar-tiempo">
-                <button onclick="radarAnterior()">◀</button>
-                <button id="btnRadarPlay" class="btn-play-obs" onclick="radarPlayPause()">▶</button>
-                <button onclick="radarSiguiente()">▶</button>
-                <input type="range" id="radarSlider" min="0" max="0" value="0" oninput="mostrarFrameRadar(parseInt(this.value))">
-                <span id="radar-tiempo-label">--:--</span>
-            </div>
-
-            <div id="leyenda-climatica">
-                <h5 id="leyenda-titulo">Leyenda</h5>
-                <div id="leyenda-contenido"></div>
-                <div class="leyenda-nota">Escala de referencia</div>
-            </div>
-
-            <div id="grafica-flotante-clima">
-                <div class="grafica-header">
-                    <span id="grafica-titulo">Pronóstico</span>
-                    <button class="grafica-cerrar" onclick="cerrarGraficaClimatica()">✕</button>
-                </div>
-                <div class="grafica-body">
-                    <div id="grafica-loading" class="grafica-loading">Cargando datos...</div>
-                    <canvas id="chartClimatico" style="display:none;"></canvas>
-                    <div id="tabla-24h-container" style="display:none;">
-                        <div id="tabla-24h-contenido"></div>
-                        <div class="tabla-scroll-hint">↔ Desplaza para ver más datos</div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 </div>
@@ -1088,10 +909,76 @@
     </div>
 </div>
 
+<!-- MODAL DE REPORTE VISUAL (WHATSAPP) -->
+<div id="modal-reporte-riesgo" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 99999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div class="card-reporte-whatsapp">
+        <div class="header-modal-reporte">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:22px;">📢</span>
+                <div>
+                    <h3 style="margin:0; font-size:15px; color:#fff; text-transform:uppercase; letter-spacing:0.5px;">Reportar Riesgo Ambiental</h3>
+                    <div style="font-size:10px; color:#25D366; font-weight:bold;">Canal de WhatsApp Comunitario</div>
+                </div>
+            </div>
+            <button class="btn-cerrar-modal" onclick="cerrarModalReporte()">✕</button>
+        </div>
+
+        <div class="body-modal-reporte">
+            <div class="reporte-item-grid">
+                <div class="reporte-campo">
+                    <label>Problema / Riesgo</label>
+                    <div id="rep-tipo-riesgo" class="reporte-valor-destacado">Bote Agua Servida</div>
+                </div>
+                <div class="reporte-campo">
+                    <label>Nivel de Gravedad</label>
+                    <select id="rep-nivel-urgencia" class="sidebar-select" onchange="actualizarVistaPreviaReporte()" style="font-weight:bold;">
+                        <option value="ALTO 🔴">🔴 Alto Riesgo (Urgente)</option>
+                        <option value="MEDIO 🟡" selected>🟡 Mediano Riesgo</option>
+                        <option value="BAJO 🟢">🟢 Bajo Riesgo (Preventivo)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="reporte-item-grid" style="margin-top:10px;">
+                <div class="reporte-campo">
+                    <label>Comuna</label>
+                    <input type="text" id="rep-comuna" class="sidebar-input" readonly>
+                </div>
+                <div class="reporte-campo">
+                    <label>Sector</label>
+                    <input type="text" id="rep-sector" class="sidebar-input" readonly>
+                </div>
+            </div>
+
+            <div class="reporte-campo" style="margin-top:10px;">
+                <label>Coordenadas Geográficas (GPS)</label>
+                <input type="text" id="rep-coordenadas" class="sidebar-input" readonly style="color:#B4D445; font-weight:bold;">
+            </div>
+
+            <div class="reporte-campo" style="margin-top:10px;">
+                <label>Punto de referencia o detalle adicional</label>
+                <textarea id="rep-observacion" rows="2" class="sidebar-input" style="height:auto; resize:none; font-family:inherit;" placeholder="Ej: Frente a la casa #12, cerca de la cancha principal..." oninput="actualizarVistaPreviaReporte()"></textarea>
+            </div>
+
+            <div class="reporte-campo" style="margin-top:12px;">
+                <label style="color:#25D366;">Vista Previa del Reporte (Formato WhatsApp)</label>
+                <div id="rep-preview-texto" class="preview-whatsapp-box"></div>
+            </div>
+        </div>
+
+        <div class="footer-modal-reporte">
+            <button class="btn-cancelar-modal" onclick="cerrarModalReporte()">Cerrar</button>
+            <button class="btn-whatsapp-enviar" onclick="simularEnvioWhatsApp()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.587 1.961.947 2.796.947 3.179 0 5.766-2.587 5.767-5.766.001-3.182-2.585-5.768-5.767-5.768zm0-2.172c4.418 0 8 3.582 8 8 0 4.418-3.582 8-8 8-1.396 0-2.735-.357-3.924-1.025l-4.107 1.077 1.096-4.01c-.742-1.238-1.165-2.658-1.165-4.042 0-4.418 3.582-8 8-8z"/></svg>
+                REPORTAR A WHATSAPP
+            </button>
+        </div>
+    </div>
+</div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://npmcdn.com/leaflet-editable@1.2.0/src/Leaflet.Editable.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <script>
     const SUPABASE_URL = 'https://zezcmftcbbzplhtdqotd.supabase.co'; 
@@ -1103,8 +990,9 @@
     let rolActual = "usuario";
     let userLocationMarker = null;
     let intervaloAutoguardado = null;
-    let mapaSoloLectura = false; // true solo en la vista de mapa generalizado/consolidado (no editable)
-    let emailPropietarioMapaActual = null; // correo al que pertenece el mapa cargado actualmente en el lienzo
+    let mapaSoloLectura = false; 
+    let emailPropietarioMapaActual = null; 
+    let objetoReporteActivo = null;
 
     const adminPermitidos = [{ user: "yetzonmora@gmail.com", pass: "32568263y" }];
 
@@ -1124,17 +1012,132 @@
 
     listaComunas.forEach(c => dbMapasCount[c] = 0);
 
+    /* === LISTA Y VALIDACIÓN DE RIESGOS AMBIENTALES === */
+    const listaRiesgosAmbientales = [
+        'pozo_derrumbado', 'poste_riesgo', 'riesgo_carro', 'cauchera', 'arbol_v', 'cables',
+        'casa_r', 'inund', 'terreno_i', 'derrumbe', 'blancas', 'servidas',
+        'colector', 'basura', 'autolavado', 'taller', 'carpinteria_porton',
+        'desechos_peligrosos'
+    ];
+
+    function esRiesgoAmbiental(tipoId) {
+        return listaRiesgosAmbientales.includes(tipoId);
+    }
+
+    function obtenerNombreRiesgo(tipoId) {
+        const nombres = {
+            'pozo_derrumbado': 'Pozo Séptico Derrumbado',
+            'poste_riesgo': 'Poste en Riesgo',
+            'riesgo_carro': 'Cauchera',
+            'cauchera': 'Cauchera',
+            'arbol_v': 'Árbol Riesgo Vivienda',
+            'cables': 'Árbol / Tendido Eléctrico',
+            'casa_r': 'Vivienda en Riesgo',
+            'inund': 'Zona Inundable',
+            'terreno_i': 'Terreno Inestable',
+            'derrumbe': 'Zona de Derrumbe',
+            'blancas': 'Bote Agua Blanca',
+            'servidas': 'Bote Agua Servida',
+            'colector': 'Colector Caído / Cloaca',
+            'basura': 'Foco Crítico (Basura)',
+            'autolavado': 'Autolavado (Fuga / Suelo)',
+            'taller': 'Taller Mecánico',
+            'carpinteria_porton': 'Carpintería / Portón',
+            'desechos_peligrosos': 'Desechos Peligrosos'
+        };
+        return nombres[tipoId] || 'Riesgo Ambiental';
+    }
+
+    /* === FUNCIONES DE REPORTE VISUAL (WHATSAPP) === */
+    function abrirModalReporteRiesgo(obj) {
+        const elemento = obj || objetoSeleccionado;
+        if (!elemento) { alert("Seleccione un elemento de riesgo en el mapa primero."); return; }
+        objetoReporteActivo = elemento;
+
+        const nombreRiesgo = obtenerNombreRiesgo(elemento.tipoId);
+        document.getElementById('rep-tipo-riesgo').innerText = nombreRiesgo;
+
+        const comuna = document.getElementById('selectComuna').value || "No seleccionada";
+        const sector = document.getElementById('infoSector').value || "Sector general";
+        document.getElementById('rep-comuna').value = comuna;
+        document.getElementById('rep-sector').value = sector;
+
+        let latlng = null;
+        if (typeof elemento.getLatLng === 'function') {
+            latlng = elemento.getLatLng();
+        } else if (elemento._latlng) {
+            latlng = elemento._latlng;
+        }
+
+        const coordsTxt = latlng ? `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}` : "No disponible";
+        document.getElementById('rep-coordenadas').value = coordsTxt;
+        document.getElementById('rep-observacion').value = elemento.especificacionDiscapacidad || "";
+
+        actualizarVistaPreviaReporte();
+        document.getElementById('modal-reporte-riesgo').style.display = 'flex';
+    }
+
+    function cerrarModalReporte() {
+        document.getElementById('modal-reporte-riesgo').style.display = 'none';
+        objetoReporteActivo = null;
+    }
+
+    function actualizarVistaPreviaReporte() {
+        if (!objetoReporteActivo) return;
+        const nombreRiesgo = document.getElementById('rep-tipo-riesgo').innerText;
+        const comuna = document.getElementById('rep-comuna').value;
+        const sector = document.getElementById('rep-sector').value;
+        const coords = document.getElementById('rep-coordenadas').value;
+        const urgencia = document.getElementById('rep-nivel-urgencia').value;
+        const obs = document.getElementById('rep-observacion').value.trim();
+
+        const correoUsuario = localStorage.getItem('user_email_active') || "Empadronador Comunal";
+        let voceroInfo = correoUsuario;
+        const v = dbVoceros.find(voc => voc.cor && voc.cor.toLowerCase() === correoUsuario.toLowerCase());
+        if (v && v.nom) {
+            voceroInfo = `${v.nom} ${v.ape} (${v.tel || correoUsuario})`;
+        }
+
+        let linkMaps = "";
+        if (coords && coords.includes(',')) {
+            const partes = coords.split(',');
+            linkMaps = `https://maps.google.com/?q=${partes[0].trim()},${partes[1].trim()}`;
+        }
+
+        let textoReporte = `🚨 *REPORTE DE RIESGO AMBIENTAL* 🚨\n`;
+        textoReporte += `━━━━━━━━━━━━━━━━━━━━━\n`;
+        textoReporte += `⚠️ *Problema:* ${nombreRiesgo}\n`;
+        textoReporte += `📊 *Nivel de Urgencia:* ${urgencia}\n`;
+        textoReporte += `🏛 *Comuna:* ${comuna}\n`;
+        textoReporte += `🏘 *Sector:* ${sector}\n`;
+        textoReporte += `📍 *Coordenadas:* ${coords}\n`;
+        if (linkMaps) textoReporte += `🗺 *Mapa GPS:* ${linkMaps}\n`;
+        if (obs) textoReporte += `📝 *Detalle/Ref:* ${obs}\n`;
+        textoReporte += `👤 *Empadronador:* ${voceroInfo}\n`;
+        textoReporte += `📅 *Fecha:* ${new Date().toLocaleString()}\n`;
+        textoReporte += `━━━━━━━━━━━━━━━━━━━━━\n`;
+        textoReporte += `*Sistema SIG Ecosocial - Municipio Simón Bolívar*`;
+
+        document.getElementById('rep-preview-texto').innerText = textoReporte;
+    }
+
+    function simularEnvioWhatsApp() {
+        const texto = document.getElementById('rep-preview-texto').innerText;
+        const enlaceWA = "https://api.whatsapp.com/send?text=" + encodeURIComponent(texto);
+        if (confirm("📢 VISTA PREVIA GENERADA CON ÉXITO\n\n¿Deseas abrir WhatsApp para compartir este reporte con el formato visual listo?\n\n(Pulsa Aceptar para abrir WhatsApp o Cancelar si solo quieres ver la prueba visual)")) {
+            window.open(enlaceWA, '_blank');
+        }
+        cerrarModalReporte();
+    }
+
     // --- MI MAPA (modelo: un único mapa por correo electrónico) ---
 
-    // Muestra el mapa generalizado/consolidado de TODOS los usuarios de la comuna que el usuario tenga seleccionada (solo lectura)
     function verMiMapaGeneralizado() {
         const comuna = document.getElementById('selectComuna').value;
         if (!comuna) { alert("Primero seleccione su Comuna en el panel de Información Territorial."); return; }
         cargarMapaGeneralComuna(comuna);
     }
 
-    // Borra TODO el contenido del mapa único del usuario (íconos, polígonos, líneas, antecedentes) y lo deja vacío,
-    // tanto en el lienzo como en Supabase (misma fila, sin crear una nueva).
     async function reiniciarMiMapa() {
         if (!confirm("⚠️ Esto borrará TODOS los elementos de tu mapa actual (polígonos, íconos, líneas, antecedentes). No se puede deshacer. ¿Deseas continuar?")) return;
         limpiarMapaCompletamente();
@@ -1151,7 +1154,6 @@
         } catch (e) { console.error(e); }
     }
 
-    // Carga (para el ADMINISTRADOR) el mapa único de un usuario específico a partir del id de fila
     async function cargarMapaPorId(id) {
         limpiarMapaCompletamente();
         document.getElementById('panel-admin-comunas').style.display = 'none';
@@ -1169,7 +1171,6 @@
         map.invalidateSize();
     }
 
-    // Elimina por completo el mapa (fila) de un usuario específico (uso administrativo)
     async function confirmarEliminarMapaPorId(id, etiqueta) {
         if (confirm(`⚠️ ADVERTENCIA: ¿Eliminar por completo el mapa de "${etiqueta}"?\nEsta acción no se puede deshacer.`)) {
             try {
@@ -1226,7 +1227,7 @@
                         rowMapa.style.gap = "5px";
                         const btnMapa = document.createElement('button');
                         btnMapa.className = 'btn-mapa'; btnMapa.style.fontSize = "9px";
-                        btnMapa.innerHTML = `<div>📂 ${etiqueta} <br><small style="color:#888;">${reg.usuario_email}</small></div>`;
+                        btnMapa.innerHTML = `<div>🗺️ ${etiqueta} <br><small style="color:#888;">${reg.usuario_email}</small></div>`;
                         btnMapa.onclick = (e) => { e.stopPropagation(); cargarMapaPorId(reg.id); };
                         const btnDel = document.createElement('button');
                         btnDel.className = 'btn-mini-delete'; btnDel.innerHTML = "🗑️";
@@ -1244,7 +1245,7 @@
                     btnGeneral.style.background = "var(--v-osc)";
                     btnGeneral.style.borderColor = "var(--v-lim)";
                     btnGeneral.style.fontWeight = "bold";
-                    btnGeneral.innerHTML = `<div>🌐 Ver Mapa Generalizado (Consolidado)</div>`;
+                    btnGeneral.innerHTML = `<div>👁️ Ver Mapa Generalizado (Consolidado)</div>`;
                     btnGeneral.onclick = (e) => { e.stopPropagation(); cargarMapaGeneralComuna(comuna); };
                     rowGeneral.appendChild(btnGeneral);
                     subListaMapas.appendChild(rowGeneral);
@@ -1330,7 +1331,6 @@
         alternarLeyendaNormal();
     }
 
-    // Construye el contenido HTML del popup para un elemento (polígono, línea o vía de evacuación)
     function generarPopupHTML(layer) {
         const idCapa = L.stamp(layer);
         if (layer.tipoId === 'ruta_evacuacion') {
@@ -1374,7 +1374,6 @@
         else { layer.bindPopup(generarPopupHTML(layer)); }
     }
 
-    // Permite cambiar el nombre asignado a un polígono, línea o vía de evacuación
     function renombrarElemento(idCapa) {
         const capa = stackElementos.find(el => L.stamp(el) === idCapa);
         if (!capa) return;
@@ -1388,7 +1387,6 @@
         }
     }
 
-    // Cambia en vivo el color y/o grosor de una línea (arroyo/río/canal) y lo persiste
     function actualizarEstiloLinea(idCapa, nuevoColor, nuevoGrosor) {
         const capa = stackElementos.find(el => L.stamp(el) === idCapa);
         if (!capa || typeof capa.setStyle !== 'function') return;
@@ -1399,7 +1397,6 @@
         guardarProgresoMapa();
     }
 
-    // Cambia en vivo el color y/o grosor de las flechas de una vía de evacuación y lo persiste
     function actualizarEstiloEvac(idCapa, nuevoColor, nuevoGrosor) {
         const capa = stackElementos.find(el => L.stamp(el) === idCapa);
         if (!capa) return;
@@ -1440,20 +1437,34 @@
             },
             onEachFeature: function (feature, layer) {
                 let popupContenido = document.createElement('div');
-                popupContenido.style.display = 'flex'; popupContenido.style.flexDirection = 'column';
+                popupContenido.style.display = 'flex'; popupContenido.style.flexDirection = 'column'; popupContenido.style.gap = '4px';
                 layer.tipoId = feature.properties.tipoId || "";
                 layer.nombrePersonalizado = feature.properties.popupContent || "";
 
-                if (layer.tipoId === 'vuln_disc' || layer.tipoId === 'poste_riesgo') {
+                if (layer.tipoId === 'poste_riesgo') {
                     const esteValue = feature.properties.especificacion || "";
-                    const labelTitulo = layer.tipoId === 'poste_riesgo' ? "ESPECIFICAR RIESGO POSTE:" : "ESPECIFICAR DISCAPACIDAD:";
-                    popupContenido.innerHTML = `<span class="popup-desc">${labelTitulo}</span><input type="text" id="input-spec-${L.stamp(layer)}" value="${esteValue}" style="width:100%; font-size:11px; color:black; background:white;" onchange="guardarEspecificacion(${L.stamp(layer)}, this.value)"><button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button>`;
+                    popupContenido.innerHTML = `
+                        <span class="popup-desc">⚠️ POSTE EN RIESGO</span>
+                        <label style="font-size:9px; color:#333; font-weight:bold; text-transform:uppercase;">ESPECIFICAR RIESGO POSTE:</label>
+                        <input type="text" id="input-spec-${L.stamp(layer)}" value="${esteValue}" style="width:100%; font-size:11px; color:black; background:white; padding:3px; border:1px solid #ccc; border-radius:3px;" onchange="guardarEspecificacion(${L.stamp(layer)}, this.value)">
+                        <button class="btn-reportar-popup" onclick="abrirModalReporteRiesgo(objetoSeleccionado)">REPORTAR</button>
+                        <button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button>
+                    `;
+                } else if (esRiesgoAmbiental(layer.tipoId)) {
+                    const nombreRiesgo = obtenerNombreRiesgo(layer.tipoId) || layer.nombrePersonalizado || "Riesgo Ambiental";
+                    popupContenido.innerHTML = `
+                        <span class="popup-desc">⚠️ ${nombreRiesgo}</span>
+                        <button class="btn-reportar-popup" onclick="abrirModalReporteRiesgo(objetoSeleccionado)">REPORTAR</button>
+                        <button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button>
+                    `;
+                } else if (layer.tipoId === 'vuln_disc') {
+                    const esteValue = feature.properties.especificacion || "";
+                    popupContenido.innerHTML = `<span class="popup-desc">ESPECIFICAR DISCAPACIDAD:</span><input type="text" id="input-spec-${L.stamp(layer)}" value="${esteValue}" style="width:100%; font-size:11px; color:black; background:white;" onchange="guardarEspecificacion(${L.stamp(layer)}, this.value)"><button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button>`;
                 } else if (layer.tipoId === 'cautivo' || layer.tipoId === 'invasora') {
                     const esteValue = feature.properties.especificacion || "";
                     const labelTitulo = layer.tipoId === 'cautivo' ? "DESCRIPCIÓN ANIMAL CAUTIVERIO:" : "DESCRIPCIÓN ESPECIE INVASORA:";
                     popupContenido.innerHTML = `<span class="popup-desc">${labelTitulo}</span><input type="text" id="input-spec-${L.stamp(layer)}" value="${esteValue}" style="width:100%; font-size:11px; color:black; background:white;" onchange="guardarEspecificacion(${L.stamp(layer)}, this.value)"><button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button>`;
                 } else if (layer instanceof L.Polygon || layer instanceof L.Polyline) {
-                    // Polígonos, líneas técnicas y vías de evacuación usan el popup dinámico con edición de nombre/estilo
                     popupContenido = null;
                 } else {
                     popupContenido.innerHTML = `<div><span class="popup-desc">${feature.properties.popupContent || "Elemento"}</span><button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button></div>`;
@@ -1478,7 +1489,6 @@
 
                 layer.on('click', ev => {
                     L.DomEvent.stopPropagation(ev);
-                    if (modoObservatorioActivo) return;
                     if (emojiActual && !modoNavegar) {
                         crearIcono(ev.latlng);
                     } else {
@@ -1494,7 +1504,6 @@
                 });
 
                 layer.on('dragend', function() {
-                    if (modoObservatorioActivo) return;
                     if (layer.tipoId === 'recicladores') {
                         const nuevaPos = layer.getLatLng(); document.getElementById('recCoordenadas').value = `${nuevaPos.lat.toFixed(6)}, ${nuevaPos.lng.toFixed(6)}`;
                         if (!layer.datosReciclador) layer.datosReciclador = {}; layer.datosReciclador.coordenadas = document.getElementById('recCoordenadas').value;
@@ -1534,7 +1543,6 @@
         if (marcador) { marcador.especificacionDiscapacidad = valor; guardarProgresoMapa(); }
     }
 
-    // Construye el arreglo de "elementos" (GeoJSON con propiedades) a partir del stack actual
     function construirElementosParaGuardar() {
         const elementos = [];
         stackElementos.forEach(capa => {
@@ -1560,7 +1568,6 @@
         return elementos;
     }
 
-    // Actualiza en memoria (variable global) la cantidad manual reportada de una vulnerabilidad
     function actualizarVulnerabilidadManual(idVulnerabilidad, valor) {
         let n = parseInt(valor);
         if (isNaN(n) || n < 0) n = 0;
@@ -1570,7 +1577,6 @@
         guardarProgresoMapa();
     }
 
-    // Refleja en los inputs de la leyenda los valores actuales de vulnerabilidadesManual
     function actualizarInputsVulnerabilidadManual() {
         for (let k in vulnerabilidadesManual) {
             const input = document.getElementById('manual-' + k);
@@ -1648,7 +1654,6 @@
         if(data.elementos && data.elementos.length > 0) restaurarDatosDesdeNube({ type: "FeatureCollection", features: data.elementos });
     }
 
-    // Aplica al lienzo los datos de UN registro de mapas_comunales ya consultado
     function aplicarDatosMapaCargado(data) {
         limpiarMapaCompletamente();
         document.getElementById('infoSector').value = data.nombre_sector || "";
@@ -1672,9 +1677,6 @@
         enfocarMapaEnElementos();
     }
 
-    // Unifica en UNA sola fila todos los mapas de sectores que un mismo correo haya guardado en el pasado
-    // (modelo antiguo: varios registros por sector). Junta íconos, polígonos, líneas, antecedentes y totales,
-    // actualiza la primera fila con todo consolidado y elimina las filas sobrantes, para no duplicar espacio.
     async function consolidarMapasDeUsuario(correo, filas) {
         let elementosUnificados = [];
         let antecedentesUnificados = [];
@@ -1730,10 +1732,6 @@
         return payloadUnificado;
     }
 
-    // Busca en Supabase el mapa único asociado a este correo (usuario_email).
-    // - Si ya existe un único mapa: lo carga automáticamente, listo para seguir editando.
-    // - Si existen varios mapas antiguos (del modelo por sectores): los unifica automáticamente en uno solo y lo carga.
-    // - Si no tiene ninguno todavía: deja el lienzo limpio y listo para crear su mapa comunal.
     async function cargarMapaUsuario(correo) {
         emailPropietarioMapaActual = correo;
         try {
@@ -1778,16 +1776,16 @@
 
     function obtenerEmojiPorId(id) {
         const mapeo = {
-            'refugio_idlesia': '⛪', 'refugio_escuela': '🏫', 'refugio_comedor': '🍽️', 'refugio_misiones': '🎪',
-            'vuln_emb': '🤰', 'vuln_disc': '♿', 'vuln_nino': '👶', 'vuln_adult': '👴', 'vuln_cron': '🩺',
-            'centro_med': '🏥', 'cpt1': '🏥₁', 'cpt2': '🏥₂', 'cpt3': '🏥₃', 'enfermero': '👨‍⚕️', 'paramedico': '🚑',
-            'pol_inst': '👮', 'bom_inst': '🚒', 'pc_inst': '🚨', 'cuadrante': '🛡️', 'medico': 'CRUZ_ROJA', 'pol_amb': '👮🌿', 'inparques': '💂',
-            'mov_amb': '✊', 'riesgo_carro': '\u{1F697}', 'arbol_v': '🏠🌳', 'cables': '🔌', 'casa_r': '🏚️', 'inund': '🌊', 'terreno_i': '⛰️',
-            'derrumbe': '⚠️', 'blancas': '💧', 'servidas': '🤢', 'colector': '🕳️', 'basura': '🗑️', 'autolavado': '🧼',
-            'taller': '🛠️', 'carpinteria_porton': '🚪', 'cauchera': '\u{1F6DE}', 'verde': '🌳', 'huerto': '👨🏼‍🌾', 'araguaney': '🟡', 'apamate': '🌸', 'cereipo': '🌿',
-            'pollos': '🐣', 'cerdo_c': '🐷', 'cerdo_s': '🐗', 'ovejos': '🐑', 'cautivo': '🦁', 'invasora': '🦎', 'recicladores': '♻️', 'poste_riesgo': '⚡',
-            'pozo_derrumbado': '⚫', 'manglar': '🌴', 'desechos_peligrosos': '☣️',
-            'serv_gas': '⛽', 'serv_agua': '🚰', 'serv_drenaje': '🟤'
+            'refugio_idlesia': '⛪', 'refugio_escuela': '🏫', 'refugio_comedor': '🍲', 'refugio_misiones': '🏛️',
+            'vuln_emb': '🤰', 'vuln_disc': '♿', 'vuln_nino': '🧒', 'vuln_adult': '👴', 'vuln_cron': '🩺',
+            'centro_med': '🏥', 'cpt1': '🏥1', 'cpt2': '🏥2', 'cpt3': '🏥3', 'enfermero': '👨‍⚕️', 'paramedico': '🚑',
+            'pol_inst': '🚓', 'bom_inst': '🚒', 'pc_inst': '🦺', 'cuadrante': '👮', 'medico': 'CRUZ_ROJA', 'pol_amb': '🌿👮', 'inparques': '🌲',
+            'mov_amb': '✊', 'riesgo_carro': '\u{1F697}', 'arbol_v': '🌳', 'cables': '🔌', 'casa_r': '🏚️', 'inund': '🌊', 'terreno_i': '⛰️',
+            'derrumbe': '🚧', 'blancas': '💧', 'servidas': '☣️', 'colector': '🚯', 'basura': '🗑️', 'autolavado': '🚘',
+            'taller': '🔧', 'carpinteria_porton': '🚪', 'cauchera': '\u{1F697}', 'verde': '🌿', 'huerto': '🌱', 'araguaney': '🌼', 'apamate': '🌸', 'cereipo': '🍃',
+            'pollos': '🐔', 'cerdo_c': '🐖', 'cerdo_s': '🐷', 'ovejos': '🐑', 'cautivo': '🦜', 'invasora': '🦎', 'recicladores': '📦', 'poste_riesgo': '⚡',
+            'pozo_derrumbado': '🕳️', 'manglar': '🌾', 'desechos_peligrosos': '☢️',
+            'serv_gas': '⛽', 'serv_agua': '🚰', 'serv_drenaje': '🕳️'
         };
         return mapeo[id] || '📍';
     }
@@ -1807,7 +1805,7 @@
     }
 
     function volverAlPanelControl() {
-        if (rolActual !== 'admin') return; // Esta opción es exclusiva del administrador
+        if (rolActual !== 'admin') return; 
         if (confirm("¿Volver al panel? Cambios no guardados se perderán.")) {
             document.getElementById('sidebar').style.display = 'none'; document.getElementById('panel-admin-comunas').style.display = 'block';
             document.getElementById('btnVolverAdmin').style.display = 'none'; limpiarMapaCompletamente();
@@ -1816,7 +1814,6 @@
         }
     }
 
-    // --- GUARDADO (manual y automático) ---
     async function guardarMapaEnNube(mostrarAlertas) {
         if (mapaSoloLectura) {
             if (mostrarAlertas) alert("⚠️ AVISO: El mapa generalizado/consolidado es de solo lectura y no se puede sobreescribir.");
@@ -1824,7 +1821,7 @@
         }
 
         const comunaSeleccionada = document.getElementById('selectComuna').value;
-        const sectorTexto = document.getElementById('infoSector').value.trim(); // ahora es informativo/opcional, no clave de guardado
+        const sectorTexto = document.getElementById('infoSector').value.trim(); 
         const estadoValor = document.getElementById('infoEstado').value;
         const municipioValor = document.getElementById('infoMunicipio').value;
         const parroquiaValor = document.getElementById('infoParroquia').value.trim();
@@ -1866,8 +1863,6 @@
         };
 
         try {
-            // Un único mapa por correo: se busca si ya existe una fila para este correo y se ACTUALIZA
-            // (nunca se inserta una fila nueva si ya tenía una), para no duplicar espacio en Supabase.
             const { data: existentes, error: errBusqueda } = await _supabase.from('mapas_comunales').select('id').eq('usuario_email', correoUsuario);
             if (errBusqueda) throw errBusqueda;
 
@@ -1875,7 +1870,6 @@
                 const { error: errUpdate } = await _supabase.from('mapas_comunales').update(payload).eq('id', existentes[0].id);
                 if (errUpdate) throw errUpdate;
                 if (existentes.length > 1) {
-                    // Limpieza defensiva de filas duplicadas remanentes de versiones anteriores
                     await _supabase.from('mapas_comunales').delete().in('id', existentes.slice(1).map(r => r.id));
                 }
             } else {
@@ -1900,19 +1894,14 @@
         }
     }
 
-    // Salir sin guardar: no exige Comuna/Sector, solo advierte que se perderán los cambios no guardados
-    // (nota: si el autoguardado ya alcanzó a correr en el último minuto, esos cambios previos sí quedaron en Supabase)
     function salirSinGuardarMapa() {
         if (confirm("⚠️ ADVERTENCIA: Vas a salir SIN GUARDAR los cambios más recientes de este mapa. Los cambios no guardados se perderán. ¿Deseas continuar de todas formas?")) {
             cerrarSesionTotal();
         }
     }
 
-    // Autoguardado silencioso cada 60 segundos mientras haya una Comuna válida en edición.
-    // Actualiza siempre la MISMA fila del correo actual (no crea filas nuevas), ahorrando espacio en Supabase.
     async function autoguardarMapa() {
         if (document.getElementById('sistema-principal').style.display === 'none') return;
-        if (modoObservatorioActivo) return;
         if (rolActual === 'admin' && document.getElementById('panel-admin-comunas').style.display !== 'none') return;
         if (mapaSoloLectura) return;
         const comunaSeleccionada = document.getElementById('selectComuna').value;
@@ -2034,10 +2023,7 @@
         map.on('editable:drawing:start', e => { trazandoAhora = e.layer; document.getElementById('btnFinalizar').style.display = 'flex'; });
         map.on('editable:drawing:click', e => { if (tipoDeTrazadoActivo === 'evac' && trazandoAhora) { trazandoAhora.colorEvac = document.getElementById('colorEvac').value; trazandoAhora.grosorEvac = parseInt(document.getElementById('grosorEvac').value); trazandoAhora.setStyle({ color: trazandoAhora.colorEvac, weight: 0, fill: false }); recrearFlechasRuta(trazandoAhora); } });
         map.on('editable:drawing:end', e => { registrarObjeto(e.layer); activarMano(); document.getElementById('btnFinalizar').style.display = 'none'; trazandoAhora = null; tipoDeTrazadoActivo = ""; document.getElementById('desplegable-riesgos-trazado').style.display = 'none'; guardarProgresoMapa(); });
-        map.on('click', e => { 
-            if (modoObservatorioActivo) return;
-            if (emojiActual && !modoNavegar) crearIcono(e.latlng); else deseleccionarTodo(); 
-        });
+        map.on('click', e => { if (emojiActual && !modoNavegar) crearIcono(e.latlng); else deseleccionarTodo(); });
     }
 
     function toggleSidebar() { document.getElementById('sidebar').style.display = document.getElementById('sidebar').style.display === 'none' ? 'block' : 'none'; map.invalidateSize(); }
@@ -2053,7 +2039,6 @@
 
     function abrirPopupDesdeFlecha(linea, ev) {
         L.DomEvent.stopPropagation(ev);
-        if (modoObservatorioActivo) return;
         if (emojiActual && !modoNavegar) {
             crearIcono(ev.latlng);
         } else {
@@ -2066,7 +2051,6 @@
     }
 
     function iniciarTrazado(tipo) { 
-        if (modoObservatorioActivo) return;
         deseleccionarTodo(); 
         emojiActual = null; 
         modoNavegar = true; 
@@ -2098,23 +2082,42 @@
     function controlarZoomSlider(val) { map.setZoom(parseFloat(val)); }
 
     function crearIcono(latlng) {
-        if (modoObservatorioActivo) return;
         let contenidoIcono = (emojiActual === 'CRUZ_ROJA') ? `<div class="cruz-roja"></div>` : emojiActual;
         let m = L.marker(latlng, { icon: L.divIcon({ className:'', html: `<div class="map-icon-container">${contenidoIcono}</div>`, iconSize:[24,24] }), draggable: true }).addTo(map);
         m.tipoId = modoEspecial; contadores[modoEspecial]++; actualizarBadges();
+        
         let popupContenido = document.createElement('div');
-        if (m.tipoId === 'vuln_disc' || m.tipoId === 'poste_riesgo') {
-            const labelTitulo = m.tipoId === 'poste_riesgo' ? "ESPECIFICAR RIESGO POSTE:" : "ESPECIFICAR DISCAPACIDAD:";
-            popupContenido.innerHTML = `<span class="popup-desc">${labelTitulo}</span><input type="text" id="input-spec-${L.stamp(m)}" style="color:black; background:white;" onchange="guardarEspecificacion(${L.stamp(m)}, this.value)"><button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button>`;
+        popupContenido.style.display = 'flex';
+        popupContenido.style.flexDirection = 'column';
+        popupContenido.style.gap = '4px';
+
+        if (m.tipoId === 'poste_riesgo') {
+            popupContenido.innerHTML = `
+                <span class="popup-desc">⚠️ POSTE EN RIESGO</span>
+                <label style="font-size:9px; color:#333; font-weight:bold; text-transform:uppercase;">ESPECIFICAR RIESGO POSTE:</label>
+                <input type="text" id="input-spec-${L.stamp(m)}" style="color:black; background:white; width:100%; font-size:11px; padding:3px; border:1px solid #ccc; border-radius:3px;" onchange="guardarEspecificacion(${L.stamp(m)}, this.value)">
+                <button class="btn-reportar-popup" onclick="abrirModalReporteRiesgo(objetoSeleccionado)">REPORTAR</button>
+                <button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button>
+            `;
+        } else if (esRiesgoAmbiental(m.tipoId)) {
+            const nombreRiesgo = obtenerNombreRiesgo(m.tipoId);
+            popupContenido.innerHTML = `
+                <span class="popup-desc">⚠️ ${nombreRiesgo}</span>
+                <button class="btn-reportar-popup" onclick="abrirModalReporteRiesgo(objetoSeleccionado)">REPORTAR</button>
+                <button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button>
+            `;
+        } else if (m.tipoId === 'vuln_disc') {
+            popupContenido.innerHTML = `<span class="popup-desc">ESPECIFICAR DISCAPACIDAD:</span><input type="text" id="input-spec-${L.stamp(m)}" style="color:black; background:white;" onchange="guardarEspecificacion(${L.stamp(m)}, this.value)"><button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button>`;
         } else if (m.tipoId === 'cautivo' || m.tipoId === 'invasora') {
             const labelTitulo = m.tipoId === 'cautivo' ? "DESCRIPCIÓN ANIMAL CAUTIVERIO:" : "DESCRIPCIÓN ESPECIE INVASORA:";
             popupContenido.innerHTML = `<span class="popup-desc">${labelTitulo}</span><input type="text" id="input-spec-${L.stamp(m)}" style="color:black; background:white; width: 100%;" onchange="guardarEspecificacion(${L.stamp(m)}, this.value)"><button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button>`;
         } else {
             popupContenido.innerHTML = `<button class="btn-delete-popup" onclick="eliminarObjeto(objetoSeleccionado)">ELIMINAR</button>`;
         }
+
         m.bindPopup(popupContenido);
-        m.on('click', ev => { L.DomEvent.stopPropagation(ev); if (modoObservatorioActivo) return; deseleccionarTodo(); objetoSeleccionado = m; if (m.tipoId === 'recicladores') alternarLeyendaRecicladores(); m.openPopup(); });
-        m.on('dragend', function() { if (modoObservatorioActivo) return; if (m.tipoId === 'recicladores') { m.datosReciclador = capturarCamposReciclador(); } guardarProgresoMapa(); });
+        m.on('click', ev => { L.DomEvent.stopPropagation(ev); deseleccionarTodo(); objetoSeleccionado = m; if (m.tipoId === 'recicladores') alternarLeyendaRecicladores(); m.openPopup(); });
+        m.on('dragend', function() { if (m.tipoId === 'recicladores') { m.datosReciclador = capturarCamposReciclador(); } guardarProgresoMapa(); });
         if (modoEspecial === 'recicladores') { alternarLeyendaRecicladores(); limpiarCamposReciclador(); document.getElementById('recCoordenadas').value = `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`; m.datosReciclador = capturarCamposReciclador(); }
         stackElementos.push(m); guardarProgresoMapa();
     }
@@ -2140,7 +2143,7 @@
                 mFlecha.on('click', ev => abrirPopupDesdeFlecha(linea, ev));
                 groupoFlechas.addLayer(mFlecha); distanciaRemanente += distanciaPaso;
             }
-            distanciaActual -= 0; // no-op, mantiene compatibilidad
+            distanciaActual -= 0;
             distanciaRemanente -= distSegmento;
         }
         groupoFlechas.addTo(map); linea._decoradorFlechas = groupoFlechas;
@@ -2160,7 +2163,7 @@
         } 
         else if (tipoDeTrazadoActivo === 'pol') {
             let col = document.getElementById('colorPol').value; let fill = document.getElementById('checkRelleno').checked; obj.tipoId = 'poligono_riesgo';
-            let textoRiesgo = col === '#ff0000' ? "ALTO RIESGO 🔴" : col === '#ffa500' ? "MEDIANO RIESGO 🟠" : col === '#ffff00' ? "BAJO RIESGO 🟡" : "SECTOR DELIMITADO ⚫";
+            let textoRiesgo = col === '#ff0000' ? "ALTO RIESGO 🔴" : col === '#ffa500' ? "MEDIANO RIESGO 🟠" : col === '#ffff00' ? "BAJO RIESGO 🟡" : "SECTOR DELIMITADO ⚪";
             descripcion = `${textoRiesgo} - ${prompt("Detalles:") || "Sin detalles"}`;
             obj.nombrePersonalizado = descripcion;
 
@@ -2180,7 +2183,6 @@
 
         obj.on('click', e => { 
             L.DomEvent.stopPropagation(e);
-            if (modoObservatorioActivo) return;
             if (emojiActual && !modoNavegar) {
                 crearIcono(e.latlng);
             } else {
@@ -2191,7 +2193,7 @@
     }
 
     function eliminarObjeto(obj) {
-        if (!obj) return; if (modoObservatorioActivo) return; if (obj.tipoId && contadores[obj.tipoId] !== undefined) contadores[obj.tipoId]--; actualizarBadges();
+        if (!obj) return; if (obj.tipoId && contadores[obj.tipoId] !== undefined) contadores[obj.tipoId]--; actualizarBadges();
         if (obj.tipoId === 'recicladores') alternarLeyendaNormal(); if (obj._decoradorFlechas) map.removeLayer(obj._decoradorFlechas);
         map.removeLayer(obj); stackElementos = stackElementos.filter(i => i !== obj); objetoSeleccionado = null; guardarProgresoMapa();
     }
@@ -2202,7 +2204,6 @@
     function actualizarBadges() { for(let k in contadores) { let el = document.getElementById('count-'+k); if(el) el.innerText = contadores[k]; } }
 
     function deshacer() { 
-        if (modoObservatorioActivo) return;
         let el = stackElementos.pop(); 
         if(el) { 
             stackRedo.push(el); 
@@ -2217,7 +2218,6 @@
     }
 
     function rehacer() { 
-        if (modoObservatorioActivo) return;
         let el = stackRedo.pop(); 
         if(el) { 
             stackElementos.push(el); 
@@ -2231,7 +2231,6 @@
         } 
     }
 
-    // --- MODO DE IMPRESIÓN: oscurece las zonas que no están dentro de un polígono trazado ---
     function activarModoImpresionOverlay() {
         if (!map) return;
         desactivarModoImpresionOverlay();
@@ -2274,475 +2273,6 @@
     });
 
     document.querySelectorAll('.sidebar-input, .sidebar-select').forEach(el => el.addEventListener('change', guardarProgresoMapa));
-
-    // ================================================================================
-    // ===========================  MODO OBSERVATORIO CLIMATICO  ====================
-    // ================================================================================
-
-    const OWM_API_KEY = "b108441878e207a4a35e7e0e756284a7";
-
-    let modoObservatorioActivo = false;
-    let mapaSoloLecturaObs = false;
-    let capaClimaActual = null;
-    let tipoCapaClimaActiva = null;
-    let radarFrames = [];
-    let radarFrameIndex = 0;
-    let radarPlayInterval = null;
-    let chartClimaInstancia = null;
-    let marcadorClimaSeleccionado = null;
-    let tipoMapaObsActual = 'estandar';
-    let baseMapaObs = null;
-    let capasVisiblesObs = { poligonos: [], iconos: [], lineas: [], evac: [] };
-    let unidadTemp = '°C';
-    let unidadViento = 'km/h';
-
-    const definicionesCapasClima = {
-        temp: {
-            titulo: "Temperatura del Aire",
-            owm: "temp_new",
-            unidadChart: "°C",
-            campoOpenMeteo: "temperature_2m",
-            leyenda: [
-                { color: "#8e24aa", texto: "Menos de -20°C" },
-                { color: "#3949ab", texto: "-20°C a 0°C" },
-                { color: "#039be5", texto: "0°C a 10°C" },
-                { color: "#43a047", texto: "10°C a 20°C" },
-                { color: "#fdd835", texto: "20°C a 27°C" },
-                { color: "#fb8c00", texto: "27°C a 33°C" },
-                { color: "#e53935", texto: "33°C a 40°C" },
-                { color: "#6a1b1a", texto: "Mas de 40°C" }
-            ]
-        },
-        precipitacion: {
-            titulo: "Intensidad de Lluvia",
-            owm: "precipitation_new",
-            unidadChart: "mm",
-            campoOpenMeteo: "precipitation",
-            leyenda: [
-                { color: "#b3e5fc", texto: "Llovizna (0.1-2 mm/h)" },
-                { color: "#4fc3f7", texto: "Debil (2-4 mm/h)" },
-                { color: "#0288d1", texto: "Moderada (4-10 mm/h)" },
-                { color: "#fdd835", texto: "Fuerte (10-20 mm/h)" },
-                { color: "#fb8c00", texto: "Muy Fuerte (20-50 mm/h)" },
-                { color: "#e53935", texto: "Torrencial (>50 mm/h)" }
-            ]
-        },
-        nubosidad: {
-            titulo: "Nubosidad",
-            owm: "clouds_new",
-            unidadChart: "%",
-            campoOpenMeteo: "cloudcover",
-            leyenda: [
-                { color: "#eceff1", texto: "Despejado (0-20%)" },
-                { color: "#cfd8dc", texto: "Parcial (20-50%)" },
-                { color: "#90a4ae", texto: "Nublado (50-80%)" },
-                { color: "#546e7a", texto: "Cubierto (80-100%)" }
-            ]
-        },
-        viento: {
-            titulo: "Velocidad del Viento",
-            owm: "wind_new",
-            unidadChart: "km/h",
-            campoOpenMeteo: "windspeed_10m",
-            leyenda: [
-                { color: "#c8e6c9", texto: "Calma (0-7 km/h)" },
-                { color: "#81c784", texto: "Brisa leve (7-20 km/h)" },
-                { color: "#ffd54f", texto: "Moderado (20-38 km/h)" },
-                { color: "#ff8a65", texto: "Fuerte (38-61 km/h)" },
-                { color: "#e53935", texto: "Muy fuerte (>61 km/h)" }
-            ]
-        },
-        presion: {
-            titulo: "Presion Atmosferica",
-            owm: "pressure_new",
-            unidadChart: "hPa",
-            campoOpenMeteo: "surface_pressure",
-            leyenda: [
-                { color: "#5c6bc0", texto: "Baja (<1000 hPa)" },
-                { color: "#42a5f5", texto: "Normal-Baja (1000-1013)" },
-                { color: "#66bb6a", texto: "Normal (1013-1020)" },
-                { color: "#ffca28", texto: "Alta (>1020 hPa)" }
-            ]
-        },
-        radar: {
-            titulo: "Radar de Lluvia en Vivo",
-            unidadChart: "mm",
-            campoOpenMeteo: "precipitation",
-            leyenda: [
-                { color: "#7de37d", texto: "Lluvia ligera" },
-                { color: "#4aa8ff", texto: "Lluvia moderada" },
-                { color: "#fdd835", texto: "Lluvia fuerte" },
-                { color: "#fb8c00", texto: "Tormenta" },
-                { color: "#e53935", texto: "Tormenta severa" }
-            ]
-        }
-    };
-
-    function toggleObservatorioClimatico() {
-        modoObservatorioActivo = !modoObservatorioActivo;
-        const panelObs = document.getElementById('panel-observatorio-climatico');
-        const grupoSigp = document.getElementById('grupo-controles-sigp');
-        const grupoObs = document.getElementById('grupo-controles-observatorio');
-        const tituloEl = document.getElementById('titulo-principal');
-        const subtituloEl = document.getElementById('subtitulo-principal');
-        const obsCommune = document.getElementById('obs-commune-display');
-
-        if (modoObservatorioActivo) {
-            tituloEl.innerText = 'OBSERVATORIO CLIMATICO';
-            const comunaSeleccionada = document.getElementById('selectComuna').value;
-            if (comunaSeleccionada && comunaSeleccionada.trim()) {
-                subtituloEl.innerText = comunaSeleccionada;
-                obsCommune.innerText = comunaSeleccionada;
-                obsCommune.style.display = 'block';
-            } else {
-                subtituloEl.innerText = 'Sin nombre de comuna seleccionada';
-                obsCommune.innerText = 'Sin nombre de comuna seleccionada';
-                obsCommune.style.display = 'block';
-            }
-            panelObs.style.display = 'block';
-            if (typeof activarMano === 'function') activarMano();
-            document.getElementById('sidebar').style.display = 'none';
-            grupoSigp.style.display = 'none';
-            grupoObs.style.display = 'flex';
-            mapaSoloLecturaObs = true;
-            activarSoloPoligonosObs();
-            map.on('click', handlerClickObservatorio);
-        } else {
-            tituloEl.innerText = 'MAPA DE RIESGOS COMUNITARIOS';
-            subtituloEl.innerText = 'Municipio Simon Bolivar - Estado Anzoategui';
-            obsCommune.style.display = 'none';
-            panelObs.style.display = 'none';
-            document.getElementById('sidebar').style.display = 'block';
-            grupoObs.style.display = 'none';
-            grupoSigp.style.display = 'flex';
-            mapaSoloLecturaObs = false;
-            map.off('click', handlerClickObservatorio);
-            activarCapaClimatica(null);
-            cerrarGraficaClimatica();
-            document.getElementById('leyenda-climatica').style.display = 'none';
-            document.getElementById('control-radar-tiempo').style.display = 'none';
-            detenerAnimacionRadar();
-            restaurarTodasCapasObs();
-            ocultarCardsObs();
-        }
-        if (map) map.invalidateSize();
-    }
-
-    function activarSoloPoligonosObs() {
-        capasVisiblesObs = { poligonos: [], iconos: [], lineas: [], evac: [] };
-        stackElementos.forEach(el => {
-            const tipoId = el.tipoId || (el.feature && el.feature.properties ? el.feature.properties.tipoId : null);
-            if (tipoId === 'poligono_riesgo') {
-                capasVisiblesObs.poligonos.push(el);
-            } else {
-                capasVisiblesObs.iconos.push(el);
-                if (map.hasLayer(el)) map.removeLayer(el);
-                if (el._decoradorFlechas && map.hasLayer(el._decoradorFlechas)) map.removeLayer(el._decoradorFlechas);
-            }
-        });
-        capasVisiblesObs.poligonos.forEach(el => {
-            if (!map.hasLayer(el)) el.addTo(map);
-            if (el.setStyle) el.setStyle({ opacity: 0.7, fillOpacity: 0.35, dashArray: null });
-        });
-    }
-
-    function restaurarTodasCapasObs() {
-        stackElementos.forEach(el => {
-            if (!map.hasLayer(el)) el.addTo(map);
-            if (el._decoradorFlechas && !map.hasLayer(el._decoradorFlechas)) el._decoradorFlechas.addTo(map);
-        });
-        stackElementos.forEach(el => {
-            const tipoId = el.tipoId || (el.feature && el.feature.properties ? el.feature.properties.tipoId : null);
-            if (tipoId === 'ruta_evacuacion' && el.setStyle) {
-                el.setStyle({ color: el.colorEvac || '#00FF00', weight: 0, fill: false });
-            } else if (tipoId === 'poligono_riesgo' && el.setStyle) {
-                const op = el.options.fillOpacity !== undefined ? el.options.fillOpacity : 0.4;
-                el.setStyle({ opacity: 1, fillOpacity: op });
-            }
-        });
-        capasVisiblesObs = { poligonos: [], iconos: [], lineas: [], evac: [] };
-    }
-
-    function handlerClickObservatorio(e) {
-        if (!modoObservatorioActivo) return;
-        if (marcadorClimaSeleccionado) map.removeLayer(marcadorClimaSeleccionado);
-        marcadorClimaSeleccionado = L.circleMarker(e.latlng, {
-            radius: 7, color: '#00b4d8', fillColor: '#00b4d8', fillOpacity: 0.8, weight: 2
-        }).addTo(map);
-        mostrarGraficaClimatica(e.latlng);
-        cargarDatosClimaActuales(e.latlng);
-    }
-
-    function cambiarTipoMapaObs(tipo, btn) {
-        tipoMapaObsActual = tipo;
-        document.querySelectorAll('.obs-map-opt').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        if (baseMapaObs) { map.removeLayer(baseMapaObs); baseMapaObs = null; }
-        if (tipo === 'satelital') {
-            baseMapaObs = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                maxZoom: 20, attribution: 'Esri'
-            }).addTo(map);
-        } else {
-            baseMapaObs = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-                maxZoom: 20
-            }).addTo(map);
-        }
-    }
-
-    function cambiarUnidad(tipo, valor, btn) {
-        if (tipo === 'temp') {
-            unidadTemp = valor;
-            document.querySelectorAll('#obs-unit-temp .obs-unit-btn').forEach(b => b.classList.remove('active'));
-        } else {
-            unidadViento = valor;
-            document.querySelectorAll('#obs-unit-viento .obs-unit-btn').forEach(b => b.classList.remove('active'));
-        }
-        btn.classList.add('active');
-    }
-
-    async function activarCapaClimatica(tipo) {
-        if (capaClimaActual) { map.removeLayer(capaClimaActual); capaClimaActual = null; }
-        detenerAnimacionRadar();
-        document.getElementById('control-radar-tiempo').style.display = 'none';
-        document.querySelectorAll('.obs-layer-card').forEach(b => b.classList.remove('active'));
-        tipoCapaClimaActiva = tipo;
-        if (!tipo) {
-            document.getElementById('leyenda-climatica').style.display = 'none';
-            return;
-        }
-        const ordenBotones = ['radar', 'temp', 'precipitacion', 'nubosidad', 'viento', 'presion'];
-        const idx = ordenBotones.indexOf(tipo);
-        const cards = document.querySelectorAll('.obs-layer-card');
-        if (idx >= 0 && cards[idx]) cards[idx].classList.add('active');
-        if (tipo === 'radar') {
-            await activarRadarEnVivo();
-        } else {
-            const def = definicionesCapasClima[tipo];
-            if (!OWM_API_KEY || OWM_API_KEY === "TU_API_KEY_AQUI") {
-                alert("Esta capa requiere una clave gratuita de OpenWeatherMap.\nRegistrate gratis en openweathermap.org/api");
-                tipoCapaClimaActiva = null;
-                document.querySelectorAll('.obs-layer-card').forEach(b => b.classList.remove('active'));
-                return;
-            }
-            capaClimaActual = L.tileLayer(
-                'https://tile.openweathermap.org/map/' + def.owm + '/{z}/{x}/{y}.png?appid=' + OWM_API_KEY,
-                { opacity: 0.92, maxNativeZoom: 9, maxZoom: 20, tileSize: 256 }
-            ).addTo(map);
-        }
-        mostrarLeyendaClimatica(tipo);
-    }
-
-    function mostrarLeyendaClimatica(tipo) {
-        const def = definicionesCapasClima[tipo];
-        if (!def) return;
-        document.getElementById('leyenda-titulo').innerText = def.titulo;
-        const cont = document.getElementById('leyenda-contenido');
-        cont.innerHTML = '';
-        def.leyenda.forEach(item => {
-            const fila = document.createElement('div');
-            fila.className = 'leyenda-fila';
-            fila.innerHTML = '<div class="leyenda-color" style="background:' + item.color + '"></div><span>' + item.texto + '</span>';
-            cont.appendChild(fila);
-        });
-        document.getElementById('leyenda-climatica').style.display = 'block';
-    }
-
-    async function activarRadarEnVivo() {
-        try {
-            const resp = await fetch('https://api.rainviewer.com/public/weather-maps.json');
-            const data = await resp.json();
-            radarFrames = [...(data.radar.past || []), ...(data.radar.nowcast || [])];
-            if (radarFrames.length === 0) { alert("No hay datos de radar disponibles."); return; }
-            radarFrameIndex = data.radar.past ? data.radar.past.length - 1 : 0;
-            document.getElementById('radarSlider').max = radarFrames.length - 1;
-            document.getElementById('radarSlider').value = radarFrameIndex;
-            mostrarFrameRadar(radarFrameIndex);
-            document.getElementById('control-radar-tiempo').style.display = 'flex';
-        } catch (e) {
-            alert("No se pudo conectar con el radar. Verifica tu conexion.");
-            console.error(e);
-        }
-    }
-
-    function mostrarFrameRadar(idx) {
-        if (!radarFrames[idx]) return;
-        radarFrameIndex = idx;
-        if (capaClimaActual) map.removeLayer(capaClimaActual);
-        const frame = radarFrames[idx];
-        capaClimaActual = L.tileLayer(
-            'https://tilecache.rainviewer.com' + frame.path + '/256/{z}/{x}/{y}/4/1_1.png',
-            { opacity: 0.92, maxNativeZoom: 12, maxZoom: 20 }
-        ).addTo(map);
-        document.getElementById('radarSlider').value = idx;
-        document.getElementById('radar-tiempo-label').innerText = new Date(frame.time * 1000).toLocaleTimeString();
-        const slider = document.getElementById('radarSlider');
-        const pct = radarFrames.length > 1 ? (idx / (radarFrames.length - 1)) * 100 : 0;
-        slider.style.background = 'linear-gradient(to right, #00b4d8 ' + pct + '%, rgba(255,255,255,0.1) ' + pct + '%)';
-    }
-
-    function radarAnterior() { if (radarFrameIndex > 0) mostrarFrameRadar(radarFrameIndex - 1); }
-    function radarSiguiente() { if (radarFrameIndex < radarFrames.length - 1) mostrarFrameRadar(radarFrameIndex + 1); }
-
-    function radarPlayPause() {
-        const btn = document.getElementById('btnRadarPlay');
-        if (radarPlayInterval) {
-            detenerAnimacionRadar();
-            btn.innerText = '\u25b6';
-        } else {
-            btn.innerText = '\u23f8';
-            radarPlayInterval = setInterval(() => {
-                let siguiente = radarFrameIndex + 1;
-                if (siguiente >= radarFrames.length) siguiente = 0;
-                mostrarFrameRadar(siguiente);
-            }, 700);
-        }
-    }
-
-    function detenerAnimacionRadar() {
-        if (radarPlayInterval) { clearInterval(radarPlayInterval); radarPlayInterval = null; }
-        const btn = document.getElementById('btnRadarPlay');
-        if (btn) btn.innerText = '\u25b6';
-    }
-
-    async function cargarDatosClimaActuales(latlng) {
-        try {
-            const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + latlng.lat.toFixed(4) + '&longitude=' + latlng.lng.toFixed(4) + '&current=temperature_2m,apparent_temperature,relativehumidity_2m,windspeed_10m&timezone=auto';
-            const resp = await fetch(url);
-            const data = await resp.json();
-            const c = data.current;
-            if (!c) return;
-            let temp = c.temperature_2m;
-            let sensa = c.apparent_temperature;
-            let hum = c.relativehumidity_2m;
-            let viento = c.windspeed_10m;
-            if (unidadTemp === '\u00b0F') { temp = Math.round(temp * 9/5 + 32); sensa = Math.round(sensa * 9/5 + 32); }
-            if (unidadViento === 'mph') { viento = Math.round(viento * 0.621371); }
-            document.getElementById('obs-card-temp').innerText = temp + unidadTemp;
-            document.getElementById('obs-card-sensa').innerText = sensa + unidadTemp;
-            document.getElementById('obs-card-humedad').innerText = hum + '%';
-            document.getElementById('obs-card-viento').innerText = viento + ' ' + unidadViento;
-            document.getElementById('obs-card-temp').style.color = temp > 35 ? '#e63946' : temp > 28 ? '#f77f00' : '#06d6a0';
-        } catch (e) { console.error(e); }
-    }
-
-    function ocultarCardsObs() {
-        document.getElementById('obs-card-temp').innerText = '--';
-        document.getElementById('obs-card-sensa').innerText = '--';
-        document.getElementById('obs-card-humedad').innerText = '--';
-        document.getElementById('obs-card-viento').innerText = '--';
-    }
-
-    async function mostrarGraficaClimatica(latlng) {
-        const panel = document.getElementById('grafica-flotante-clima');
-        panel.style.display = 'flex';
-        document.getElementById('grafica-loading').style.display = 'block';
-        document.getElementById('grafica-loading').innerText = 'Cargando datos...';
-        document.getElementById('chartClimatico').style.display = 'none';
-        document.getElementById('tabla-24h-container').style.display = 'none';
-        const tipo = tipoCapaClimaActiva || 'temp';
-        const def = definicionesCapasClima[tipo] || definicionesCapasClima.temp;
-        document.getElementById('grafica-titulo').innerText = def.titulo + ' - Proximas 24h';
-        try {
-            let camposOpenMeteo = def.campoOpenMeteo;
-            if (tipo === 'temp') camposOpenMeteo = 'temperature_2m,apparent_temperature';
-            else if (tipo === 'viento') camposOpenMeteo = 'windspeed_10m,winddirection_10m,windgusts_10m';
-            else if (tipo === 'presion') camposOpenMeteo = 'surface_pressure';
-            else if (tipo === 'precipitacion') camposOpenMeteo = 'precipitation,rain,relativehumidity_2m';
-            else if (tipo === 'nubosidad') camposOpenMeteo = 'cloudcover,visibility';
-            const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + latlng.lat.toFixed(4) + '&longitude=' + latlng.lng.toFixed(4) + '&hourly=' + camposOpenMeteo + '&forecast_days=2&timezone=auto';
-            const resp = await fetch(url);
-            const data = await resp.json();
-            const horas = data.hourly.time.slice(0, 24).map(t => t.split('T')[1]);
-            const valores = data.hourly[def.campoOpenMeteo].slice(0, 24);
-            dibujarGraficaClimatica(horas, valores, def.unidadChart);
-            construirTabla24h(data, horas, tipo, def);
-        } catch (e) {
-            document.getElementById('grafica-loading').innerText = "No se pudieron obtener los datos.";
-            console.error(e);
-        }
-    }
-
-    function dibujarGraficaClimatica(labels, valores, unidad) {
-        document.getElementById('grafica-loading').style.display = 'none';
-        const canvas = document.getElementById('chartClimatico');
-        canvas.style.display = 'block';
-        if (chartClimaInstancia) chartClimaInstancia.destroy();
-        chartClimaInstancia = new Chart(canvas.getContext('2d'), {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: unidad,
-                    data: valores,
-                    borderColor: '#00b4d8',
-                    backgroundColor: 'rgba(0,180,216,0.12)',
-                    borderWidth: 2.5,
-                    tension: 0.4,
-                    fill: true,
-                    pointRadius: 3,
-                    pointBackgroundColor: '#00b4d8',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 1,
-                    pointHoverRadius: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: { ticks: { color: 'rgba(255,255,255,0.5)', maxTicksLimit: 8, font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                    y: { ticks: { color: 'rgba(255,255,255,0.5)', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.05)' } }
-                }
-            }
-        });
-    }
-
-    function construirTabla24h(data, horas, tipo, def) {
-        const container = document.getElementById('tabla-24h-container');
-        const contenido = document.getElementById('tabla-24h-contenido');
-        contenido.innerHTML = '';
-        const tabla = document.createElement('table');
-        const thead = document.createElement('thead');
-        const tbody = document.createElement('tbody');
-        let cabeceras = ['Hora'];
-        let camposDatos = [];
-        if (tipo === 'temp') { cabeceras.push('Temp', 'Sensacion'); camposDatos = ['temperature_2m', 'apparent_temperature']; }
-        else if (tipo === 'viento') { cabeceras.push('Vel.', 'Dir.', 'Rafagas'); camposDatos = ['windspeed_10m', 'winddirection_10m', 'windgusts_10m']; }
-        else if (tipo === 'precipitacion') { cabeceras.push('Lluvia', 'Precip.', 'Humedad'); camposDatos = ['precipitation', 'rain', 'relativehumidity_2m']; }
-        else if (tipo === 'nubosidad') { cabeceras.push('Nubosidad', 'Visibilidad'); camposDatos = ['cloudcover', 'visibility']; }
-        else if (tipo === 'presion') { cabeceras.push('Presion'); camposDatos = ['surface_pressure']; }
-        else if (tipo === 'radar') { cabeceras.push('Precip. est.'); camposDatos = ['precipitation']; }
-        else { cabeceras.push('Valor'); camposDatos = [def.campoOpenMeteo]; }
-        let headerRow = document.createElement('tr');
-        cabeceras.forEach(c => { let th = document.createElement('th'); th.innerText = c; headerRow.appendChild(th); });
-        thead.appendChild(headerRow);
-        horas.forEach((hora, i) => {
-            let tr = document.createElement('tr');
-            let tdHora = document.createElement('td');
-            tdHora.innerText = hora;
-            tr.appendChild(tdHora);
-            camposDatos.forEach(campo => {
-                let td = document.createElement('td');
-                const val = data.hourly[campo] ? data.hourly[campo][i] : '-';
-                td.innerText = val !== null && val !== undefined ? val : '-';
-                if ((campo === 'temperature_2m' || campo === 'apparent_temperature') && val > 35) td.style.color = '#e63946';
-                else if (campo === 'windspeed_10m' && val > 60) td.style.color = '#e63946';
-                else if ((campo === 'precipitation' || campo === 'rain') && val > 10) td.style.color = '#e63946';
-                tr.appendChild(td);
-            });
-            tbody.appendChild(tr);
-        });
-        tabla.appendChild(thead);
-        tabla.appendChild(tbody);
-        contenido.appendChild(tabla);
-        container.style.display = 'block';
-    }
-
-    function cerrarGraficaClimatica() {
-        document.getElementById('grafica-flotante-clima').style.display = 'none';
-        document.getElementById('tabla-24h-container').style.display = 'none';
-        if (marcadorClimaSeleccionado) { map.removeLayer(marcadorClimaSeleccionado); marcadorClimaSeleccionado = null; }
-    }
 </script>
 </body>
 </html>

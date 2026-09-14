@@ -1946,11 +1946,25 @@
             if (insertErr) throw new Error('Error guardando reporte: ' + insertErr.message);
             if (!insertData || !insertData.id) throw new Error('No se obtuvo el ID del reporte');
 
-            const { data: fnData, error: fnErr } = await _supabase.functions.invoke('enviar-reporte-telegram', {
-                body: { reporte_id: insertData.id }
+            // Llamar Edge Function (fetch directo = mejor mensaje de error)
+            const fnUrl = SUPABASE_URL + '/functions/v1/dynamic-handler';
+            const fnRes = await fetch(fnUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + SUPABASE_KEY,
+                    'apikey': SUPABASE_KEY
+                },
+                body: JSON.stringify({ reporte_id: insertData.id })
             });
-
-            if (fnErr) throw new Error(fnErr.message || 'Error en la función de envío');
+            const fnRaw = await fnRes.text();
+            let fnData = null;
+            try { fnData = fnRaw ? JSON.parse(fnRaw) : null; } catch (e) {
+                throw new Error('Edge Function no devolvió JSON. Status ' + fnRes.status + '. ¿Está desplegada? Respuesta: ' + fnRaw.slice(0, 180));
+            }
+            if (!fnRes.ok) {
+                throw new Error((fnData && fnData.error) || ('Edge Function HTTP ' + fnRes.status));
+            }
             if (fnData && fnData.error) throw new Error(fnData.error);
 
             alert("✅ Reporte enviado exitosamente a Telegram\n(Las fotos temporales fueron eliminadas de Supabase)");
